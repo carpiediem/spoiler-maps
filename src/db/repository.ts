@@ -182,17 +182,18 @@ function rowToChapter(row: Row): Chapter {
     id: row.id as number,
     bookId: row.book_id as number,
     name: row.name as string,
+    url: row.url as string | null,
     sortOrder: row.sort_order as number,
   };
 }
 
 export async function createChapter(input: NewChapter): Promise<Chapter> {
   const db = await getDatabase();
-  const id = insert(db, 'INSERT INTO chapters (book_id, name, sort_order) VALUES (?, ?, ?);', [
-    input.bookId,
-    input.name,
-    input.sortOrder,
-  ]);
+  const id = insert(
+    db,
+    'INSERT INTO chapters (book_id, name, url, sort_order) VALUES (?, ?, ?, ?);',
+    [input.bookId, input.name, input.url, input.sortOrder],
+  );
   await persist();
   return { id, ...input };
 }
@@ -209,9 +210,10 @@ export async function listChaptersForBook(bookId: number): Promise<Chapter[]> {
 
 export async function updateChapter(id: number, input: NewChapter): Promise<void> {
   const db = await getDatabase();
-  db.run('UPDATE chapters SET book_id = ?, name = ?, sort_order = ? WHERE id = ?;', [
+  db.run('UPDATE chapters SET book_id = ?, name = ?, url = ?, sort_order = ? WHERE id = ?;', [
     input.bookId,
     input.name,
+    input.url,
     input.sortOrder,
     id,
   ]);

@@ -1,4 +1,4 @@
-import { Box, Button, Paper } from '@mui/material';
+import { Box, Paper } from '@mui/material';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import type { LatLng, Story } from '../db';
@@ -13,6 +13,29 @@ import { resolveTileUrlTemplate } from '../lib/tileUrl';
 import { StorySelector } from './StorySelector';
 
 type SectionId = 'map' | 'books' | 'television' | 'characters' | 'markers';
+
+const HASH_PATTERN = /^#(map|books|television|characters|markers)(?:-(\d+))?$/;
+
+interface HashTarget {
+  section: SectionId;
+  bookIndex: number | null;
+}
+
+// Reads a #section or #section-N fragment (e.g. #books, #books-1). A
+// section other than Map only exists once a story has been saved, so the
+// fragment is ignored (rather than left pending) while selectedStoryId is
+// still null.
+function parseHash(hash: string, selectedStoryId: number | null): HashTarget | null {
+  const match = hash.match(HASH_PATTERN);
+  if (!match) return null;
+  const [, section, indexStr] = match;
+  if (section !== 'map' && selectedStoryId === null) return null;
+
+  return {
+    section: section as SectionId,
+    bookIndex: section === 'books' && indexStr ? Number(indexStr) : null,
+  };
+}
 
 interface EditorSidebarProps {
   stories: Story[];
@@ -47,7 +70,15 @@ export function EditorSidebar({
     formState: { errors, isDirty },
   } = useForm<FormValues>({ defaultValues: storyToFormValues(null) });
 
-  const [expandedSection, setExpandedSection] = useState<SectionId | false>('map');
+  // Seeded synchronously from the URL hash present at first render (rather
+  // than via an effect) so a hash-targeted section/book is visible on the
+  // very first paint instead of flashing open a tick later.
+  const [expandedSection, setExpandedSection] = useState<SectionId | false>(
+    () => parseHash(window.location.hash, selectedStoryId)?.section ?? 'map',
+  );
+  const [hashBookIndex, setHashBookIndex] = useState<number | null>(
+    () => parseHash(window.location.hash, selectedStoryId)?.bookIndex ?? null,
+  );
 
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
@@ -61,7 +92,25 @@ export function EditorSidebar({
 
     const story = stories.find((candidate) => candidate.id === selectedStoryId) ?? null;
     reset(storyToFormValues(story));
+    setExpandedSection('map');
   }, [selectedStoryId, stories, reset]);
+
+  // Re-applies the hash on demand: once more when selectedStoryId
+  // transitions away from null (a non-Map fragment may have been waiting
+  // on a story to finish loading/saving), and again on any live
+  // 'hashchange' while the sidebar is already open.
+  useEffect(() => {
+    function applyHash() {
+      const target = parseHash(window.location.hash, selectedStoryId);
+      if (!target) return;
+      setExpandedSection(target.section);
+      setHashBookIndex(target.bookIndex);
+    }
+
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    return () => window.removeEventListener('hashchange', applyHash);
+  }, [selectedStoryId]);
 
   function onValid(data: FormValues) {
     const resolved = resolveTileUrlTemplate(data.tileUrlValue)!;
@@ -115,50 +164,51 @@ export function EditorSidebar({
             control={control}
             setValue={setValue}
             errors={errors}
+            isDirty={isDirty}
             mapPosition={mapPosition}
             onCaptureMapPosition={onCaptureMapPosition}
           />
         </SidebarSection>
 
-        <SidebarSection
-          id="books-section"
-          title="Books"
-          expanded={expandedSection === 'books'}
-          onChange={handleAccordionChange('books')}
-        >
-          <BooksSection />
-        </SidebarSection>
+        {selectedStoryId !== null && (
+          <>
+            <SidebarSection
+              id="books-section"
+              title="Books"
+              expanded={expandedSection === 'books'}
+              onChange={handleAccordionChange('books')}
+            >
+              <BooksSection storyId={selectedStoryId} initialExpandedIndex={hashBookIndex} />
+            </SidebarSection>
 
-        <SidebarSection
-          id="television-section"
-          title="Television"
-          expanded={expandedSection === 'television'}
-          onChange={handleAccordionChange('television')}
-        >
-          <TelevisionSection />
-        </SidebarSection>
+            <SidebarSection
+              id="television-section"
+              title="Television"
+              expanded={expandedSection === 'television'}
+              onChange={handleAccordionChange('television')}
+            >
+              <TelevisionSection />
+            </SidebarSection>
 
-        <SidebarSection
-          id="characters-section"
-          title="Characters"
-          expanded={expandedSection === 'characters'}
-          onChange={handleAccordionChange('characters')}
-        >
-          <CharactersSection />
-        </SidebarSection>
+            <SidebarSection
+              id="characters-section"
+              title="Characters"
+              expanded={expandedSection === 'characters'}
+              onChange={handleAccordionChange('characters')}
+            >
+              <CharactersSection />
+            </SidebarSection>
 
-        <SidebarSection
-          id="markers-section"
-          title="Markers"
-          expanded={expandedSection === 'markers'}
-          onChange={handleAccordionChange('markers')}
-        >
-          <MarkersSection />
-        </SidebarSection>
-
-        <Button type="submit" variant="contained" disabled={!isDirty} sx={{ mt: 2 }}>
-          Save
-        </Button>
+            <SidebarSection
+              id="markers-section"
+              title="Markers"
+              expanded={expandedSection === 'markers'}
+              onChange={handleAccordionChange('markers')}
+            >
+              <MarkersSection />
+            </SidebarSection>
+          </>
+        )}
       </Box>
     </Paper>
   );

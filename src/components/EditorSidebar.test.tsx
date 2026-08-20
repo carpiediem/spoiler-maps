@@ -1,9 +1,28 @@
 import { fireEvent, render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import type { Story } from '../db';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createBook, createStory, type Story } from '../db';
+import { resetDatabaseForTests } from '../db/client';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
 import { EditorSidebar } from './EditorSidebar';
+
+async function deleteStoredDatabase(): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase('spoiler-maps');
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+beforeEach(() => {
+  resetDatabaseForTests();
+});
+
+afterEach(async () => {
+  resetDatabaseForTests();
+  await deleteStoredDatabase();
+  window.location.hash = '';
+});
 
 function makeStory(overrides: Partial<Story>): Story {
   return {
@@ -376,7 +395,7 @@ describe('EditorSidebar', () => {
     render(
       <EditorSidebar
         stories={[]}
-        selectedStoryId={null}
+        selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
@@ -385,7 +404,7 @@ describe('EditorSidebar', () => {
     );
 
     expect(screen.getByLabelText(/map name/i)).toBeVisible();
-    expect(screen.getByText(/no books yet/i)).not.toBeVisible();
+    expect(await screen.findByText(/no books yet/i)).not.toBeVisible();
 
     await user.click(screen.getByRole('button', { name: /^books$/i }));
 
@@ -402,7 +421,7 @@ describe('EditorSidebar', () => {
     render(
       <EditorSidebar
         stories={[]}
-        selectedStoryId={null}
+        selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
@@ -418,5 +437,162 @@ describe('EditorSidebar', () => {
 
     await user.click(screen.getByRole('button', { name: /^markers$/i }));
     expect(screen.getByText(/no markers yet/i)).toBeVisible();
+  });
+
+  it('hides the Books/Television/Characters/Markers sections for a brand new, unsaved map', () => {
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /^books$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^television$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^characters$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^markers$/i })).not.toBeInTheDocument();
+  });
+
+  it('re-collapses to the Map section when switching stories', async () => {
+    const user = userEvent.setup();
+    const stories = [makeStory({ id: 1 }), makeStory({ id: 2, name: 'The Wheel of Time' })];
+    const { rerender } = render(
+      <EditorSidebar
+        stories={stories}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /^books$/i }));
+    expect(await screen.findByText(/no books yet/i)).toBeVisible();
+
+    rerender(
+      <EditorSidebar
+        stories={stories}
+        selectedStoryId={2}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    expect(screen.getByLabelText(/map name/i)).toBeVisible();
+  });
+
+  it('opens the Books section from a #books URL hash', async () => {
+    window.location.hash = '#books';
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    expect(await screen.findByText(/no books yet/i)).toBeVisible();
+    expect(screen.getByLabelText(/map name/i)).not.toBeVisible();
+  });
+
+  it('expands the Nth book from a #books-N URL hash', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+    });
+    await createBook({
+      storyId: story.id,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createBook({
+      storyId: story.id,
+      name: 'A Clash of Kings',
+      author: null,
+      url: null,
+      sortOrder: 1,
+    });
+    window.location.hash = '#books-2';
+
+    render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={story.id}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    expect(await screen.findByDisplayValue('A Clash of Kings')).toBeVisible();
+    expect(screen.getByDisplayValue('A Game of Thrones')).not.toBeVisible();
+  });
+
+  it('ignores a #books hash for a brand new, unsaved map', () => {
+    window.location.hash = '#books';
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    expect(screen.getByLabelText(/map name/i)).toBeVisible();
+  });
+
+  it('ignores a hash that does not name a known section', () => {
+    window.location.hash = '#not-a-real-section';
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    expect(screen.getByLabelText(/map name/i)).toBeVisible();
+  });
+
+  it('responds to the hash changing while already open', async () => {
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    expect(screen.getByText(/no television seasons yet/i)).not.toBeVisible();
+
+    window.location.hash = '#television';
+
+    expect(await screen.findByText(/no television seasons yet/i)).toBeVisible();
   });
 });

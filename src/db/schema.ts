@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export interface Migration {
   version: number;
@@ -164,6 +164,12 @@ export const MIGRATIONS: Migration[] = [
     sql: `
       ALTER TABLE stories ADD COLUMN tile_layer_author TEXT;
       ALTER TABLE stories ADD COLUMN tile_layer_attribution_url TEXT;
+    `,
+  },
+  {
+    version: 6,
+    sql: `
+      ALTER TABLE chapters ADD COLUMN url TEXT;
     `,
   },
 ];

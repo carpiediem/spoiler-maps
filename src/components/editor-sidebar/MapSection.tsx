@@ -2,6 +2,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutlined';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import {
   Alert,
+  Button,
   FormControl,
   IconButton,
   InputAdornment,
@@ -28,6 +29,7 @@ interface MapSectionProps {
   control: Control<FormValues>;
   setValue: UseFormSetValue<FormValues>;
   errors: FieldErrors<FormValues>;
+  isDirty: boolean;
   mapPosition: { center: LatLng; zoom: number } | null;
   onCaptureMapPosition: () => { center: LatLng; zoom: number } | null;
 }
@@ -36,6 +38,7 @@ export function MapSection({
   control,
   setValue,
   errors,
+  isDirty,
   mapPosition,
   onCaptureMapPosition,
 }: MapSectionProps) {
@@ -182,6 +185,10 @@ export function MapSection({
       </FormControl>
 
       {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
+
+      <Button type="submit" variant="contained" disabled={!isDirty} fullWidth>
+        Save
+      </Button>
 
       <TileUrlHelpDialog open={isTileUrlHelpOpen} onClose={() => setIsTileUrlHelpOpen(false)} />
     </Stack>

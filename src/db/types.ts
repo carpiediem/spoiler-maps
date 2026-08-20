@@ -28,6 +28,7 @@ export interface Chapter {
   id: number;
   bookId: number;
   name: string;
+  url: string | null;
   /** Fractional index, zero-based; see ordering.ts. Not a display number. */
   sortOrder: number;
 }
