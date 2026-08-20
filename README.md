@@ -16,6 +16,7 @@ This app will help people build maps that summarize their favorite books or movi
 - [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/) for dev server and builds
 - [Leaflet](https://leafletjs.com/) / [react-leaflet](https://react-leaflet.js.org/) for the map
+- [sql.js](https://sql.js.org/) for in-browser SQLite persistence, backed by IndexedDB
 - [Vitest](https://vitest.dev/) + [Testing Library](https://testing-library.com/) for tests
 - [oxlint](https://oxc.rs/docs/guide/usage/linter.html) for linting, [Prettier](https://prettier.io/) for formatting
 
@@ -32,7 +33,11 @@ npm install
 npm run dev
 ```
 
+<!-- markdownlint-disable MD034 -->
+
 The app will be available at http://localhost:5173.
+
+<!-- markdownlint-enable MD034 -->
 
 ## Available Scripts
 
