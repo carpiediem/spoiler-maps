@@ -1,0 +1,48 @@
+name: Accessibility Scanner
+
+# Manual trigger only: this action files GitHub issues (and can open PRs via
+# Copilot) for whatever it finds, so it shouldn't run unattended on every
+# push. Run it from the Actions tab when you want a fresh scan.
+# https://github.com/github/accessibility-scanner
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  accessibility_scanner:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Refuse to run from a non-main ref
+        # This always scans the live production site regardless of which
+        # ref the workflow is dispatched from - the "Use workflow from"
+        # branch picker does not scope the scan to that branch's content.
+        # Fail loudly here instead of letting that look like a scan of the
+        # selected branch.
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::This workflow always scans the live production site (https://carpiediem.github.io/spoiler-maps/), not the selected branch's content. Run it from main."
+          exit 1
+
+      - uses: github/accessibility-scanner@v3
+        with:
+          urls: https://carpiediem.github.io/spoiler-maps/
+          repository: ${{ github.repository }}
+          # A fine-grained PAT with contents:write, issues:write,
+          # pull-requests:write, actions:write, and metadata:read on this
+          # repo, added as a repository secret. The default GITHUB_TOKEN
+          # can't be used here. See the action's README for details:
+          # https://github.com/github/accessibility-scanner#2-create-a-token-and-add-a-secret
+          token: ${{ secrets.A11Y_SCANNER_TOKEN }}
+          cache_key: a11y-scan-results-spoiler-maps.json
+          include_screenshots: true
+          # One issue per violated rule, aggregating every occurrence across
+          # every scanned page, instead of the default of one issue per
+          # individual violation. Use "rule+url" instead for one issue per
+          # rule per page.
+          group_by: rule
+          # Set to true if this repo doesn't have GitHub Copilot enabled,
+          # to skip auto-assigning filed issues to it.
+          # skip_copilot_assignment: true
