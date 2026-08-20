@@ -37,7 +37,7 @@ async function seedStoryId(): Promise<number> {
 describe('CharactersSection', () => {
   it('shows a loading state, then "No characters yet." for a story with none', async () => {
     const storyId = await seedStoryId();
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} />);
+    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
 
     expect(screen.getByText(/loading characters/i)).toBeInTheDocument();
     expect(await screen.findByText(/no characters yet/i)).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe('CharactersSection', () => {
   it('lists existing characters', async () => {
     const storyId = await seedStoryId();
     await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} />);
+    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
 
     expect(await screen.findByText('Jon Snow')).toBeInTheDocument();
   });
@@ -63,7 +63,12 @@ describe('CharactersSection', () => {
     });
     const onCountChange = vi.fn();
     render(
-      <CharactersSection storyId={storyId} onCountChange={onCountChange} onAddPosition={vi.fn()} />,
+      <CharactersSection
+        storyId={storyId}
+        onCountChange={onCountChange}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+      />,
     );
 
     await vi.waitFor(() => expect(onCountChange).toHaveBeenCalledWith(2));
@@ -73,7 +78,12 @@ describe('CharactersSection', () => {
     const storyId = await seedStoryId();
     const onCountChange = vi.fn();
     render(
-      <CharactersSection storyId={storyId} onCountChange={onCountChange} onAddPosition={vi.fn()} />,
+      <CharactersSection
+        storyId={storyId}
+        onCountChange={onCountChange}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+      />,
     );
 
     await vi.waitFor(() => expect(onCountChange).toHaveBeenCalledWith(0));
@@ -83,7 +93,7 @@ describe('CharactersSection', () => {
     const storyId = await seedStoryId();
     await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
     const user = userEvent.setup();
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} />);
+    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
 
     await screen.findByText('Jon Snow');
     await user.click(screen.getByRole('button', { name: /add character/i }));
@@ -99,7 +109,7 @@ describe('CharactersSection', () => {
     const storyId = await seedStoryId();
     await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
     const user = userEvent.setup();
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} />);
+    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
 
     await user.click(await screen.findByText('Jon Snow'));
     const nameField = screen.getByLabelText(/^name$/i);
@@ -120,7 +130,7 @@ describe('CharactersSection', () => {
       color: null,
     });
     const user = userEvent.setup();
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} />);
+    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
 
     await user.click(await screen.findByText('Jon Snow'));
     const visibleNameField = screen
@@ -146,7 +156,7 @@ describe('CharactersSection', () => {
       color: null,
     });
     const user = userEvent.setup();
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} />);
+    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
 
     await user.click(await screen.findByText('Jon Snow'));
     await user.click(screen.getByRole('button', { name: /delete character/i }));
@@ -160,7 +170,9 @@ describe('CharactersSection', () => {
   it('does not update state after unmounting while characters are still loading', async () => {
     const storyId = await seedStoryId();
     await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
-    const { unmount } = render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} />);
+    const { unmount } = render(
+      <CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />,
+    );
 
     unmount();
 

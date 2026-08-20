@@ -1,7 +1,14 @@
-import { fireEvent, render, screen, waitForElementToBeRemoved } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createBook, createStory, type Story } from '../db';
+import { createBook, createCharacter, createStory, type LatLng, type Story } from '../db';
 import { resetDatabaseForTests } from '../db/client';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
 import { EditorSidebar } from './EditorSidebar';
@@ -35,6 +42,33 @@ function makeStory(overrides: Partial<Story>): Story {
     initialZoom: 6,
     ...overrides,
   };
+}
+
+/** Stands in for App: owns draftPosition and drives it the way a real marker drag would. */
+function DraggableEditorSidebar({
+  stories,
+  selectedStoryId,
+}: {
+  stories: Story[];
+  selectedStoryId: number;
+}) {
+  const [draftPosition, setDraftPosition] = useState<LatLng | null>(null);
+  return (
+    <>
+      <EditorSidebar
+        stories={stories}
+        selectedStoryId={selectedStoryId}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={{ center: { lat: 39.8283, lng: -98.5795 }, zoom: 4 }}
+        draftPosition={draftPosition}
+        onStartEditingPosition={() => setDraftPosition({ lat: 39.8283, lng: -98.5795 })}
+        onEndEditingPosition={() => setDraftPosition(null)}
+      />
+      <button onClick={() => setDraftPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag</button>
+    </>
+  );
 }
 
 describe('EditorSidebar', () => {
@@ -669,5 +703,36 @@ describe('EditorSidebar', () => {
     window.location.hash = '#television';
 
     expect(await screen.findByText(/no television seasons yet/i)).toBeVisible();
+  });
+
+  it('lists a newly saved position once the user returns from editing it', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+    });
+    await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    const user = userEvent.setup();
+    render(<DraggableEditorSidebar stories={[story]} selectedStoryId={story.id} />);
+
+    await user.click(screen.getByRole('button', { name: /^characters$/i }));
+    await user.click(await screen.findByText('Jon Snow'));
+    await user.click(screen.getByRole('button', { name: /^position$/i }));
+
+    await user.click(screen.getByRole('button', { name: /simulate drag/i }));
+    await waitFor(() => expect(screen.getByText('51.5000, -0.1278')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: /back to sidebar/i }));
+
+    expect(await screen.findByText('1. Always visible')).toBeInTheDocument();
   });
 });

@@ -11,8 +11,8 @@ import {
   Typography,
   type SelectChangeEvent,
 } from '@mui/material';
-import { useState } from 'react';
-import type { LatLng } from '../../db';
+import { useEffect, useRef, useState } from 'react';
+import { createCharacterPosition, updateCharacterPosition, type LatLng } from '../../db';
 import { useRangeOptions, type FlatOption } from './characters/rangeOptions';
 
 const OPEN_END_VALUE = '';
@@ -58,13 +58,20 @@ function RangeSelect({ label, options, value, onChange }: RangeSelectProps) {
 
 interface PositionPanelProps {
   storyId: number;
+  characterId: number;
   /** 1-based ordinal of this position among the character's positions. */
   index: number;
   position: LatLng | null;
   onBack: () => void;
 }
 
-export function PositionPanel({ storyId, index, position, onBack }: PositionPanelProps) {
+export function PositionPanel({
+  storyId,
+  characterId,
+  index,
+  position,
+  onBack,
+}: PositionPanelProps) {
   const { chapterOptions, episodeOptions, hasBooks, hasSeasons } = useRangeOptions(storyId);
 
   const [chapterRangeStart, setChapterRangeStart] = useState<number | null>(null);
@@ -72,6 +79,49 @@ export function PositionPanel({ storyId, index, position, onBack }: PositionPane
   const [episodeRangeStart, setEpisodeRangeStart] = useState<number | null>(null);
   const [episodeRangeEnd, setEpisodeRangeEnd] = useState<number | null>(null);
   const [dead, setDead] = useState(false);
+
+  // The pin starts at the map's current center; nothing is saved until the
+  // user actually drags it away from that starting point. Captured once on
+  // mount (a fresh PositionPanel instance per "+ Position" click) so later
+  // renders can tell "the marker moved" apart from "the panel re-rendered".
+  const initialPositionRef = useRef(position);
+  // Set once the position row exists, so later field/marker changes update
+  // it instead of creating another one. A ref (not state) so setting it
+  // doesn't itself trigger another save via the effect below.
+  const savedPositionIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (position === null) return;
+    const chapterRange = { startChapterId: chapterRangeStart, endChapterId: chapterRangeEnd };
+    const episodeRange = { startEpisodeId: episodeRangeStart, endEpisodeId: episodeRangeEnd };
+
+    if (savedPositionIdRef.current !== null) {
+      updateCharacterPosition(savedPositionIdRef.current, {
+        characterId,
+        position,
+        dead,
+        chapterRange,
+        episodeRange,
+      });
+      return;
+    }
+
+    if (position === initialPositionRef.current) return;
+
+    createCharacterPosition({ characterId, position, dead, chapterRange, episodeRange }).then(
+      (created) => {
+        savedPositionIdRef.current = created.id;
+      },
+    );
+  }, [
+    characterId,
+    position,
+    chapterRangeStart,
+    chapterRangeEnd,
+    episodeRangeStart,
+    episodeRangeEnd,
+    dead,
+  ]);
 
   return (
     <Stack spacing={2}>

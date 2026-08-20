@@ -9,12 +9,15 @@ interface CharactersSectionProps {
   onCountChange?: (count: number) => void;
   /** Called with (characterId, 1-based new position index) when "+ Position" is clicked. */
   onAddPosition: (characterId: number, index: number) => void;
+  /** Bumped whenever a position editing session ends, so each CharacterItem re-fetches its list. */
+  positionsVersion: number;
 }
 
 export function CharactersSection({
   storyId,
   onCountChange,
   onAddPosition,
+  positionsVersion,
 }: CharactersSectionProps) {
   const [characters, setCharacters] = useState<Character[] | null>(null);
   const [expandedCharacterId, setExpandedCharacterId] = useState<number | null>(null);
@@ -104,6 +107,7 @@ export function CharactersSection({
           onCharacterChange={handleCharacterChange}
           onDelete={() => handleDeleteCharacter(character.id)}
           onAddPosition={(index) => onAddPosition(character.id, index)}
+          positionsVersion={positionsVersion}
         />
       ))}
 

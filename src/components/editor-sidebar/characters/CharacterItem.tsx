@@ -33,6 +33,8 @@ interface CharacterItemProps {
   onDelete: () => void;
   /** Called with the 1-based index the new position would have when "+ Position" is clicked. */
   onAddPosition: (index: number) => void;
+  /** Bumped whenever a position editing session ends, to re-fetch the list below. */
+  positionsVersion: number;
 }
 
 export function CharacterItem({
@@ -42,6 +44,7 @@ export function CharacterItem({
   onCharacterChange,
   onDelete,
   onAddPosition,
+  positionsVersion,
 }: CharacterItemProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [positions, setPositions] = useState<CharacterPosition[] | null>(null);
@@ -56,7 +59,7 @@ export function CharacterItem({
     return () => {
       cancelled = true;
     };
-  }, [character.id]);
+  }, [character.id, positionsVersion]);
 
   function handleFieldChange(field: 'name' | 'group' | 'icon' | 'color', value: string) {
     onCharacterChange({

@@ -1,7 +1,17 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createBook, createChapter, createEpisode, createStory, createTvSeason } from '../../db';
+import {
+  createBook,
+  createCharacter,
+  createChapter,
+  createEpisode,
+  createStory,
+  createTvSeason,
+  listCharacterPositionsForCharacter,
+  type LatLng,
+} from '../../db';
 import { resetDatabaseForTests } from '../../db/client';
 import { PositionPanel } from './PositionPanel';
 
@@ -34,12 +44,45 @@ async function seedStoryId(): Promise<number> {
   return story.id;
 }
 
+async function seedCharacter(): Promise<{ storyId: number; characterId: number }> {
+  const storyId = await seedStoryId();
+  const character = await createCharacter({
+    storyId,
+    name: 'Jon Snow',
+    group: null,
+    icon: null,
+    color: null,
+  });
+  return { storyId, characterId: character.id };
+}
+
+const INITIAL_POSITION: LatLng = { lat: 39.8283, lng: -98.5795 };
+
+function DraggableWrapper({ storyId, characterId }: { storyId: number; characterId: number }) {
+  const [position, setPosition] = useState<LatLng | null>(INITIAL_POSITION);
+  return (
+    <>
+      <PositionPanel
+        storyId={storyId}
+        characterId={characterId}
+        index={1}
+        position={position}
+        onBack={vi.fn()}
+      />
+      <button onClick={() => setPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag 1</button>
+      <button onClick={() => setPosition({ lat: 40.7128, lng: -74.006 })}>Simulate drag 2</button>
+    </>
+  );
+}
+
 describe('PositionPanel', () => {
   it('shows the position index in the header and calls onBack', async () => {
     const storyId = await seedStoryId();
     const onBack = vi.fn();
     const user = userEvent.setup();
-    render(<PositionPanel storyId={storyId} index={3} position={null} onBack={onBack} />);
+    render(
+      <PositionPanel storyId={storyId} characterId={1} index={3} position={null} onBack={onBack} />,
+    );
 
     expect(screen.getByText('Position 3')).toBeInTheDocument();
 
@@ -49,7 +92,15 @@ describe('PositionPanel', () => {
 
   it('prompts to drag the pin when no position is set yet', async () => {
     const storyId = await seedStoryId();
-    render(<PositionPanel storyId={storyId} index={1} position={null} onBack={vi.fn()} />);
+    render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText(/drag the pin on the map/i)).toBeInTheDocument();
   });
@@ -59,6 +110,7 @@ describe('PositionPanel', () => {
     render(
       <PositionPanel
         storyId={storyId}
+        characterId={1}
         index={1}
         position={{ lat: 51.5, lng: -0.1278 }}
         onBack={vi.fn()}
@@ -70,7 +122,15 @@ describe('PositionPanel', () => {
 
   it('hides the Chapter Range and Episode Range sections when there are no books or seasons', async () => {
     const storyId = await seedStoryId();
-    render(<PositionPanel storyId={storyId} index={1} position={null} onBack={vi.fn()} />);
+    render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+      />,
+    );
 
     await waitFor(() => expect(screen.queryByText(/chapter range/i)).not.toBeInTheDocument());
     expect(screen.queryByText(/episode range/i)).not.toBeInTheDocument();
@@ -96,7 +156,15 @@ describe('PositionPanel', () => {
     await createChapter({ bookId: book1.id, name: 'Bran', url: null, sortOrder: 1 });
     await createChapter({ bookId: book2.id, name: 'Prologue', url: null, sortOrder: 0 });
     const user = userEvent.setup();
-    render(<PositionPanel storyId={storyId} index={1} position={null} onBack={vi.fn()} />);
+    render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+      />,
+    );
 
     await screen.findByText(/chapter range/i);
     await user.click(screen.getByLabelText(/^start chapter$/i));
@@ -123,7 +191,15 @@ describe('PositionPanel', () => {
       sortOrder: 0,
     });
     const user = userEvent.setup();
-    render(<PositionPanel storyId={storyId} index={1} position={null} onBack={vi.fn()} />);
+    render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+      />,
+    );
 
     await screen.findByText(/episode range/i);
     await user.click(screen.getByLabelText(/^start episode$/i));
@@ -146,7 +222,15 @@ describe('PositionPanel', () => {
     });
     await createChapter({ bookId: book.id, name: '', url: null, sortOrder: 0 });
     const user = userEvent.setup();
-    render(<PositionPanel storyId={book.storyId} index={1} position={null} onBack={vi.fn()} />);
+    render(
+      <PositionPanel
+        storyId={book.storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+      />,
+    );
 
     await user.click(await screen.findByLabelText(/^start chapter$/i));
 
@@ -160,7 +244,15 @@ describe('PositionPanel', () => {
     const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
     await createEpisode({ seasonId: season.id, name: '', url: null, sortOrder: 0 });
     const user = userEvent.setup();
-    render(<PositionPanel storyId={storyId} index={1} position={null} onBack={vi.fn()} />);
+    render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+      />,
+    );
 
     await user.click(await screen.findByLabelText(/^start episode$/i));
 
@@ -180,7 +272,15 @@ describe('PositionPanel', () => {
     });
     await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
     const user = userEvent.setup();
-    render(<PositionPanel storyId={storyId} index={1} position={null} onBack={vi.fn()} />);
+    render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+      />,
+    );
 
     await user.click(await screen.findByLabelText(/^start chapter$/i));
     await user.click(await screen.findByRole('option', { name: '1. AGOT: Prologue' }));
@@ -196,7 +296,15 @@ describe('PositionPanel', () => {
   it('toggles the Dead checkbox', async () => {
     const storyId = await seedStoryId();
     const user = userEvent.setup();
-    render(<PositionPanel storyId={storyId} index={1} position={null} onBack={vi.fn()} />);
+    render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+      />,
+    );
 
     const deadCheckbox = screen.getByRole('checkbox', { name: /dead/i });
     expect(deadCheckbox).not.toBeChecked();
@@ -208,11 +316,71 @@ describe('PositionPanel', () => {
   it('does not update state after unmounting while books/seasons are still loading', async () => {
     const storyId = await seedStoryId();
     const { unmount } = render(
-      <PositionPanel storyId={storyId} index={1} position={null} onBack={vi.fn()} />,
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+      />,
     );
 
     unmount();
 
     await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+
+  it('does not persist a position while it stays at its initial value, even if fields change', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const user = userEvent.setup();
+    render(<DraggableWrapper storyId={storyId} characterId={characterId} />);
+
+    await user.click(screen.getByRole('checkbox', { name: /dead/i }));
+
+    expect(await listCharacterPositionsForCharacter(characterId)).toEqual([]);
+  });
+
+  it('creates the position once the marker moves from its initial value', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const user = userEvent.setup();
+    render(<DraggableWrapper storyId={storyId} characterId={characterId} />);
+
+    await user.click(screen.getByRole('button', { name: /simulate drag 1/i }));
+
+    await waitFor(async () => {
+      expect(await listCharacterPositionsForCharacter(characterId)).toHaveLength(1);
+    });
+    const [saved] = await listCharacterPositionsForCharacter(characterId);
+    expect(saved.position).toEqual({ lat: 51.5, lng: -0.1278 });
+    expect(saved.dead).toBe(false);
+  });
+
+  it('updates the same position row on further marker moves and field changes', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const user = userEvent.setup();
+    render(<DraggableWrapper storyId={storyId} characterId={characterId} />);
+
+    await user.click(screen.getByRole('button', { name: /simulate drag 1/i }));
+    await waitFor(async () => {
+      expect(await listCharacterPositionsForCharacter(characterId)).toHaveLength(1);
+    });
+    const [firstSaved] = await listCharacterPositionsForCharacter(characterId);
+
+    await user.click(screen.getByRole('checkbox', { name: /dead/i }));
+    await waitFor(async () => {
+      const [updated] = await listCharacterPositionsForCharacter(characterId);
+      expect(updated.dead).toBe(true);
+    });
+
+    await user.click(screen.getByRole('button', { name: /simulate drag 2/i }));
+    await waitFor(async () => {
+      const [updated] = await listCharacterPositionsForCharacter(characterId);
+      expect(updated.position).toEqual({ lat: 40.7128, lng: -74.006 });
+    });
+
+    const allPositions = await listCharacterPositionsForCharacter(characterId);
+    expect(allPositions).toHaveLength(1);
+    expect(allPositions[0]!.id).toBe(firstSaved.id);
+    expect(allPositions[0]!.dead).toBe(true);
   });
 });

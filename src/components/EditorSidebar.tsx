@@ -106,6 +106,7 @@ export function EditorSidebar({
     characterId: number;
     index: number;
   } | null>(null);
+  const [positionsVersion, setPositionsVersion] = useState(0);
 
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
@@ -174,6 +175,11 @@ export function EditorSidebar({
   function handleBackFromPosition() {
     setActivePosition(null);
     onEndEditingPosition();
+    // Bumps a value each character's CharacterItem depends on when
+    // re-fetching its positions list, so the list picks up whatever was
+    // just created/updated while its accordion stayed mounted (and
+    // silently stale) behind the Position panel.
+    setPositionsVersion((previous) => previous + 1);
   }
 
   return (
@@ -265,6 +271,7 @@ export function EditorSidebar({
                     storyId={selectedStoryId}
                     onCountChange={setCharactersCount}
                     onAddPosition={handleAddPosition}
+                    positionsVersion={positionsVersion}
                   />
                 </SidebarSection>
 
@@ -288,6 +295,7 @@ export function EditorSidebar({
           {activePosition && selectedStoryId !== null && (
             <PositionPanel
               storyId={selectedStoryId}
+              characterId={activePosition.characterId}
               index={activePosition.index}
               position={draftPosition}
               onBack={handleBackFromPosition}

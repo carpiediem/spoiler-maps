@@ -75,6 +75,7 @@ function Wrapper({
       onCharacterChange={setCharacter}
       onDelete={onDelete ?? vi.fn()}
       onAddPosition={onAddPosition ?? vi.fn()}
+      positionsVersion={0}
     />
   );
 }
@@ -97,6 +98,7 @@ describe('CharacterItem', () => {
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
         onAddPosition={vi.fn()}
+        positionsVersion={0}
       />,
     );
 
@@ -120,6 +122,7 @@ describe('CharacterItem', () => {
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
         onAddPosition={vi.fn()}
+        positionsVersion={0}
       />,
     );
 
