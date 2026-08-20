@@ -406,12 +406,12 @@ describe('EditorSidebar', () => {
     expect(screen.getByLabelText(/map name/i)).toBeVisible();
     expect(await screen.findByText(/no books yet/i)).not.toBeVisible();
 
-    await user.click(screen.getByRole('button', { name: /^books$/i }));
+    await user.click(screen.getByRole('button', { name: /^books/i }));
 
     expect(screen.getByText(/no books yet/i)).toBeVisible();
     expect(screen.getByLabelText(/map name/i)).not.toBeVisible();
 
-    await user.click(screen.getByRole('button', { name: /^books$/i }));
+    await user.click(screen.getByRole('button', { name: /^books/i }));
 
     expect(screen.getByText(/no books yet/i)).not.toBeVisible();
   });
@@ -429,13 +429,13 @@ describe('EditorSidebar', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: /^television$/i }));
+    await user.click(screen.getByRole('button', { name: /^television/i }));
     expect(screen.getByText(/no television seasons yet/i)).toBeVisible();
 
-    await user.click(screen.getByRole('button', { name: /^characters$/i }));
+    await user.click(screen.getByRole('button', { name: /^characters/i }));
     expect(screen.getByText(/no characters yet/i)).toBeVisible();
 
-    await user.click(screen.getByRole('button', { name: /^markers$/i }));
+    await user.click(screen.getByRole('button', { name: /^markers/i }));
     expect(screen.getByText(/no markers yet/i)).toBeVisible();
   });
 
@@ -451,10 +451,10 @@ describe('EditorSidebar', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: /^books$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^television$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^characters$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^markers$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^books/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^television/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^characters/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^markers/i })).not.toBeInTheDocument();
   });
 
   it('re-collapses to the Map section when switching stories', async () => {
@@ -471,7 +471,7 @@ describe('EditorSidebar', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: /^books$/i }));
+    await user.click(screen.getByRole('button', { name: /^books/i }));
     expect(await screen.findByText(/no books yet/i)).toBeVisible();
 
     rerender(
@@ -589,7 +589,7 @@ describe('EditorSidebar', () => {
       />,
     );
 
-    expect(screen.getByText(/no television seasons yet/i)).not.toBeVisible();
+    expect(await screen.findByText(/no television seasons yet/i)).not.toBeVisible();
 
     window.location.hash = '#television';
 

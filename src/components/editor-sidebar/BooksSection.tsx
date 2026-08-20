@@ -16,13 +16,18 @@ interface BooksSectionProps {
   storyId: number;
   /** 1-based index of the book to auto-expand, e.g. from a #books-1 URL hash. */
   initialExpandedIndex?: number | null;
+  onCountChange?: (count: number) => void;
 }
 
-export function BooksSection({ storyId, initialExpandedIndex }: BooksSectionProps) {
+export function BooksSection({ storyId, initialExpandedIndex, onCountChange }: BooksSectionProps) {
   const [books, setBooks] = useState<Book[] | null>(null);
   const [chaptersByBookId, setChaptersByBookId] = useState<Record<number, Chapter[]>>({});
   const [expandedBookId, setExpandedBookId] = useState<number | null>(null);
   const appliedInitialIndexRef = useRef(false);
+
+  useEffect(() => {
+    if (books !== null) onCountChange?.(books.length);
+  }, [books, onCountChange]);
 
   useEffect(() => {
     let cancelled = false;

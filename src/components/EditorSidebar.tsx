@@ -18,13 +18,14 @@ const HASH_PATTERN = /^#(map|books|television|characters|markers)(?:-(\d+))?$/;
 
 interface HashTarget {
   section: SectionId;
-  bookIndex: number | null;
+  /** 1-based index of the book/season named by a #books-N or #television-N fragment. */
+  itemIndex: number | null;
 }
 
-// Reads a #section or #section-N fragment (e.g. #books, #books-1). A
-// section other than Map only exists once a story has been saved, so the
-// fragment is ignored (rather than left pending) while selectedStoryId is
-// still null.
+// Reads a #section or #section-N fragment (e.g. #books, #books-1,
+// #television-2). A section other than Map only exists once a story has
+// been saved, so the fragment is ignored (rather than left pending) while
+// selectedStoryId is still null.
 function parseHash(hash: string, selectedStoryId: number | null): HashTarget | null {
   const match = hash.match(HASH_PATTERN);
   if (!match) return null;
@@ -33,7 +34,8 @@ function parseHash(hash: string, selectedStoryId: number | null): HashTarget | n
 
   return {
     section: section as SectionId,
-    bookIndex: section === 'books' && indexStr ? Number(indexStr) : null,
+    itemIndex:
+      (section === 'books' || section === 'television') && indexStr ? Number(indexStr) : null,
   };
 }
 
@@ -76,9 +78,14 @@ export function EditorSidebar({
   const [expandedSection, setExpandedSection] = useState<SectionId | false>(
     () => parseHash(window.location.hash, selectedStoryId)?.section ?? 'map',
   );
-  const [hashBookIndex, setHashBookIndex] = useState<number | null>(
-    () => parseHash(window.location.hash, selectedStoryId)?.bookIndex ?? null,
+  const [hashItemIndex, setHashItemIndex] = useState<number | null>(
+    () => parseHash(window.location.hash, selectedStoryId)?.itemIndex ?? null,
   );
+
+  const [bookCount, setBookCount] = useState<number>();
+  const [televisionCount, setTelevisionCount] = useState<number>();
+  const [charactersCount, setCharactersCount] = useState<number>();
+  const [markersCount, setMarkersCount] = useState<number>();
 
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
@@ -104,7 +111,7 @@ export function EditorSidebar({
       const target = parseHash(window.location.hash, selectedStoryId);
       if (!target) return;
       setExpandedSection(target.section);
-      setHashBookIndex(target.bookIndex);
+      setHashItemIndex(target.itemIndex);
     }
 
     applyHash();
@@ -175,37 +182,49 @@ export function EditorSidebar({
             <SidebarSection
               id="books-section"
               title="Books"
+              count={bookCount}
               expanded={expandedSection === 'books'}
               onChange={handleAccordionChange('books')}
             >
-              <BooksSection storyId={selectedStoryId} initialExpandedIndex={hashBookIndex} />
+              <BooksSection
+                storyId={selectedStoryId}
+                initialExpandedIndex={expandedSection === 'books' ? hashItemIndex : null}
+                onCountChange={setBookCount}
+              />
             </SidebarSection>
 
             <SidebarSection
               id="television-section"
               title="Television"
+              count={televisionCount}
               expanded={expandedSection === 'television'}
               onChange={handleAccordionChange('television')}
             >
-              <TelevisionSection />
+              <TelevisionSection
+                storyId={selectedStoryId}
+                initialExpandedIndex={expandedSection === 'television' ? hashItemIndex : null}
+                onCountChange={setTelevisionCount}
+              />
             </SidebarSection>
 
             <SidebarSection
               id="characters-section"
               title="Characters"
+              count={charactersCount}
               expanded={expandedSection === 'characters'}
               onChange={handleAccordionChange('characters')}
             >
-              <CharactersSection />
+              <CharactersSection storyId={selectedStoryId} onCountChange={setCharactersCount} />
             </SidebarSection>
 
             <SidebarSection
               id="markers-section"
               title="Markers"
+              count={markersCount}
               expanded={expandedSection === 'markers'}
               onChange={handleAccordionChange('markers')}
             >
-              <MarkersSection />
+              <MarkersSection storyId={selectedStoryId} onCountChange={setMarkersCount} />
             </SidebarSection>
           </>
         )}

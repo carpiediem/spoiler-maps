@@ -15,50 +15,52 @@ import {
 } from '@mui/material';
 import { useState, type SyntheticEvent } from 'react';
 import {
-  createChapter,
-  deleteChapter,
-  updateBook,
-  updateChapter,
-  type Book,
-  type Chapter,
+  createEpisode,
+  deleteEpisode,
+  updateEpisode,
+  updateTvSeason,
+  type Episode,
+  type TvSeason,
 } from '../../../db';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
 import { EntryEditorDialog } from '../EntryEditorDialog';
 import { EntryList } from '../EntryList';
 
-interface BookItemProps {
-  book: Book;
-  chapters: Chapter[];
+interface SeasonItemProps {
+  season: TvSeason;
+  /** 0-based position within the story's season list, for the "Season N" label. */
+  index: number;
+  episodes: Episode[];
   expanded: boolean;
   onToggle: (event: SyntheticEvent, isExpanded: boolean) => void;
-  onBookChange: (book: Book) => void;
-  onChaptersChange: (chapters: Chapter[]) => void;
+  onSeasonChange: (season: TvSeason) => void;
+  onEpisodesChange: (episodes: Episode[]) => void;
   onDelete: () => void;
 }
 
-export function BookItem({
-  book,
-  chapters,
+export function SeasonItem({
+  season,
+  index,
+  episodes,
   expanded,
   onToggle,
-  onBookChange,
-  onChaptersChange,
+  onSeasonChange,
+  onEpisodesChange,
   onDelete,
-}: BookItemProps) {
-  const [isChaptersDialogOpen, setIsChaptersDialogOpen] = useState(false);
+}: SeasonItemProps) {
+  const [isEpisodesDialogOpen, setIsEpisodesDialogOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const seasonLabel = `Season ${index + 1}`;
 
-  function handleFieldChange(field: 'name' | 'author' | 'url', value: string) {
-    onBookChange({ ...book, [field]: field === 'name' ? value : value || null });
+  function handleUrlChange(value: string) {
+    onSeasonChange({ ...season, url: value || null });
   }
 
   async function handleBlur() {
-    await updateBook(book.id, {
-      storyId: book.storyId,
-      name: book.name,
-      author: book.author,
-      url: book.url,
-      sortOrder: book.sortOrder,
+    await updateTvSeason(season.id, {
+      storyId: season.storyId,
+      url: season.url,
+      sortOrder: season.sortOrder,
     });
   }
 
@@ -81,50 +83,34 @@ export function BookItem({
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            {book.name || 'Untitled Book'}
+            {seasonLabel}
           </Typography>
           <Tooltip
-            title={`${chapters.length} ${chapters.length === 1 ? 'chapter' : 'chapters'}`}
+            title={`${episodes.length} ${episodes.length === 1 ? 'episode' : 'episodes'}`}
             arrow
           >
-            <Chip label={chapters.length} size="small" variant="outlined" />
+            <Chip label={episodes.length} size="small" variant="outlined" />
           </Tooltip>
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ px: 1, backgroundColor: 'rgba(0, 0, 0, .015)' }}>
         <Stack spacing={1.5}>
           <TextField
-            label="Title"
-            size="small"
-            fullWidth
-            value={book.name}
-            onChange={(event) => handleFieldChange('name', event.target.value)}
-            onBlur={handleBlur}
-          />
-          <TextField
-            label="Author"
-            size="small"
-            fullWidth
-            value={book.author ?? ''}
-            onChange={(event) => handleFieldChange('author', event.target.value)}
-            onBlur={handleBlur}
-          />
-          <TextField
             label="URL"
             size="small"
             fullWidth
-            value={book.url ?? ''}
-            onChange={(event) => handleFieldChange('url', event.target.value)}
+            value={season.url ?? ''}
+            onChange={(event) => handleUrlChange(event.target.value)}
             onBlur={handleBlur}
             sx={{ '& .MuiInputBase-input': { fontSize: '0.8125rem' } }}
             slotProps={{
               input: {
-                endAdornment: book.url && (
+                endAdornment: season.url && (
                   <InputAdornment position="end">
                     <IconButton
                       size="small"
                       aria-label="Open URL"
-                      href={book.url}
+                      href={season.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       edge="end"
@@ -136,40 +122,40 @@ export function BookItem({
               },
             }}
           />
-          <Button size="small" onClick={() => setIsChaptersDialogOpen(true)} fullWidth>
-            Edit Chapters
+          <Button size="small" onClick={() => setIsEpisodesDialogOpen(true)} fullWidth>
+            Edit Episodes
           </Button>
           <Button size="small" color="error" onClick={() => setIsDeleteConfirmOpen(true)} fullWidth>
-            Delete Book
+            Delete Season
           </Button>
         </Stack>
       </AccordionDetails>
 
       <EntryEditorDialog
-        open={isChaptersDialogOpen}
-        onClose={() => setIsChaptersDialogOpen(false)}
-        title={`${book.name || 'Untitled Book'} — Chapters`}
+        open={isEpisodesDialogOpen}
+        onClose={() => setIsEpisodesDialogOpen(false)}
+        title={`${seasonLabel} — Episodes`}
       >
         <EntryList
-          items={chapters}
-          onItemsChange={onChaptersChange}
+          items={episodes}
+          onItemsChange={onEpisodesChange}
           onCreate={(sortOrder) =>
-            createChapter({ bookId: book.id, name: '', url: null, sortOrder })
+            createEpisode({ seasonId: season.id, name: '', url: null, sortOrder })
           }
-          onUpdate={(chapter) =>
-            updateChapter(chapter.id, {
-              bookId: chapter.bookId,
-              name: chapter.name,
-              url: chapter.url,
-              sortOrder: chapter.sortOrder,
+          onUpdate={(episode) =>
+            updateEpisode(episode.id, {
+              seasonId: episode.seasonId,
+              name: episode.name,
+              url: episode.url,
+              sortOrder: episode.sortOrder,
             })
           }
-          onDelete={deleteChapter}
+          onDelete={deleteEpisode}
           nameColumnLabel="Title"
-          namePlaceholder="Chapter name"
-          urlPlaceholder="Chapter Wiki URL"
-          addLabel="Add Chapter"
-          deleteLabel="Delete chapter"
+          namePlaceholder="Episode name"
+          urlPlaceholder="Episode Wiki URL"
+          addLabel="Add Episode"
+          deleteLabel="Delete episode"
         />
       </EntryEditorDialog>
 
@@ -180,11 +166,11 @@ export function BookItem({
           setIsDeleteConfirmOpen(false);
           onDelete();
         }}
-        title={`Delete “${book.name || 'Untitled Book'}”?`}
+        title={`Delete “${seasonLabel}”?`}
         description={
-          chapters.length === 0
-            ? 'This will permanently delete the book. This can’t be undone.'
-            : `This will permanently delete the book and all ${chapters.length} of its ${chapters.length === 1 ? 'chapter' : 'chapters'}. This can’t be undone.`
+          episodes.length === 0
+            ? 'This will permanently delete the season. This can’t be undone.'
+            : `This will permanently delete the season and all ${episodes.length} of its ${episodes.length === 1 ? 'episode' : 'episodes'}. This can’t be undone.`
         }
       />
     </Accordion>

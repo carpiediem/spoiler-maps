@@ -6,11 +6,13 @@ import {
   createBook,
   createChapter,
   createStory,
+  deleteChapter,
   listChaptersForBook,
+  updateChapter,
   type Chapter,
-} from '../../../db';
-import { resetDatabaseForTests } from '../../../db/client';
-import { ChapterList } from './ChapterList';
+} from '../../db';
+import { resetDatabaseForTests } from '../../db/client';
+import { EntryList } from './EntryList';
 
 async function deleteStoredDatabase(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
@@ -48,20 +50,55 @@ async function seedBookId(): Promise<number> {
   return book.id;
 }
 
-describe('ChapterList', () => {
-  it('renders no rows or column headers when there are no chapters', () => {
-    render(<ChapterList bookId={1} chapters={[]} onChaptersChange={vi.fn()} />);
+// EntryList is generic — these tests exercise it via chapters, since that's
+// one of its two real call sites (the other being episodes) and the two
+// are structurally identical from EntryList's point of view.
+function ChaptersEntryList({
+  bookId,
+  chapters,
+  onChaptersChange,
+}: {
+  bookId: number;
+  chapters: Chapter[];
+  onChaptersChange: (chapters: Chapter[]) => void;
+}) {
+  return (
+    <EntryList
+      items={chapters}
+      onItemsChange={onChaptersChange}
+      onCreate={(sortOrder) => createChapter({ bookId, name: '', url: null, sortOrder })}
+      onUpdate={(chapter) =>
+        updateChapter(chapter.id, {
+          bookId: chapter.bookId,
+          name: chapter.name,
+          url: chapter.url,
+          sortOrder: chapter.sortOrder,
+        })
+      }
+      onDelete={deleteChapter}
+      nameColumnLabel="Title"
+      namePlaceholder="Chapter name"
+      urlPlaceholder="Chapter Wiki URL"
+      addLabel="Add Chapter"
+      deleteLabel="Delete chapter"
+    />
+  );
+}
+
+describe('EntryList', () => {
+  it('renders no rows or column headers when there are no items', () => {
+    render(<ChaptersEntryList bookId={1} chapters={[]} onChaptersChange={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: /add chapter/i })).toBeInTheDocument();
     expect(screen.queryByText(/^title$/i)).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/chapter name/i)).not.toBeInTheDocument();
   });
 
-  it('creates a chapter in the database and reports it to the parent', async () => {
+  it('creates an item via onCreate and reports it to the parent', async () => {
     const bookId = await seedBookId();
     const onChaptersChange = vi.fn();
     const user = userEvent.setup();
-    render(<ChapterList bookId={bookId} chapters={[]} onChaptersChange={onChaptersChange} />);
+    render(<ChaptersEntryList bookId={bookId} chapters={[]} onChaptersChange={onChaptersChange} />);
 
     await user.click(screen.getByRole('button', { name: /add chapter/i }));
 
@@ -71,13 +108,17 @@ describe('ChapterList', () => {
     expect(await listChaptersForBook(bookId)).toHaveLength(1);
   });
 
-  it('appends a new chapter after existing ones', async () => {
+  it('appends a new item after existing ones', async () => {
     const bookId = await seedBookId();
     const chapter = await createChapter({ bookId, name: 'Prologue', url: null, sortOrder: 0 });
     const onChaptersChange = vi.fn();
     const user = userEvent.setup();
     render(
-      <ChapterList bookId={bookId} chapters={[chapter]} onChaptersChange={onChaptersChange} />,
+      <ChaptersEntryList
+        bookId={bookId}
+        chapters={[chapter]}
+        onChaptersChange={onChaptersChange}
+      />,
     );
 
     await user.click(screen.getByRole('button', { name: /add chapter/i }));
@@ -86,14 +127,16 @@ describe('ChapterList', () => {
     expect(reported.at(-1)).toMatchObject({ bookId, name: '', sortOrder: 1 });
   });
 
-  it('renames a chapter on blur and persists it', async () => {
+  it('renames an item on blur and persists it via onUpdate', async () => {
     const bookId = await seedBookId();
     const chapter = await createChapter({ bookId, name: 'Prologue', url: null, sortOrder: 0 });
     const user = userEvent.setup();
 
     function Wrapper() {
       const [chapters, setChapters] = useState<Chapter[]>([chapter]);
-      return <ChapterList bookId={bookId} chapters={chapters} onChaptersChange={setChapters} />;
+      return (
+        <ChaptersEntryList bookId={bookId} chapters={chapters} onChaptersChange={setChapters} />
+      );
     }
     render(<Wrapper />);
 
@@ -106,7 +149,7 @@ describe('ChapterList', () => {
     expect(persisted.name).toBe('Chapter 1');
   });
 
-  it('edits a chapter Wiki URL on blur and persists it, storing a blank value as null', async () => {
+  it('edits an item URL on blur and persists it, storing a blank value as null', async () => {
     const bookId = await seedBookId();
     const chapter = await createChapter({
       bookId,
@@ -118,7 +161,9 @@ describe('ChapterList', () => {
 
     function Wrapper() {
       const [chapters, setChapters] = useState<Chapter[]>([chapter]);
-      return <ChapterList bookId={bookId} chapters={chapters} onChaptersChange={setChapters} />;
+      return (
+        <ChaptersEntryList bookId={bookId} chapters={chapters} onChaptersChange={setChapters} />
+      );
     }
     render(<Wrapper />);
 
@@ -137,7 +182,7 @@ describe('ChapterList', () => {
     expect(persisted.url).toBeNull();
   });
 
-  it('renaming one chapter does not affect a sibling chapter', async () => {
+  it('renaming one item does not affect a sibling item', async () => {
     const bookId = await seedBookId();
     const chapter1 = await createChapter({ bookId, name: 'Prologue', url: null, sortOrder: 0 });
     const chapter2 = await createChapter({ bookId, name: 'Bran', url: null, sortOrder: 1 });
@@ -145,7 +190,9 @@ describe('ChapterList', () => {
 
     function Wrapper() {
       const [chapters, setChapters] = useState<Chapter[]>([chapter1, chapter2]);
-      return <ChapterList bookId={bookId} chapters={chapters} onChaptersChange={setChapters} />;
+      return (
+        <ChaptersEntryList bookId={bookId} chapters={chapters} onChaptersChange={setChapters} />
+      );
     }
     render(<Wrapper />);
 
@@ -155,13 +202,17 @@ describe('ChapterList', () => {
     expect(screen.getByDisplayValue('Bran')).toBeInTheDocument();
   });
 
-  it('moves focus between chapter name fields with the arrow keys', async () => {
+  it('moves focus between name fields with the arrow keys', async () => {
     const bookId = await seedBookId();
     const chapter1 = await createChapter({ bookId, name: 'Prologue', url: null, sortOrder: 0 });
     const chapter2 = await createChapter({ bookId, name: 'Bran', url: null, sortOrder: 1 });
     const user = userEvent.setup();
     render(
-      <ChapterList bookId={bookId} chapters={[chapter1, chapter2]} onChaptersChange={vi.fn()} />,
+      <ChaptersEntryList
+        bookId={bookId}
+        chapters={[chapter1, chapter2]}
+        onChaptersChange={vi.fn()}
+      />,
     );
 
     const prologueField = screen.getByDisplayValue('Prologue');
@@ -175,7 +226,7 @@ describe('ChapterList', () => {
     expect(prologueField).toHaveFocus();
   });
 
-  it('moves focus between chapter Wiki URL fields with the arrow keys, independently of the name column', async () => {
+  it('moves focus between URL fields with the arrow keys, independently of the name column', async () => {
     const bookId = await seedBookId();
     const chapter1 = await createChapter({
       bookId,
@@ -191,7 +242,11 @@ describe('ChapterList', () => {
     });
     const user = userEvent.setup();
     render(
-      <ChapterList bookId={bookId} chapters={[chapter1, chapter2]} onChaptersChange={vi.fn()} />,
+      <ChaptersEntryList
+        bookId={bookId}
+        chapters={[chapter1, chapter2]}
+        onChaptersChange={vi.fn()}
+      />,
     );
 
     const firstUrlField = screen.getByDisplayValue('https://example.com/1');
@@ -202,11 +257,11 @@ describe('ChapterList', () => {
     expect(secondUrlField).toHaveFocus();
   });
 
-  it('does nothing when the arrow keys would move focus past the first or last chapter', async () => {
+  it('does nothing when the arrow keys would move focus past the first or last item', async () => {
     const bookId = await seedBookId();
     const chapter = await createChapter({ bookId, name: 'Prologue', url: null, sortOrder: 0 });
     const user = userEvent.setup();
-    render(<ChapterList bookId={bookId} chapters={[chapter]} onChaptersChange={vi.fn()} />);
+    render(<ChaptersEntryList bookId={bookId} chapters={[chapter]} onChaptersChange={vi.fn()} />);
 
     const nameField = screen.getByDisplayValue('Prologue');
     nameField.focus();
@@ -222,7 +277,7 @@ describe('ChapterList', () => {
     const bookId = await seedBookId();
     const chapter = await createChapter({ bookId, name: 'Prologue', url: null, sortOrder: 0 });
     const user = userEvent.setup();
-    render(<ChapterList bookId={bookId} chapters={[chapter]} onChaptersChange={vi.fn()} />);
+    render(<ChaptersEntryList bookId={bookId} chapters={[chapter]} onChaptersChange={vi.fn()} />);
 
     const nameField = screen.getByDisplayValue('Prologue');
     nameField.focus();
@@ -231,13 +286,17 @@ describe('ChapterList', () => {
     expect(nameField).toHaveFocus();
   });
 
-  it('deletes a chapter from the database and removes it from the list', async () => {
+  it('deletes an item via onDelete and removes it from the list', async () => {
     const bookId = await seedBookId();
     const chapter = await createChapter({ bookId, name: 'Prologue', url: null, sortOrder: 0 });
     const onChaptersChange = vi.fn();
     const user = userEvent.setup();
     render(
-      <ChapterList bookId={bookId} chapters={[chapter]} onChaptersChange={onChaptersChange} />,
+      <ChaptersEntryList
+        bookId={bookId}
+        chapters={[chapter]}
+        onChaptersChange={onChaptersChange}
+      />,
     );
 
     await user.click(screen.getByRole('button', { name: /delete chapter/i }));

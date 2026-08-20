@@ -7,6 +7,7 @@ import {
   createStory,
   getStory,
   listBooksForStory,
+  listChaptersForBook,
   type Book,
   type Chapter,
 } from '../../../db';
@@ -51,7 +52,7 @@ async function seedBook(overrides: Partial<Parameters<typeof createBook>[0]> = {
 
 function Wrapper({
   initialBook,
-  chapters,
+  chapters: initialChapters,
   onDelete,
 }: {
   initialBook: Book;
@@ -59,6 +60,7 @@ function Wrapper({
   onDelete?: () => void;
 }) {
   const [book, setBook] = useState(initialBook);
+  const [chapters, setChapters] = useState(initialChapters);
   const [expanded, setExpanded] = useState(true);
   return (
     <BookItem
@@ -67,7 +69,7 @@ function Wrapper({
       expanded={expanded}
       onToggle={(_event, isExpanded) => setExpanded(isExpanded)}
       onBookChange={setBook}
-      onChaptersChange={vi.fn()}
+      onChaptersChange={setChapters}
       onDelete={onDelete ?? vi.fn()}
     />
   );
@@ -175,6 +177,22 @@ describe('BookItem', () => {
     await user.tab();
 
     expect(await getStory(book.storyId)).toEqual(before);
+  });
+
+  it('adds a chapter and renames it via the chapter editor dialog, persisting both', async () => {
+    const book = await seedBook();
+    const user = userEvent.setup();
+    render(<Wrapper initialBook={book} chapters={[]} />);
+
+    await user.click(screen.getByRole('button', { name: /edit chapters/i }));
+    await user.click(await screen.findByRole('button', { name: /add chapter/i }));
+
+    const nameField = await screen.findByPlaceholderText(/chapter name/i);
+    await user.type(nameField, 'Prologue');
+    await user.tab();
+
+    const [persisted] = await listChaptersForBook(book.id);
+    expect(persisted.name).toBe('Prologue');
   });
 
   it('asks for confirmation before deleting, and does not delete when cancelled', async () => {
