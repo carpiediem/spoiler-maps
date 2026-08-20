@@ -1,11 +1,8 @@
 const DB_NAME = 'spoiler-maps';
 const STORE_NAME = 'sqlite';
-// The key the database bytes are stored under within STORE_NAME. Bundled
-// with SCHEMA_VERSION so a schema change starts fresh instead of trying (and
-// failing) to open an incompatible file.
 const RECORD_KEY = 'database';
 
-interface StoredDatabase {
+export interface StoredDatabase {
   schemaVersion: number;
   bytes: Uint8Array;
 }
@@ -23,11 +20,12 @@ function openStore(): Promise<IDBDatabase> {
 }
 
 /**
- * Loads the persisted database bytes, if any were saved under the given
- * schema version. Returns null on first run, or if the stored database was
- * written under a different (and therefore incompatible) schema version.
+ * Loads whatever database was last persisted, along with the schema
+ * version it was saved under — regardless of what the current schema
+ * version is, so the caller can migrate it forward rather than discarding
+ * it. Returns null on first run, when nothing has been saved yet.
  */
-export async function loadDatabaseBytes(schemaVersion: number): Promise<Uint8Array | null> {
+export async function loadStoredDatabase(): Promise<StoredDatabase | null> {
   const db = await openStore();
   try {
     const stored = await new Promise<StoredDatabase | undefined>((resolve, reject) => {
@@ -40,10 +38,7 @@ export async function loadDatabaseBytes(schemaVersion: number): Promise<Uint8Arr
       request.onerror = () => reject(request.error);
     });
 
-    if (!stored || stored.schemaVersion !== schemaVersion) {
-      return null;
-    }
-    return stored.bytes;
+    return stored ?? null;
   } finally {
     db.close();
   }

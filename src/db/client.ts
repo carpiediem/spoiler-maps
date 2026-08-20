@@ -1,7 +1,7 @@
 import initSqlJs from 'sql.js';
 import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
-import { SCHEMA_SQL, SCHEMA_VERSION } from './schema';
-import { loadDatabaseBytes, saveDatabaseBytes } from './storage';
+import { MIGRATIONS, SCHEMA_VERSION } from './schema';
+import { loadStoredDatabase, saveDatabaseBytes } from './storage';
 
 type SqlJsStatic = Awaited<ReturnType<typeof initSqlJs>>;
 export type SqlDatabase = InstanceType<SqlJsStatic['Database']>;
@@ -30,12 +30,20 @@ async function createDatabase(): Promise<SqlDatabase> {
   const wasmLocation = await resolveWasmLocation();
   const SQL = await initSqlJs({ locateFile: () => wasmLocation });
 
-  const storedBytes = await loadDatabaseBytes(SCHEMA_VERSION);
-  const db = storedBytes ? new SQL.Database(storedBytes) : new SQL.Database();
+  const stored = await loadStoredDatabase();
+  const db = stored ? new SQL.Database(stored.bytes) : new SQL.Database();
   db.run('PRAGMA foreign_keys = ON;');
-  if (!storedBytes) {
-    db.run(SCHEMA_SQL);
+
+  // Applies just the migrations the stored database hasn't seen yet (all of
+  // them, on a fresh database), upgrading it in place instead of
+  // discarding whatever was already there.
+  const fromVersion = stored?.schemaVersion ?? 0;
+  for (const migration of MIGRATIONS) {
+    if (migration.version > fromVersion && migration.version <= SCHEMA_VERSION) {
+      db.run(migration.sql);
+    }
   }
+
   return db;
 }
 
@@ -68,4 +76,19 @@ export async function persist(): Promise<void> {
  */
 export function resetDatabaseForTests(): void {
   databasePromise = null;
+}
+
+/**
+ * Test-only: opens a bare sql.js connection with no schema applied, for
+ * building fixture databases (e.g. one shaped like an older schema
+ * version, to exercise migrations against).
+ */
+export async function createRawDatabaseForTests(): Promise<SqlDatabase> {
+  const wasmLocation = await resolveWasmLocation();
+  // initSqlJs caches the loaded wasm module process-wide, so once
+  // getDatabase() has already initialized it once, this locateFile is
+  // never actually invoked again.
+  /* v8 ignore next */
+  const SQL = await initSqlJs({ locateFile: () => wasmLocation });
+  return new SQL.Database();
 }
