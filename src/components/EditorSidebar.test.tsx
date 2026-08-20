@@ -309,30 +309,11 @@ describe('EditorSidebar', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /explain how to fill in this field/i }));
-
-    const dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveTextContent(/keyhole/i);
-
-    await user.click(screen.getByRole('button', { name: /close/i }));
-    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
-  });
-
-  it('closes the tile URL template help dialog when pressing Escape', async () => {
-    const user = userEvent.setup();
-    render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onCaptureMapPosition={() => null}
-      />,
-    );
-
-    await user.click(screen.getByRole('button', { name: /explain how to fill in this field/i }));
     await screen.findByRole('dialog');
 
-    await user.keyboard('{Escape}');
+    // TileUrlHelpDialog's own content and interactions are covered in
+    // TileUrlHelpDialog.test.tsx; this just proves the button opens it.
+    await user.click(screen.getByRole('button', { name: /close/i }));
     await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
   });
 });

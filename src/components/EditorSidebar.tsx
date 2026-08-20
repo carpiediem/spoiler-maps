@@ -4,11 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   FormControl,
   IconButton,
   InputAdornment,
@@ -25,6 +20,7 @@ import type { LatLng, Story } from '../db';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
 import { resolveTileUrlTemplate } from '../lib/tileUrl';
 import { StorySelector } from './StorySelector';
+import { TileUrlHelpDialog } from './TileUrlHelpDialog';
 
 interface EditorSidebarProps {
   stories: Story[];
@@ -254,40 +250,7 @@ export function EditorSidebar({
         </Stack>
       </Box>
 
-      <Dialog open={isTileUrlHelpOpen} onClose={() => setIsTileUrlHelpOpen(false)}>
-        <DialogTitle>Tile URL template</DialogTitle>
-        <DialogContent>
-          <DialogContentText component="div">
-            <p>
-              Enter the URL your map tiles are served from, with placeholders for the parts that
-              change per tile:
-            </p>
-            <ul>
-              <li>
-                <code>{'{x}'}</code>, <code>{'{y}'}</code>, <code>{'{z}'}</code> — the standard
-                scheme most tile servers use (column, row, zoom level). Example:{' '}
-                <code>
-                  http://services.arcgisonline.com/arcgis/rest/services/World_Physical_Map/MapServer/tile/
-                  {z}/{y}/{x}
-                </code>
-              </li>
-              <li>
-                <code>{'{q}'}</code> — a single placeholder for a "keyhole" quadkey string, used by
-                some custom tile sets. Example:{' '}
-                <code>https://carpiediem.github.io/game-of-thrones-map/fsm/{q}.jpg</code>
-              </li>
-            </ul>
-            <p>
-              If you paste a real, working tile URL instead of a template — e.g. one copied while a
-              map is open — a <code>{'{q}'}</code> template will be extracted from it automatically
-              when possible.
-            </p>
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsTileUrlHelpOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+      <TileUrlHelpDialog open={isTileUrlHelpOpen} onClose={() => setIsTileUrlHelpOpen(false)} />
     </Paper>
   );
 }
