@@ -11,6 +11,10 @@ function App() {
   const [stories, setStories] = useState<Story[]>([]);
   const [selectedStoryId, setSelectedStoryId] = useState<number | null>(null);
   const [tileUrl, setTileUrl] = useState<string | null>(null);
+  const [mapPosition, setMapPosition] = useState<{ center: LatLng; zoom: number }>({
+    center: DEFAULT_CENTER,
+    zoom: DEFAULT_ZOOM,
+  });
   const mapRef = useRef<LeafletMap | null>(null);
 
   useEffect(() => {
@@ -37,6 +41,15 @@ function App() {
     selectedStory?.tileLayerAuthor ?? null,
     selectedStory?.tileLayerAttributionUrl ?? null,
   );
+
+  // MapView remounts (via the key below) whenever the selected story
+  // changes, so its live position tracking should start over from that
+  // story's own saved position too — otherwise the pushpin button would
+  // judge "has the map moved" against the previous story's position.
+  useEffect(() => {
+    setMapPosition({ center: mapCenter, zoom: mapZoom });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStoryId]);
 
   function handleSelectStory(storyId: number | null) {
     setSelectedStoryId(storyId);
@@ -87,6 +100,7 @@ function App() {
           attribution={tileAttribution}
           center={mapCenter}
           zoom={mapZoom}
+          onPositionChange={setMapPosition}
         />
       </main>
       <EditorSidebar
@@ -95,6 +109,7 @@ function App() {
         onSelectStory={handleSelectStory}
         onSave={handleSave}
         onCaptureMapPosition={getCurrentMapPosition}
+        mapPosition={mapPosition}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import type { Map as LeafletMap } from 'leaflet';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { createRef } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MapView } from './MapView';
 
 const center = { lat: 40, lng: -100 };
@@ -34,5 +34,30 @@ describe('MapView', () => {
     expect(mapRef.current!.getZoom()).toBe(6);
     expect(mapRef.current!.getCenter().lat).toBeCloseTo(center.lat);
     expect(mapRef.current!.getCenter().lng).toBeCloseTo(center.lng);
+  });
+
+  it('calls onPositionChange when the map is panned or zoomed', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onPositionChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        onPositionChange={onPositionChange}
+      />,
+    );
+
+    act(() => {
+      mapRef.current!.setView([41, -101], 7, { animate: false });
+    });
+
+    expect(onPositionChange).toHaveBeenCalled();
+    const lastCall = onPositionChange.mock.calls.at(-1)!;
+    const [position] = lastCall as [{ center: { lat: number; lng: number }; zoom: number }];
+    expect(position.zoom).toBe(7);
+    expect(position.center.lat).toBeCloseTo(41);
+    expect(position.center.lng).toBeCloseTo(-101);
   });
 });

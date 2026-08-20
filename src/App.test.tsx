@@ -31,7 +31,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /new map/i })).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
-    fireEvent.change(screen.getByLabelText(/tile url template/i), {
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
       target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
     });
     await user.click(screen.getByRole('button', { name: /save/i }));
@@ -90,13 +90,20 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: /^renamed story$/i })).toBeInTheDocument();
   });
 
-  it('captures the live map position from the sidebar pushpin button', async () => {
+  it('shows the pushpin only once the map has moved, and captures its live position', async () => {
     const user = userEvent.setup();
-    render(<App />);
+    const { container } = render(<App />);
 
-    await user.click(screen.getByRole('button', { name: /use current map position/i }));
+    // The map hasn't moved from the story's stored position yet.
+    expect(
+      screen.queryByRole('button', { name: /use current map position/i }),
+    ).not.toBeInTheDocument();
 
-    expect(screen.getByText(/39\.8283, -98\.5795 · Zoom 4/)).toBeInTheDocument();
+    await user.click(container.querySelector('.leaflet-control-zoom-in')!);
+
+    await user.click(await screen.findByRole('button', { name: /use current map position/i }));
+
+    expect(screen.getByText(/39\.8283, -98\.5795 · Zoom 5/)).toBeInTheDocument();
   });
 
   it('does not update state after unmounting while stories are still loading', async () => {

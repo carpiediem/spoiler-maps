@@ -19,6 +19,47 @@ function makeStory(overrides: Partial<Story>): Story {
 }
 
 describe('EditorSidebar', () => {
+  it('disables Save until the form has unsaved changes, then disables it again after saving', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    const story = makeStory({ id: 1 });
+    render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
+
+    await user.type(screen.getByLabelText(/map name/i), '!');
+    expect(screen.getByRole('button', { name: /save/i })).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
+  });
+
+  it('starts with Save disabled for a brand new map', () => {
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
+  });
+
   it('calls onSave with a valid name, tile URL template, and default initial position', async () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
@@ -29,11 +70,12 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={onSave}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
-    fireEvent.change(screen.getByLabelText(/tile url template/i), {
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
       target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
     });
     await user.click(screen.getByRole('button', { name: /save/i }));
@@ -58,11 +100,12 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={onSave}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
-    fireEvent.change(screen.getByLabelText(/tile url template/i), {
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
       target: { value: 'https://carpiediem.github.io/game-of-thrones-map/fsm/tqtqr.jpg' },
     });
     await user.click(screen.getByRole('button', { name: /save/i }));
@@ -84,10 +127,11 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={onSave}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 
-    fireEvent.change(screen.getByLabelText(/tile url template/i), {
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
       target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
     });
     await user.click(screen.getByRole('button', { name: /save/i }));
@@ -106,11 +150,12 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={onSave}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
-    await user.type(screen.getByLabelText(/tile url template/i), 'not-a-valid-url');
+    await user.type(screen.getByLabelText(/tile layer url template/i), 'not-a-valid-url');
     await user.click(screen.getByRole('button', { name: /save/i }));
 
     expect(await screen.findByRole('alert')).toBeInTheDocument();
@@ -130,11 +175,12 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 
     expect(screen.getByLabelText(/map name/i)).toHaveValue(story.name);
-    expect(screen.getByLabelText(/tile url template/i)).toHaveValue(story.tileUrlTemplate);
+    expect(screen.getByLabelText(/tile layer url template/i)).toHaveValue(story.tileUrlTemplate);
     expect(screen.getByLabelText(/tile layer author/i)).toHaveValue('Jane Cartographer');
     expect(screen.getByLabelText(/tile layer attribution url/i)).toHaveValue('https://example.com');
     expect(screen.getByText(/51\.5000, -0\.1278 · Zoom 6/)).toBeInTheDocument();
@@ -150,11 +196,12 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={onSave}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
-    fireEvent.change(screen.getByLabelText(/tile url template/i), {
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
       target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
     });
     await user.type(screen.getByLabelText(/tile layer author/i), '  Jane Cartographer  ');
@@ -181,6 +228,7 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 
@@ -191,11 +239,12 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 
     expect(screen.getByLabelText(/map name/i)).toHaveValue('');
-    expect(screen.getByLabelText(/tile url template/i)).toHaveValue('');
+    expect(screen.getByLabelText(/tile layer url template/i)).toHaveValue('');
     expect(
       screen.getByText(
         new RegExp(`${DEFAULT_CENTER.lat.toFixed(4)}, ${DEFAULT_CENTER.lng.toFixed(4)}`),
@@ -214,6 +263,7 @@ describe('EditorSidebar', () => {
         onSelectStory={onSelectStory}
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 
@@ -234,6 +284,7 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={onSave}
         onCaptureMapPosition={() => ({ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 })}
+        mapPosition={{ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 }}
       />,
     );
 
@@ -261,6 +312,7 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
+        mapPosition={{ center: { lat: 10, lng: 10 }, zoom: 3 }}
       />,
     );
 
@@ -278,16 +330,17 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 
     expect(screen.queryByLabelText(/tile layer author/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/tile layer attribution url/i)).not.toBeInTheDocument();
 
-    await user.type(screen.getByLabelText(/tile url template/i), 'not-a-valid-url');
+    await user.type(screen.getByLabelText(/tile layer url template/i), 'not-a-valid-url');
     expect(screen.queryByLabelText(/tile layer author/i)).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText(/tile url template/i), {
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
       target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
     });
     expect(screen.getByLabelText(/tile layer author/i)).toBeInTheDocument();
@@ -303,6 +356,7 @@ describe('EditorSidebar', () => {
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
+        mapPosition={null}
       />,
     );
 

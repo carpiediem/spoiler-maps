@@ -35,6 +35,8 @@ interface EditorSidebarProps {
     initialZoom: number;
   }) => void;
   onCaptureMapPosition: () => { center: LatLng; zoom: number } | null;
+  /** The map's current live position, to tell whether it has moved from what's stored in the form. */
+  mapPosition: { center: LatLng; zoom: number } | null;
 }
 
 interface FormValues {
@@ -63,19 +65,25 @@ export function EditorSidebar({
   onSelectStory,
   onSave,
   onCaptureMapPosition,
+  mapPosition,
 }: EditorSidebarProps) {
   const {
     control,
     handleSubmit,
     reset,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<FormValues>({ defaultValues: storyToFormValues(null) });
 
   const initialCenter = useWatch({ control, name: 'initialCenter' });
   const initialZoom = useWatch({ control, name: 'initialZoom' });
   const tileUrlValue = useWatch({ control, name: 'tileUrlValue' });
   const hasValidTileUrl = !!resolveTileUrlTemplate(tileUrlValue);
+  const hasMapMoved =
+    mapPosition !== null &&
+    (mapPosition.center.lat !== initialCenter.lat ||
+      mapPosition.center.lng !== initialCenter.lng ||
+      mapPosition.zoom !== initialZoom);
 
   const [isTileUrlHelpOpen, setIsTileUrlHelpOpen] = useState(false);
 
@@ -96,8 +104,8 @@ export function EditorSidebar({
   function handleCapturePosition() {
     const position = onCaptureMapPosition();
     if (!position) return;
-    setValue('initialCenter', position.center);
-    setValue('initialZoom', position.zoom);
+    setValue('initialCenter', position.center, { shouldDirty: true });
+    setValue('initialZoom', position.zoom, { shouldDirty: true });
   }
 
   function onValid(data: FormValues) {
@@ -110,6 +118,12 @@ export function EditorSidebar({
       initialCenter: data.initialCenter,
       initialZoom: data.initialZoom,
     });
+    // Marks these values (with tileUrlValue normalized to the resolved
+    // template, in case a real tile URL was extrapolated) as the new clean
+    // baseline, so Save — disabled while the form isn't dirty — goes back
+    // to disabled until the next actual change, instead of staying enabled
+    // right after saving.
+    reset({ ...data, tileUrlValue: resolved.template });
   }
 
   const errorMessage = errors.name?.message ?? errors.tileUrlValue?.message;
@@ -155,7 +169,7 @@ export function EditorSidebar({
               <TextField
                 {...field}
                 id="tile-url-input"
-                label="Tile URL template"
+                label="Tile Layer URL Template"
                 variant="outlined"
                 size="small"
                 fullWidth
@@ -164,7 +178,7 @@ export function EditorSidebar({
                   input: {
                     endAdornment: (
                       <InputAdornment position="end">
-                        <Tooltip title="How this field works">
+                        <Tooltip title="How this field works" arrow>
                           <IconButton
                             size="small"
                             aria-label="Explain how to fill in this field"
@@ -230,11 +244,12 @@ export function EditorSidebar({
               <Typography id="initial-position-value" variant="body2" sx={{ ml: '14px' }}>
                 {initialCenter.lat.toFixed(4)}, {initialCenter.lng.toFixed(4)} · Zoom {initialZoom}
               </Typography>
-              <Tooltip title="Use current map position">
+              <Tooltip title="Use current map position" arrow>
                 <IconButton
                   size="small"
                   aria-label="Use current map position"
                   onClick={handleCapturePosition}
+                  sx={{ visibility: hasMapMoved ? 'visible' : 'hidden' }}
                 >
                   <PushPinOutlinedIcon fontSize="small" />
                 </IconButton>
@@ -244,7 +259,7 @@ export function EditorSidebar({
 
           {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
-          <Button type="submit" variant="contained">
+          <Button type="submit" variant="contained" disabled={!isDirty}>
             Save
           </Button>
         </Stack>
