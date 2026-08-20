@@ -24,12 +24,18 @@ export function SidebarSection({ id, title, expanded, onChange, children }: Side
         expandIcon={<ExpandMoreIcon />}
         aria-controls={`${id}-content`}
         id={`${id}-header`}
+        sx={{
+          backgroundColor: 'rgba(0, 0, 0, .03)',
+          px: 1,
+          minHeight: 40,
+          '&.Mui-expanded': { minHeight: 40 },
+        }}
       >
         <Typography component="span" sx={{ fontWeight: 500 }}>
           {title}
         </Typography>
       </AccordionSummary>
-      <AccordionDetails>{children}</AccordionDetails>
+      <AccordionDetails sx={{ px: 1 }}>{children}</AccordionDetails>
     </Accordion>
   );
 }
