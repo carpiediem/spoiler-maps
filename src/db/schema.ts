@@ -55,13 +55,31 @@ export const SCHEMA_SQL = `
     name TEXT NOT NULL
   );
 
+  -- chapter_range_* / episode_range_* (here and on character_positions
+  -- below) record when a map item should appear: once the reader/viewer
+  -- has reached a given point in the story. The two ranges are independent
+  -- (a row can define either, or both, so it resolves regardless of
+  -- whether progress is tracked via books or the show). Each boundary
+  -- references a chapter/episode row directly rather than copying its
+  -- sort_order, so it stays valid even if sort orders are renumbered, and
+  -- a NULL boundary leaves that end open ("from the beginning" / "through
+  -- the end"); NULL on both is treated as no range at all (always shown).
+  -- A chapter's/episode's place in the story is the two-level ordering
+  -- (book.sort_order, chapter.sort_order) / (season.sort_order,
+  -- episode.sort_order), so a range's boundaries are free to fall in
+  -- different books/seasons — e.g. book 1 chapter 10 through book 2
+  -- chapter 5.
   CREATE TABLE markers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     marker_set_id INTEGER NOT NULL REFERENCES marker_sets(id) ON DELETE CASCADE,
     label TEXT NOT NULL,
     icon TEXT,
     lat REAL NOT NULL,
-    lng REAL NOT NULL
+    lng REAL NOT NULL,
+    chapter_range_start_chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
+    chapter_range_end_chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
+    episode_range_start_episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL,
+    episode_range_end_episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL
   );
 
   CREATE TABLE characters (
@@ -72,24 +90,13 @@ export const SCHEMA_SQL = `
     icon TEXT
   );
 
-  -- Where a character should appear on the map once the reader/viewer has
-  -- reached a given point in the story. chapter_range and episode_range are
-  -- independent (a row can define either, or both, so it resolves
-  -- regardless of whether progress is tracked via books or the show) and
-  -- each is open-ended when its start/end id is NULL ("from the beginning"
-  -- / "through the end"). Range membership is a chapter's/episode's
-  -- sort_order falling between its range's start and end sort_order, so
-  -- this references the boundary rows directly rather than copying their
-  -- sort_order values, which stay valid even if sort orders are renumbered.
   CREATE TABLE character_positions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
     lat REAL NOT NULL,
     lng REAL NOT NULL,
-    chapter_range_book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
     chapter_range_start_chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
     chapter_range_end_chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
-    episode_range_season_id INTEGER REFERENCES tv_seasons(id) ON DELETE CASCADE,
     episode_range_start_episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL,
     episode_range_end_episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL
   );

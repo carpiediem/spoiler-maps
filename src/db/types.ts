@@ -48,6 +48,31 @@ export interface MarkerSet {
   name: string;
 }
 
+/**
+ * A span of chapters, boundaries inclusive, ordered by (book.sortOrder,
+ * chapter.sortOrder) — so a range's boundaries can fall in different
+ * books (e.g. book 1 chapter 10 through book 2 chapter 5). A null
+ * startChapterId/endChapterId leaves the range open on that end ("from
+ * the beginning of the story" / "through the end of the story").
+ */
+export interface ChapterRange {
+  startChapterId: number | null;
+  endChapterId: number | null;
+}
+
+/** The tv-season equivalent of ChapterRange, ordered by (season.sortOrder, episode.sortOrder). */
+export interface EpisodeRange {
+  startEpisodeId: number | null;
+  endEpisodeId: number | null;
+}
+
+/**
+ * A pin on the map. chapterRange and episodeRange say when it should
+ * appear — once the reader/viewer has reached a given point in the story —
+ * and are independent of each other, so a marker resolves regardless of
+ * whether progress is tracked via books or the show. Both null means the
+ * marker is always shown.
+ */
 export interface Marker {
   id: number;
   markerSetId: number;
@@ -55,6 +80,8 @@ export interface Marker {
   icon: string | null;
   lat: number;
   lng: number;
+  chapterRange: ChapterRange | null;
+  episodeRange: EpisodeRange | null;
 }
 
 export interface Character {
@@ -63,24 +90,6 @@ export interface Character {
   name: string;
   group: string | null;
   icon: string | null;
-}
-
-/**
- * A span of chapters within one book, boundaries inclusive. A null
- * startChapterId/endChapterId means the range is open on that end ("from
- * the beginning of the book" / "through the end of the book").
- */
-export interface ChapterRange {
-  bookId: number;
-  startChapterId: number | null;
-  endChapterId: number | null;
-}
-
-/** The tv-season equivalent of ChapterRange. */
-export interface EpisodeRange {
-  seasonId: number;
-  startEpisodeId: number | null;
-  endEpisodeId: number | null;
 }
 
 /**

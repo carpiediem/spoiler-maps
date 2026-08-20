@@ -232,6 +232,8 @@ describe('marker sets and markers', () => {
       icon: 'castle',
       lat: 54.5,
       lng: -1.5,
+      chapterRange: null,
+      episodeRange: null,
     });
 
     expect(await listMarkersForMarkerSet(markerSet.id)).toEqual([marker]);
@@ -248,6 +250,8 @@ describe('marker sets and markers', () => {
       icon: null,
       lat: 42.6,
       lng: 8.7,
+      chapterRange: null,
+      episodeRange: null,
     });
     await deleteMarkerSet(markerSet.id);
     expect(await listMarkersForMarkerSet(secondMarker.markerSetId)).toEqual([]);
@@ -318,32 +322,133 @@ describe('character positions', () => {
   });
 
   it('round-trips a bounded chapter range', async () => {
-    const { character, book, chapter1, chapter2 } = await seedCharacterAndBook();
+    const { character, chapter1, chapter2 } = await seedCharacterAndBook();
     const position = await createCharacterPosition({
       characterId: character.id,
       lat: 54.5,
       lng: -1.5,
-      chapterRange: { bookId: book.id, startChapterId: chapter1.id, endChapterId: chapter2.id },
+      chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
     });
 
     expect(await listCharacterPositionsForCharacter(character.id)).toEqual([position]);
+  });
+
+  it('allows a single-chapter range (start equal to end)', async () => {
+    const { character, chapter1 } = await seedCharacterAndBook();
+    const position = await createCharacterPosition({
+      characterId: character.id,
+      lat: 54.5,
+      lng: -1.5,
+      chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id },
+      episodeRange: null,
+    });
+
+    expect(await listCharacterPositionsForCharacter(character.id)).toEqual([position]);
+  });
+
+  it('allows a chapter range spanning two different books', async () => {
+    const story = await seedStory();
+    const character = await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: 'Stark',
+      icon: null,
+    });
+    const book1 = await createBook({
+      storyId: story.id,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    const book2 = await createBook({
+      storyId: story.id,
+      name: 'A Clash of Kings',
+      author: null,
+      url: null,
+      sortOrder: 1,
+    });
+    const book1Chapter10 = await createChapter({
+      bookId: book1.id,
+      name: 'Chapter 10',
+      sortOrder: 10,
+    });
+    const book2Chapter5 = await createChapter({
+      bookId: book2.id,
+      name: 'Chapter 5',
+      sortOrder: 5,
+    });
+
+    const position = await createCharacterPosition({
+      characterId: character.id,
+      lat: 54.5,
+      lng: -1.5,
+      chapterRange: { startChapterId: book1Chapter10.id, endChapterId: book2Chapter5.id },
+      episodeRange: null,
+    });
+
+    expect(await listCharacterPositionsForCharacter(character.id)).toEqual([position]);
+  });
+
+  it('rejects a chapter range whose end comes before its start', async () => {
+    const { character, chapter1, chapter2 } = await seedCharacterAndBook();
+
+    await expect(
+      createCharacterPosition({
+        characterId: character.id,
+        lat: 54.5,
+        lng: -1.5,
+        chapterRange: { startChapterId: chapter2.id, endChapterId: chapter1.id },
+        episodeRange: null,
+      }),
+    ).rejects.toThrow(/endChapterId must not come before/);
+  });
+
+  it('rejects a chapter range referencing a chapter that does not exist', async () => {
+    const { character, chapter1 } = await seedCharacterAndBook();
+
+    await expect(
+      createCharacterPosition({
+        characterId: character.id,
+        lat: 54.5,
+        lng: -1.5,
+        chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id + 1000 },
+        episodeRange: null,
+      }),
+    ).rejects.toThrow(/does not exist/);
   });
 
   it('round-trips an open-ended chapter range', async () => {
-    const { character, book } = await seedCharacterAndBook();
+    const { character, chapter1 } = await seedCharacterAndBook();
     const position = await createCharacterPosition({
       characterId: character.id,
       lat: 54.5,
       lng: -1.5,
-      chapterRange: { bookId: book.id, startChapterId: null, endChapterId: null },
+      chapterRange: { startChapterId: chapter1.id, endChapterId: null },
       episodeRange: null,
     });
 
     expect(await listCharacterPositionsForCharacter(character.id)).toEqual([position]);
   });
 
-  it('round-trips an episode range', async () => {
+  it('normalizes a chapter range with both boundaries open to no range at all', async () => {
+    const { character } = await seedCharacterAndBook();
+    const position = await createCharacterPosition({
+      characterId: character.id,
+      lat: 54.5,
+      lng: -1.5,
+      chapterRange: { startChapterId: null, endChapterId: null },
+      episodeRange: null,
+    });
+
+    expect(position.chapterRange).toBeNull();
+    expect(await listCharacterPositionsForCharacter(character.id)).toEqual([
+      { ...position, chapterRange: null },
+    ]);
+  });
+
+  async function seedCharacterAndSeason() {
     const story = await seedStory();
     const character = await createCharacter({
       storyId: story.id,
@@ -352,30 +457,82 @@ describe('character positions', () => {
       icon: null,
     });
     const season = await createTvSeason({ storyId: story.id, url: null, sortOrder: 0 });
-    const episode = await createEpisode({
+    const episode1 = await createEpisode({
       seasonId: season.id,
       name: 'Winter Is Coming',
       url: null,
       sortOrder: 0,
     });
+    const episode2 = await createEpisode({
+      seasonId: season.id,
+      name: 'The Kingsroad',
+      url: null,
+      sortOrder: 1,
+    });
+    return { character, season, episode1, episode2 };
+  }
+
+  it('round-trips a bounded episode range', async () => {
+    const { character, episode1, episode2 } = await seedCharacterAndSeason();
     const position = await createCharacterPosition({
       characterId: character.id,
       lat: 54.5,
       lng: -1.5,
       chapterRange: null,
-      episodeRange: { seasonId: season.id, startEpisodeId: episode.id, endEpisodeId: null },
+      episodeRange: { startEpisodeId: episode1.id, endEpisodeId: episode2.id },
     });
 
     expect(await listCharacterPositionsForCharacter(character.id)).toEqual([position]);
   });
 
-  it('clears a range boundary when its chapter is deleted, without deleting the position', async () => {
-    const { character, book, chapter1, chapter2 } = await seedCharacterAndBook();
+  it('round-trips an open-ended episode range', async () => {
+    const { character, episode1 } = await seedCharacterAndSeason();
     const position = await createCharacterPosition({
       characterId: character.id,
       lat: 54.5,
       lng: -1.5,
-      chapterRange: { bookId: book.id, startChapterId: chapter1.id, endChapterId: chapter2.id },
+      chapterRange: null,
+      episodeRange: { startEpisodeId: episode1.id, endEpisodeId: null },
+    });
+
+    expect(await listCharacterPositionsForCharacter(character.id)).toEqual([position]);
+  });
+
+  it('rejects an episode range whose end comes before its start', async () => {
+    const { character, episode1, episode2 } = await seedCharacterAndSeason();
+
+    await expect(
+      createCharacterPosition({
+        characterId: character.id,
+        lat: 54.5,
+        lng: -1.5,
+        chapterRange: null,
+        episodeRange: { startEpisodeId: episode2.id, endEpisodeId: episode1.id },
+      }),
+    ).rejects.toThrow(/endEpisodeId must not come before/);
+  });
+
+  it('rejects an episode range referencing an episode that does not exist', async () => {
+    const { character, episode1 } = await seedCharacterAndSeason();
+
+    await expect(
+      createCharacterPosition({
+        characterId: character.id,
+        lat: 54.5,
+        lng: -1.5,
+        chapterRange: null,
+        episodeRange: { startEpisodeId: episode1.id, endEpisodeId: episode1.id + 1000 },
+      }),
+    ).rejects.toThrow(/does not exist/);
+  });
+
+  it('clears a range boundary when its chapter is deleted, without deleting the position', async () => {
+    const { character, chapter1, chapter2 } = await seedCharacterAndBook();
+    const position = await createCharacterPosition({
+      characterId: character.id,
+      lat: 54.5,
+      lng: -1.5,
+      chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
     });
 
@@ -384,7 +541,7 @@ describe('character positions', () => {
     expect(await listCharacterPositionsForCharacter(character.id)).toEqual([
       {
         ...position,
-        chapterRange: { bookId: book.id, startChapterId: null, endChapterId: chapter2.id },
+        chapterRange: { startChapterId: null, endChapterId: chapter2.id },
       },
     ]);
   });

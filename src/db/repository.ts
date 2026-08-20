@@ -352,6 +352,103 @@ export async function deleteMarkerSet(id: number): Promise<void> {
   await persist();
 }
 
+/** A chapter's or episode's place within its story, for range-order comparisons. */
+interface StoryOrderKey {
+  parentSortOrder: number;
+  sortOrder: number;
+}
+
+function isBefore(a: StoryOrderKey, b: StoryOrderKey): boolean {
+  return a.parentSortOrder !== b.parentSortOrder
+    ? a.parentSortOrder < b.parentSortOrder
+    : a.sortOrder < b.sortOrder;
+}
+
+function getChapterOrderKey(db: SqlDatabase, chapterId: number): StoryOrderKey {
+  const key = selectOne(
+    db,
+    `SELECT b.sort_order AS parent_sort_order, c.sort_order AS sort_order
+     FROM chapters c JOIN books b ON b.id = c.book_id
+     WHERE c.id = ?;`,
+    (row) => ({
+      parentSortOrder: row.parent_sort_order as number,
+      sortOrder: row.sort_order as number,
+    }),
+    [chapterId],
+  );
+  if (!key) throw new Error(`Chapter ${chapterId} does not exist.`);
+  return key;
+}
+
+function getEpisodeOrderKey(db: SqlDatabase, episodeId: number): StoryOrderKey {
+  const key = selectOne(
+    db,
+    `SELECT s.sort_order AS parent_sort_order, e.sort_order AS sort_order
+     FROM episodes e JOIN tv_seasons s ON s.id = e.season_id
+     WHERE e.id = ?;`,
+    (row) => ({
+      parentSortOrder: row.parent_sort_order as number,
+      sortOrder: row.sort_order as number,
+    }),
+    [episodeId],
+  );
+  if (!key) throw new Error(`Episode ${episodeId} does not exist.`);
+  return key;
+}
+
+function assertChapterRangeOrder(db: SqlDatabase, range: ChapterRange | null): void {
+  if (!range || range.startChapterId === null || range.endChapterId === null) return;
+  const start = getChapterOrderKey(db, range.startChapterId);
+  const end = getChapterOrderKey(db, range.endChapterId);
+  if (isBefore(end, start)) {
+    throw new Error('chapterRange.endChapterId must not come before chapterRange.startChapterId.');
+  }
+}
+
+function assertEpisodeRangeOrder(db: SqlDatabase, range: EpisodeRange | null): void {
+  if (!range || range.startEpisodeId === null || range.endEpisodeId === null) return;
+  const start = getEpisodeOrderKey(db, range.startEpisodeId);
+  const end = getEpisodeOrderKey(db, range.endEpisodeId);
+  if (isBefore(end, start)) {
+    throw new Error('episodeRange.endEpisodeId must not come before episodeRange.startEpisodeId.');
+  }
+}
+
+function chapterRangeColumns(range: ChapterRange | null): [number | null, number | null] {
+  return range ? [range.startChapterId, range.endChapterId] : [null, null];
+}
+
+function episodeRangeColumns(range: EpisodeRange | null): [number | null, number | null] {
+  return range ? [range.startEpisodeId, range.endEpisodeId] : [null, null];
+}
+
+// A range with both boundaries open carries no information (it's
+// indistinguishable from having no range at all), so it's normalized to
+// null both on the way into the database and on the way out — keeping
+// what create/update functions return consistent with what a later
+// list/get call would see.
+function normalizeChapterRange(range: ChapterRange | null): ChapterRange | null {
+  return range && (range.startChapterId !== null || range.endChapterId !== null) ? range : null;
+}
+
+function normalizeEpisodeRange(range: EpisodeRange | null): EpisodeRange | null {
+  return range && (range.startEpisodeId !== null || range.endEpisodeId !== null) ? range : null;
+}
+
+function rowToChapterRange(row: Row): ChapterRange | null {
+  return normalizeChapterRange({
+    startChapterId: row.chapter_range_start_chapter_id as number | null,
+    endChapterId: row.chapter_range_end_chapter_id as number | null,
+  });
+}
+
+function rowToEpisodeRange(row: Row): EpisodeRange | null {
+  return normalizeEpisodeRange({
+    startEpisodeId: row.episode_range_start_episode_id as number | null,
+    endEpisodeId: row.episode_range_end_episode_id as number | null,
+  });
+}
+
 function rowToMarker(row: Row): Marker {
   return {
     id: row.id as number,
@@ -360,18 +457,39 @@ function rowToMarker(row: Row): Marker {
     icon: row.icon as string | null,
     lat: row.lat as number,
     lng: row.lng as number,
+    chapterRange: rowToChapterRange(row),
+    episodeRange: rowToEpisodeRange(row),
   };
 }
 
 export async function createMarker(input: NewMarker): Promise<Marker> {
   const db = await getDatabase();
+  assertChapterRangeOrder(db, input.chapterRange);
+  assertEpisodeRangeOrder(db, input.episodeRange);
   const id = insert(
     db,
-    'INSERT INTO markers (marker_set_id, label, icon, lat, lng) VALUES (?, ?, ?, ?, ?);',
-    [input.markerSetId, input.label, input.icon, input.lat, input.lng],
+    `INSERT INTO markers (
+       marker_set_id, label, icon, lat, lng,
+       chapter_range_start_chapter_id, chapter_range_end_chapter_id,
+       episode_range_start_episode_id, episode_range_end_episode_id
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    [
+      input.markerSetId,
+      input.label,
+      input.icon,
+      input.lat,
+      input.lng,
+      ...chapterRangeColumns(input.chapterRange),
+      ...episodeRangeColumns(input.episodeRange),
+    ],
   );
   await persist();
-  return { id, ...input };
+  return {
+    id,
+    ...input,
+    chapterRange: normalizeChapterRange(input.chapterRange),
+    episodeRange: normalizeEpisodeRange(input.episodeRange),
+  };
 }
 
 export async function listMarkersForMarkerSet(markerSetId: number): Promise<Marker[]> {
@@ -383,9 +501,24 @@ export async function listMarkersForMarkerSet(markerSetId: number): Promise<Mark
 
 export async function updateMarker(id: number, input: NewMarker): Promise<void> {
   const db = await getDatabase();
+  assertChapterRangeOrder(db, input.chapterRange);
+  assertEpisodeRangeOrder(db, input.episodeRange);
   db.run(
-    'UPDATE markers SET marker_set_id = ?, label = ?, icon = ?, lat = ?, lng = ? WHERE id = ?;',
-    [input.markerSetId, input.label, input.icon, input.lat, input.lng, id],
+    `UPDATE markers
+     SET marker_set_id = ?, label = ?, icon = ?, lat = ?, lng = ?,
+         chapter_range_start_chapter_id = ?, chapter_range_end_chapter_id = ?,
+         episode_range_start_episode_id = ?, episode_range_end_episode_id = ?
+     WHERE id = ?;`,
+    [
+      input.markerSetId,
+      input.label,
+      input.icon,
+      input.lat,
+      input.lng,
+      ...chapterRangeColumns(input.chapterRange),
+      ...episodeRangeColumns(input.episodeRange),
+      id,
+    ],
   );
   await persist();
 }
@@ -442,43 +575,14 @@ export async function deleteCharacter(id: number): Promise<void> {
   await persist();
 }
 
-function chapterRangeColumns(
-  range: ChapterRange | null,
-): [number | null, number | null, number | null] {
-  return range ? [range.bookId, range.startChapterId, range.endChapterId] : [null, null, null];
-}
-
-function episodeRangeColumns(
-  range: EpisodeRange | null,
-): [number | null, number | null, number | null] {
-  return range ? [range.seasonId, range.startEpisodeId, range.endEpisodeId] : [null, null, null];
-}
-
 function rowToCharacterPosition(row: Row): CharacterPosition {
-  const chapterRangeBookId = row.chapter_range_book_id as number | null;
-  const episodeRangeSeasonId = row.episode_range_season_id as number | null;
-
   return {
     id: row.id as number,
     characterId: row.character_id as number,
     lat: row.lat as number,
     lng: row.lng as number,
-    chapterRange:
-      chapterRangeBookId === null
-        ? null
-        : {
-            bookId: chapterRangeBookId,
-            startChapterId: row.chapter_range_start_chapter_id as number | null,
-            endChapterId: row.chapter_range_end_chapter_id as number | null,
-          },
-    episodeRange:
-      episodeRangeSeasonId === null
-        ? null
-        : {
-            seasonId: episodeRangeSeasonId,
-            startEpisodeId: row.episode_range_start_episode_id as number | null,
-            endEpisodeId: row.episode_range_end_episode_id as number | null,
-          },
+    chapterRange: rowToChapterRange(row),
+    episodeRange: rowToEpisodeRange(row),
   };
 }
 
@@ -486,13 +590,15 @@ export async function createCharacterPosition(
   input: NewCharacterPosition,
 ): Promise<CharacterPosition> {
   const db = await getDatabase();
+  assertChapterRangeOrder(db, input.chapterRange);
+  assertEpisodeRangeOrder(db, input.episodeRange);
   const id = insert(
     db,
     `INSERT INTO character_positions (
        character_id, lat, lng,
-       chapter_range_book_id, chapter_range_start_chapter_id, chapter_range_end_chapter_id,
-       episode_range_season_id, episode_range_start_episode_id, episode_range_end_episode_id
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+       chapter_range_start_chapter_id, chapter_range_end_chapter_id,
+       episode_range_start_episode_id, episode_range_end_episode_id
+     ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
     [
       input.characterId,
       input.lat,
@@ -502,7 +608,12 @@ export async function createCharacterPosition(
     ],
   );
   await persist();
-  return { id, ...input };
+  return {
+    id,
+    ...input,
+    chapterRange: normalizeChapterRange(input.chapterRange),
+    episodeRange: normalizeEpisodeRange(input.episodeRange),
+  };
 }
 
 export async function listCharacterPositionsForCharacter(
@@ -522,11 +633,13 @@ export async function updateCharacterPosition(
   input: NewCharacterPosition,
 ): Promise<void> {
   const db = await getDatabase();
+  assertChapterRangeOrder(db, input.chapterRange);
+  assertEpisodeRangeOrder(db, input.episodeRange);
   db.run(
     `UPDATE character_positions
      SET character_id = ?, lat = ?, lng = ?,
-         chapter_range_book_id = ?, chapter_range_start_chapter_id = ?, chapter_range_end_chapter_id = ?,
-         episode_range_season_id = ?, episode_range_start_episode_id = ?, episode_range_end_episode_id = ?
+         chapter_range_start_chapter_id = ?, chapter_range_end_chapter_id = ?,
+         episode_range_start_episode_id = ?, episode_range_end_episode_id = ?
      WHERE id = ?;`,
     [
       input.characterId,
