@@ -12,7 +12,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import type { LatLng, Story } from '../db';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
 import { resolveTileUrlTemplate } from '../lib/tileUrl';
@@ -31,6 +32,22 @@ interface EditorSidebarProps {
   onCaptureMapPosition: () => { center: LatLng; zoom: number } | null;
 }
 
+interface FormValues {
+  name: string;
+  tileUrlValue: string;
+  initialCenter: LatLng;
+  initialZoom: number;
+}
+
+function storyToFormValues(story: Story | null): FormValues {
+  return {
+    name: story?.name ?? '',
+    tileUrlValue: story?.tileUrlTemplate ?? '',
+    initialCenter: story?.initialCenter ?? DEFAULT_CENTER,
+    initialZoom: story?.initialZoom ?? DEFAULT_ZOOM,
+  };
+}
+
 export function EditorSidebar({
   stories,
   selectedStoryId,
@@ -38,11 +55,16 @@ export function EditorSidebar({
   onSave,
   onCaptureMapPosition,
 }: EditorSidebarProps) {
-  const [name, setName] = useState('');
-  const [tileUrlValue, setTileUrlValue] = useState('');
-  const [initialCenter, setInitialCenter] = useState<LatLng>(DEFAULT_CENTER);
-  const [initialZoom, setInitialZoom] = useState(DEFAULT_ZOOM);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<FormValues>({ defaultValues: storyToFormValues(null) });
+
+  const initialCenter = useWatch({ control, name: 'initialCenter' });
+  const initialZoom = useWatch({ control, name: 'initialZoom' });
 
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
@@ -55,45 +77,27 @@ export function EditorSidebar({
     syncedStoryIdRef.current = selectedStoryId;
 
     const story = stories.find((candidate) => candidate.id === selectedStoryId) ?? null;
-    setName(story?.name ?? '');
-    setTileUrlValue(story?.tileUrlTemplate ?? '');
-    setInitialCenter(story?.initialCenter ?? DEFAULT_CENTER);
-    setInitialZoom(story?.initialZoom ?? DEFAULT_ZOOM);
-    setError(null);
-  }, [selectedStoryId, stories]);
+    reset(storyToFormValues(story));
+  }, [selectedStoryId, stories, reset]);
 
   function handleCapturePosition() {
     const position = onCaptureMapPosition();
     if (!position) return;
-    setInitialCenter(position.center);
-    setInitialZoom(position.zoom);
+    setValue('initialCenter', position.center);
+    setValue('initialZoom', position.zoom);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      setError('Enter a name for this map.');
-      return;
-    }
-
-    const resolved = resolveTileUrlTemplate(tileUrlValue);
-    if (!resolved) {
-      setError(
-        'Enter a URL template with {x}, {y}, {z} (or {q}) placeholders, or a real tile URL to extract a {q} quadkey template from.',
-      );
-      return;
-    }
-
-    setError(null);
+  function onValid(data: FormValues) {
+    const resolved = resolveTileUrlTemplate(data.tileUrlValue)!;
     onSave({
-      name: trimmedName,
+      name: data.name.trim(),
       tileUrlTemplate: resolved.template,
-      initialCenter,
-      initialZoom,
+      initialCenter: data.initialCenter,
+      initialZoom: data.initialZoom,
     });
   }
+
+  const errorMessage = errors.name?.message ?? errors.tileUrlValue?.message;
 
   return (
     <Paper
@@ -103,28 +107,46 @@ export function EditorSidebar({
     >
       <StorySelector stories={stories} selectedStoryId={selectedStoryId} onSelect={onSelectStory} />
 
-      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+      <Box component="form" onSubmit={handleSubmit(onValid)} sx={{ mt: 2 }}>
         <Stack spacing={2}>
-          <TextField
-            id="map-name-input"
-            label="Map Name"
-            variant="outlined"
-            size="small"
-            fullWidth
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="My Story Map"
+          <Controller
+            name="name"
+            control={control}
+            rules={{
+              validate: (value) => value.trim().length > 0 || 'Enter a name for this map.',
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                id="map-name-input"
+                label="Map Name"
+                variant="outlined"
+                size="small"
+                fullWidth
+                placeholder="My Story Map"
+              />
+            )}
           />
 
-          <TextField
-            id="tile-url-input"
-            label="Tile URL template"
-            variant="outlined"
-            size="small"
-            fullWidth
-            value={tileUrlValue}
-            onChange={(event) => setTileUrlValue(event.target.value)}
-            placeholder="https://tile.example.com/{z}/{x}/{y}.png"
+          <Controller
+            name="tileUrlValue"
+            control={control}
+            rules={{
+              validate: (value) =>
+                !!resolveTileUrlTemplate(value) ||
+                'Enter a URL template with {x}, {y}, {z} (or {q}) placeholders, or a real tile URL to extract a {q} quadkey template from.',
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                id="tile-url-input"
+                label="Tile URL template"
+                variant="outlined"
+                size="small"
+                fullWidth
+                placeholder="https://tile.example.com/{z}/{x}/{y}.png"
+              />
+            )}
           />
 
           <FormControl fullWidth variant="outlined" size="small">
@@ -151,7 +173,7 @@ export function EditorSidebar({
             </Stack>
           </FormControl>
 
-          {error && <Alert severity="error">{error}</Alert>}
+          {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
           <Button type="submit" variant="contained">
             Save
