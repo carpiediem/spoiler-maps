@@ -1,6 +1,6 @@
 // Bumped whenever SCHEMA_SQL changes, so a stored database from an older
 // schema version can be detected and discarded rather than opened as-is.
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const SCHEMA_SQL = `
   CREATE TABLE stories (
@@ -69,13 +69,19 @@ export const SCHEMA_SQL = `
   -- episode.sort_order), so a range's boundaries are free to fall in
   -- different books/seasons — e.g. book 1 chapter 10 through book 2
   -- chapter 5.
+  -- polygon is a JSON-encoded array of {lat, lng} points (an optional area
+  -- outline, e.g. a territory boundary, alongside the lat/lng pin) — a
+  -- separate table isn't worth it since polygon points are never queried
+  -- individually, only ever read/written as a whole with their marker.
   CREATE TABLE markers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     marker_set_id INTEGER NOT NULL REFERENCES marker_sets(id) ON DELETE CASCADE,
     label TEXT NOT NULL,
     icon TEXT,
+    color TEXT,
     lat REAL NOT NULL,
     lng REAL NOT NULL,
+    polygon TEXT,
     chapter_range_start_chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
     chapter_range_end_chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
     episode_range_start_episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL,

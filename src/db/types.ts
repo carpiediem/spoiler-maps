@@ -1,9 +1,13 @@
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
 export interface Story {
   id: number;
   name: string;
   tileUrlTemplate: string | null;
-  initialCenterLat: number;
-  initialCenterLng: number;
+  initialCenter: LatLng;
   initialZoom: number;
 }
 
@@ -78,8 +82,11 @@ export interface Marker {
   markerSetId: number;
   label: string;
   icon: string | null;
-  lat: number;
-  lng: number;
+  /** CSS color (e.g. a hex string), used for the icon and/or polygon. */
+  color: string | null;
+  position: LatLng;
+  /** An optional area outline, e.g. a territory boundary, in addition to the position pin. */
+  polygon: LatLng[] | null;
   chapterRange: ChapterRange | null;
   episodeRange: EpisodeRange | null;
 }
@@ -101,8 +108,7 @@ export interface Character {
 export interface CharacterPosition {
   id: number;
   characterId: number;
-  lat: number;
-  lng: number;
+  position: LatLng;
   chapterRange: ChapterRange | null;
   episodeRange: EpisodeRange | null;
 }

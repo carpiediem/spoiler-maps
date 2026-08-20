@@ -61,8 +61,7 @@ afterEach(async () => {
 const exampleStory: NewStory = {
   name: 'A Song of Ice and Fire',
   tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
-  initialCenterLat: 39.8283,
-  initialCenterLng: -98.5795,
+  initialCenter: { lat: 39.8283, lng: -98.5795 },
   initialZoom: 4,
 };
 
@@ -230,8 +229,9 @@ describe('marker sets and markers', () => {
       markerSetId: markerSet.id,
       label: 'Winterfell',
       icon: 'castle',
-      lat: 54.5,
-      lng: -1.5,
+      color: '#1d3557',
+      position: { lat: 54.5, lng: -1.5 },
+      polygon: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -248,13 +248,35 @@ describe('marker sets and markers', () => {
       markerSetId: markerSet.id,
       label: "King's Landing",
       icon: null,
-      lat: 42.6,
-      lng: 8.7,
+      color: null,
+      position: { lat: 42.6, lng: 8.7 },
+      polygon: null,
       chapterRange: null,
       episodeRange: null,
     });
     await deleteMarkerSet(markerSet.id);
     expect(await listMarkersForMarkerSet(secondMarker.markerSetId)).toEqual([]);
+  });
+
+  it('round-trips a polygon', async () => {
+    const story = await seedStory();
+    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Territories' });
+    const marker = await createMarker({
+      markerSetId: markerSet.id,
+      label: 'The North',
+      icon: null,
+      color: '#457b9d',
+      position: { lat: 54.5, lng: -1.5 },
+      polygon: [
+        { lat: 54.5, lng: -1.5 },
+        { lat: 55.1, lng: -2.3 },
+        { lat: 53.9, lng: -3.1 },
+      ],
+      chapterRange: null,
+      episodeRange: null,
+    });
+
+    expect(await listMarkersForMarkerSet(markerSet.id)).toEqual([marker]);
   });
 });
 
@@ -303,18 +325,16 @@ describe('character positions', () => {
     const { character } = await seedCharacterAndBook();
     const position = await createCharacterPosition({
       characterId: character.id,
-      lat: 54.5,
-      lng: -1.5,
+      position: { lat: 54.5, lng: -1.5 },
       chapterRange: null,
       episodeRange: null,
     });
 
     expect(await listCharacterPositionsForCharacter(character.id)).toEqual([position]);
 
-    await updateCharacterPosition(position.id, { ...position, lat: 10, lng: 20 });
+    await updateCharacterPosition(position.id, { ...position, position: { lat: 10, lng: 20 } });
     expect((await listCharacterPositionsForCharacter(character.id))[0]).toMatchObject({
-      lat: 10,
-      lng: 20,
+      position: { lat: 10, lng: 20 },
     });
 
     await deleteCharacterPosition(position.id);
@@ -325,8 +345,7 @@ describe('character positions', () => {
     const { character, chapter1, chapter2 } = await seedCharacterAndBook();
     const position = await createCharacterPosition({
       characterId: character.id,
-      lat: 54.5,
-      lng: -1.5,
+      position: { lat: 54.5, lng: -1.5 },
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
     });
@@ -338,8 +357,7 @@ describe('character positions', () => {
     const { character, chapter1 } = await seedCharacterAndBook();
     const position = await createCharacterPosition({
       characterId: character.id,
-      lat: 54.5,
-      lng: -1.5,
+      position: { lat: 54.5, lng: -1.5 },
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id },
       episodeRange: null,
     });
@@ -382,8 +400,7 @@ describe('character positions', () => {
 
     const position = await createCharacterPosition({
       characterId: character.id,
-      lat: 54.5,
-      lng: -1.5,
+      position: { lat: 54.5, lng: -1.5 },
       chapterRange: { startChapterId: book1Chapter10.id, endChapterId: book2Chapter5.id },
       episodeRange: null,
     });
@@ -397,8 +414,7 @@ describe('character positions', () => {
     await expect(
       createCharacterPosition({
         characterId: character.id,
-        lat: 54.5,
-        lng: -1.5,
+        position: { lat: 54.5, lng: -1.5 },
         chapterRange: { startChapterId: chapter2.id, endChapterId: chapter1.id },
         episodeRange: null,
       }),
@@ -411,8 +427,7 @@ describe('character positions', () => {
     await expect(
       createCharacterPosition({
         characterId: character.id,
-        lat: 54.5,
-        lng: -1.5,
+        position: { lat: 54.5, lng: -1.5 },
         chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id + 1000 },
         episodeRange: null,
       }),
@@ -423,8 +438,7 @@ describe('character positions', () => {
     const { character, chapter1 } = await seedCharacterAndBook();
     const position = await createCharacterPosition({
       characterId: character.id,
-      lat: 54.5,
-      lng: -1.5,
+      position: { lat: 54.5, lng: -1.5 },
       chapterRange: { startChapterId: chapter1.id, endChapterId: null },
       episodeRange: null,
     });
@@ -436,8 +450,7 @@ describe('character positions', () => {
     const { character } = await seedCharacterAndBook();
     const position = await createCharacterPosition({
       characterId: character.id,
-      lat: 54.5,
-      lng: -1.5,
+      position: { lat: 54.5, lng: -1.5 },
       chapterRange: { startChapterId: null, endChapterId: null },
       episodeRange: null,
     });
@@ -476,8 +489,7 @@ describe('character positions', () => {
     const { character, episode1, episode2 } = await seedCharacterAndSeason();
     const position = await createCharacterPosition({
       characterId: character.id,
-      lat: 54.5,
-      lng: -1.5,
+      position: { lat: 54.5, lng: -1.5 },
       chapterRange: null,
       episodeRange: { startEpisodeId: episode1.id, endEpisodeId: episode2.id },
     });
@@ -489,8 +501,7 @@ describe('character positions', () => {
     const { character, episode1 } = await seedCharacterAndSeason();
     const position = await createCharacterPosition({
       characterId: character.id,
-      lat: 54.5,
-      lng: -1.5,
+      position: { lat: 54.5, lng: -1.5 },
       chapterRange: null,
       episodeRange: { startEpisodeId: episode1.id, endEpisodeId: null },
     });
@@ -504,8 +515,7 @@ describe('character positions', () => {
     await expect(
       createCharacterPosition({
         characterId: character.id,
-        lat: 54.5,
-        lng: -1.5,
+        position: { lat: 54.5, lng: -1.5 },
         chapterRange: null,
         episodeRange: { startEpisodeId: episode2.id, endEpisodeId: episode1.id },
       }),
@@ -518,8 +528,7 @@ describe('character positions', () => {
     await expect(
       createCharacterPosition({
         characterId: character.id,
-        lat: 54.5,
-        lng: -1.5,
+        position: { lat: 54.5, lng: -1.5 },
         chapterRange: null,
         episodeRange: { startEpisodeId: episode1.id, endEpisodeId: episode1.id + 1000 },
       }),
@@ -530,8 +539,7 @@ describe('character positions', () => {
     const { character, chapter1, chapter2 } = await seedCharacterAndBook();
     const position = await createCharacterPosition({
       characterId: character.id,
-      lat: 54.5,
-      lng: -1.5,
+      position: { lat: 54.5, lng: -1.5 },
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
     });
@@ -550,8 +558,7 @@ describe('character positions', () => {
     const { character } = await seedCharacterAndBook();
     await createCharacterPosition({
       characterId: character.id,
-      lat: 54.5,
-      lng: -1.5,
+      position: { lat: 54.5, lng: -1.5 },
       chapterRange: null,
       episodeRange: null,
     });

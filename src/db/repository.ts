@@ -7,6 +7,7 @@ import type {
   ChapterRange,
   Episode,
   EpisodeRange,
+  LatLng,
   Marker,
   MarkerSet,
   NewBook,
@@ -63,8 +64,10 @@ function rowToStory(row: Row): Story {
     id: row.id as number,
     name: row.name as string,
     tileUrlTemplate: row.tile_url_template as string | null,
-    initialCenterLat: row.initial_center_lat as number,
-    initialCenterLng: row.initial_center_lng as number,
+    initialCenter: {
+      lat: row.initial_center_lat as number,
+      lng: row.initial_center_lng as number,
+    },
     initialZoom: row.initial_zoom as number,
   };
 }
@@ -78,8 +81,8 @@ export async function createStory(input: NewStory): Promise<Story> {
     [
       input.name,
       input.tileUrlTemplate,
-      input.initialCenterLat,
-      input.initialCenterLng,
+      input.initialCenter.lat,
+      input.initialCenter.lng,
       input.initialZoom,
     ],
   );
@@ -106,8 +109,8 @@ export async function updateStory(id: number, input: NewStory): Promise<void> {
     [
       input.name,
       input.tileUrlTemplate,
-      input.initialCenterLat,
-      input.initialCenterLng,
+      input.initialCenter.lat,
+      input.initialCenter.lng,
       input.initialZoom,
       id,
     ],
@@ -449,14 +452,24 @@ function rowToEpisodeRange(row: Row): EpisodeRange | null {
   });
 }
 
+function polygonToColumn(polygon: LatLng[] | null): string | null {
+  return polygon ? JSON.stringify(polygon) : null;
+}
+
+function rowToPolygon(row: Row): LatLng[] | null {
+  const column = row.polygon as string | null;
+  return column ? (JSON.parse(column) as LatLng[]) : null;
+}
+
 function rowToMarker(row: Row): Marker {
   return {
     id: row.id as number,
     markerSetId: row.marker_set_id as number,
     label: row.label as string,
     icon: row.icon as string | null,
-    lat: row.lat as number,
-    lng: row.lng as number,
+    color: row.color as string | null,
+    position: { lat: row.lat as number, lng: row.lng as number },
+    polygon: rowToPolygon(row),
     chapterRange: rowToChapterRange(row),
     episodeRange: rowToEpisodeRange(row),
   };
@@ -469,16 +482,18 @@ export async function createMarker(input: NewMarker): Promise<Marker> {
   const id = insert(
     db,
     `INSERT INTO markers (
-       marker_set_id, label, icon, lat, lng,
+       marker_set_id, label, icon, color, lat, lng, polygon,
        chapter_range_start_chapter_id, chapter_range_end_chapter_id,
        episode_range_start_episode_id, episode_range_end_episode_id
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       input.markerSetId,
       input.label,
       input.icon,
-      input.lat,
-      input.lng,
+      input.color,
+      input.position.lat,
+      input.position.lng,
+      polygonToColumn(input.polygon),
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
     ],
@@ -505,7 +520,7 @@ export async function updateMarker(id: number, input: NewMarker): Promise<void> 
   assertEpisodeRangeOrder(db, input.episodeRange);
   db.run(
     `UPDATE markers
-     SET marker_set_id = ?, label = ?, icon = ?, lat = ?, lng = ?,
+     SET marker_set_id = ?, label = ?, icon = ?, color = ?, lat = ?, lng = ?, polygon = ?,
          chapter_range_start_chapter_id = ?, chapter_range_end_chapter_id = ?,
          episode_range_start_episode_id = ?, episode_range_end_episode_id = ?
      WHERE id = ?;`,
@@ -513,8 +528,10 @@ export async function updateMarker(id: number, input: NewMarker): Promise<void> 
       input.markerSetId,
       input.label,
       input.icon,
-      input.lat,
-      input.lng,
+      input.color,
+      input.position.lat,
+      input.position.lng,
+      polygonToColumn(input.polygon),
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
       id,
@@ -579,8 +596,7 @@ function rowToCharacterPosition(row: Row): CharacterPosition {
   return {
     id: row.id as number,
     characterId: row.character_id as number,
-    lat: row.lat as number,
-    lng: row.lng as number,
+    position: { lat: row.lat as number, lng: row.lng as number },
     chapterRange: rowToChapterRange(row),
     episodeRange: rowToEpisodeRange(row),
   };
@@ -601,8 +617,8 @@ export async function createCharacterPosition(
      ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
     [
       input.characterId,
-      input.lat,
-      input.lng,
+      input.position.lat,
+      input.position.lng,
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
     ],
@@ -643,8 +659,8 @@ export async function updateCharacterPosition(
      WHERE id = ?;`,
     [
       input.characterId,
-      input.lat,
-      input.lng,
+      input.position.lat,
+      input.position.lng,
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
       id,
