@@ -1,9 +1,22 @@
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
+import {
+  Alert,
+  Box,
+  Button,
+  FormControl,
+  IconButton,
+  InputLabel,
+  Paper,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { LatLng, Story } from '../db';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
 import { resolveTileUrlTemplate } from '../lib/tileUrl';
 import { StorySelector } from './StorySelector';
-import './EditorSidebar.css';
 
 interface EditorSidebarProps {
   stories: Story[];
@@ -83,52 +96,68 @@ export function EditorSidebar({
   }
 
   return (
-    <aside className="editor-sidebar">
+    <Paper
+      component="aside"
+      elevation={4}
+      sx={{ position: 'absolute', top: 16, right: 16, zIndex: 1000, width: 280, p: 2 }}
+    >
       <StorySelector stories={stories} selectedStoryId={selectedStoryId} onSelect={onSelectStory} />
 
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="map-name-input">Map Name</label>
-        <input
-          id="map-name-input"
-          type="text"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="My Story Map"
-        />
+      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+        <Stack spacing={2}>
+          <TextField
+            id="map-name-input"
+            label="Map Name"
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="My Story Map"
+          />
 
-        <label htmlFor="tile-url-input">Tile URL template</label>
-        <input
-          id="tile-url-input"
-          type="text"
-          value={tileUrlValue}
-          onChange={(event) => setTileUrlValue(event.target.value)}
-          placeholder="https://tile.example.com/{z}/{x}/{y}.png"
-        />
+          <TextField
+            id="tile-url-input"
+            label="Tile URL template"
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={tileUrlValue}
+            onChange={(event) => setTileUrlValue(event.target.value)}
+            placeholder="https://tile.example.com/{z}/{x}/{y}.png"
+          />
 
-        <span className="editor-sidebar__label">Initial Position</span>
-        <div className="editor-sidebar__position">
-          <span>
-            {initialCenter.lat.toFixed(4)}, {initialCenter.lng.toFixed(4)} · Zoom {initialZoom}
-          </span>
-          <button
-            type="button"
-            className="editor-sidebar__capture-button"
-            aria-label="Use current map position"
-            title="Use current map position"
-            onClick={handleCapturePosition}
-          >
-            📌
-          </button>
-        </div>
+          <FormControl fullWidth variant="outlined" size="small">
+            <InputLabel
+              shrink
+              htmlFor="initial-position-value"
+              sx={{ position: 'static', transform: 'none', ml: '14px', fontSize: '0.75rem' }}
+            >
+              Initial Position
+            </InputLabel>
+            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography id="initial-position-value" variant="body2" sx={{ ml: '14px' }}>
+                {initialCenter.lat.toFixed(4)}, {initialCenter.lng.toFixed(4)} · Zoom {initialZoom}
+              </Typography>
+              <Tooltip title="Use current map position">
+                <IconButton
+                  size="small"
+                  aria-label="Use current map position"
+                  onClick={handleCapturePosition}
+                >
+                  <PushPinOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </FormControl>
 
-        {error && (
-          <p className="editor-sidebar__error" role="alert">
-            {error}
-          </p>
-        )}
+          {error && <Alert severity="error">{error}</Alert>}
 
-        <button type="submit">Save</button>
-      </form>
-    </aside>
+          <Button type="submit" variant="contained">
+            Save
+          </Button>
+        </Stack>
+      </Box>
+    </Paper>
   );
 }
