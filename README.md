@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/carpiediem/spoiler-maps/actions/workflows/ci.yml/badge.svg)](https://github.com/carpiediem/spoiler-maps/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/carpiediem/spoiler-maps/branch/main/graph/badge.svg)](https://codecov.io/gh/carpiediem/spoiler-maps)
+[![CodeQL](https://github.com/carpiediem/spoiler-maps/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/carpiediem/spoiler-maps/actions/workflows/codeql-analysis.yml)
+[![Accessibility Scanner](https://github.com/carpiediem/spoiler-maps/actions/workflows/a11y-scan.yml/badge.svg)](https://github.com/carpiediem/spoiler-maps/actions/workflows/a11y-scan.yml)
 
 This app will help people build maps that summarize their favorite books or movies. All the map content will be associated with a particular point in the story and will not appear (in the viewer tool) until the user tells the map how much of the book they've read. This avoids spoilers for individual people.
 
