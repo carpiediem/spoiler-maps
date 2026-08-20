@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import type { Story } from '../db';
+import type { LatLng, Story } from '../db';
+import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
 import { resolveTileUrlTemplate } from '../lib/tileUrl';
 import { StorySelector } from './StorySelector';
 import './EditorSidebar.css';
@@ -8,7 +9,13 @@ interface EditorSidebarProps {
   stories: Story[];
   selectedStoryId: number | null;
   onSelectStory: (storyId: number | null) => void;
-  onSave: (input: { name: string; tileUrlTemplate: string }) => void;
+  onSave: (input: {
+    name: string;
+    tileUrlTemplate: string;
+    initialCenter: LatLng;
+    initialZoom: number;
+  }) => void;
+  onCaptureMapPosition: () => { center: LatLng; zoom: number } | null;
 }
 
 export function EditorSidebar({
@@ -16,9 +23,12 @@ export function EditorSidebar({
   selectedStoryId,
   onSelectStory,
   onSave,
+  onCaptureMapPosition,
 }: EditorSidebarProps) {
   const [name, setName] = useState('');
   const [tileUrlValue, setTileUrlValue] = useState('');
+  const [initialCenter, setInitialCenter] = useState<LatLng>(DEFAULT_CENTER);
+  const [initialZoom, setInitialZoom] = useState(DEFAULT_ZOOM);
   const [error, setError] = useState<string | null>(null);
 
   // Tracks the selectedStoryId last synced to the form, so the list simply
@@ -34,8 +44,17 @@ export function EditorSidebar({
     const story = stories.find((candidate) => candidate.id === selectedStoryId) ?? null;
     setName(story?.name ?? '');
     setTileUrlValue(story?.tileUrlTemplate ?? '');
+    setInitialCenter(story?.initialCenter ?? DEFAULT_CENTER);
+    setInitialZoom(story?.initialZoom ?? DEFAULT_ZOOM);
     setError(null);
   }, [selectedStoryId, stories]);
+
+  function handleCapturePosition() {
+    const position = onCaptureMapPosition();
+    if (!position) return;
+    setInitialCenter(position.center);
+    setInitialZoom(position.zoom);
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,7 +74,12 @@ export function EditorSidebar({
     }
 
     setError(null);
-    onSave({ name: trimmedName, tileUrlTemplate: resolved.template });
+    onSave({
+      name: trimmedName,
+      tileUrlTemplate: resolved.template,
+      initialCenter,
+      initialZoom,
+    });
   }
 
   return (
@@ -80,6 +104,22 @@ export function EditorSidebar({
           onChange={(event) => setTileUrlValue(event.target.value)}
           placeholder="https://tile.example.com/{z}/{x}/{y}.png"
         />
+
+        <span className="editor-sidebar__label">Initial Position</span>
+        <div className="editor-sidebar__position">
+          <span>
+            {initialCenter.lat.toFixed(4)}, {initialCenter.lng.toFixed(4)} · Zoom {initialZoom}
+          </span>
+          <button
+            type="button"
+            className="editor-sidebar__capture-button"
+            aria-label="Use current map position"
+            title="Use current map position"
+            onClick={handleCapturePosition}
+          >
+            📌
+          </button>
+        </div>
 
         {error && (
           <p className="editor-sidebar__error" role="alert">

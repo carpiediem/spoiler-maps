@@ -86,6 +86,15 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: /^renamed story$/i })).toBeInTheDocument();
   });
 
+  it('captures the live map position from the sidebar pushpin button', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: /use current map position/i }));
+
+    expect(screen.getByText(/39\.8283, -98\.5795 · Zoom 4/)).toBeInTheDocument();
+  });
+
   it('does not update state after unmounting while stories are still loading', async () => {
     const { unmount } = render(<App />);
     unmount();

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import type { Map as LeafletMap } from 'leaflet';
+import { useEffect, useRef, useState } from 'react';
 import { EditorSidebar } from './components/EditorSidebar';
 import { MapView } from './components/MapView';
-import { createStory, listStories, updateStory, type Story } from './db';
+import { createStory, listStories, updateStory, type LatLng, type Story } from './db';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from './lib/mapDefaults';
 import './App.css';
 
@@ -9,6 +10,7 @@ function App() {
   const [stories, setStories] = useState<Story[]>([]);
   const [selectedStoryId, setSelectedStoryId] = useState<number | null>(null);
   const [tileUrl, setTileUrl] = useState<string | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -27,20 +29,32 @@ function App() {
     };
   }, []);
 
+  const selectedStory = stories.find((s) => s.id === selectedStoryId) ?? null;
+  const mapCenter = selectedStory?.initialCenter ?? DEFAULT_CENTER;
+  const mapZoom = selectedStory?.initialZoom ?? DEFAULT_ZOOM;
+
   function handleSelectStory(storyId: number | null) {
     setSelectedStoryId(storyId);
     const story = storyId === null ? null : stories.find((s) => s.id === storyId);
     setTileUrl(story?.tileUrlTemplate ?? null);
   }
 
-  async function handleSave(input: { name: string; tileUrlTemplate: string }) {
+  function getCurrentMapPosition(): { center: LatLng; zoom: number } | null {
+    const map = mapRef.current;
+    /* v8 ignore next -- mapRef is set synchronously when MapView mounts, before any user interaction that could call this. */
+    if (!map) return null;
+    const center = map.getCenter();
+    return { center: { lat: center.lat, lng: center.lng }, zoom: map.getZoom() };
+  }
+
+  async function handleSave(input: {
+    name: string;
+    tileUrlTemplate: string;
+    initialCenter: LatLng;
+    initialZoom: number;
+  }) {
     if (selectedStoryId === null) {
-      const created = await createStory({
-        name: input.name,
-        tileUrlTemplate: input.tileUrlTemplate,
-        initialCenter: DEFAULT_CENTER,
-        initialZoom: DEFAULT_ZOOM,
-      });
+      const created = await createStory(input);
       setStories((previous) => [...previous, created]);
       setSelectedStoryId(created.id);
     } else {
@@ -48,11 +62,7 @@ function App() {
       /* v8 ignore next -- selectedStoryId only ever comes from a story already in `stories`, via handleSelectStory or the create branch above. */
       if (!existing) return;
 
-      const updated: Story = {
-        ...existing,
-        name: input.name,
-        tileUrlTemplate: input.tileUrlTemplate,
-      };
+      const updated: Story = { ...existing, ...input };
       await updateStory(selectedStoryId, updated);
       setStories((previous) => previous.map((s) => (s.id === selectedStoryId ? updated : s)));
     }
@@ -63,13 +73,20 @@ function App() {
   return (
     <div className="app">
       <main aria-label="Map">
-        <MapView tileUrl={tileUrl} />
+        <MapView
+          key={selectedStoryId ?? 'new'}
+          mapRef={mapRef}
+          tileUrl={tileUrl}
+          center={mapCenter}
+          zoom={mapZoom}
+        />
       </main>
       <EditorSidebar
         stories={stories}
         selectedStoryId={selectedStoryId}
         onSelectStory={handleSelectStory}
         onSave={handleSave}
+        onCaptureMapPosition={getCurrentMapPosition}
       />
     </div>
   );
