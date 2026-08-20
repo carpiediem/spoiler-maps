@@ -1,26 +1,18 @@
-import HelpOutlineIcon from '@mui/icons-material/HelpOutlined';
-import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
-import {
-  Alert,
-  Box,
-  Button,
-  FormControl,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  Paper,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Box, Button, Paper } from '@mui/material';
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { useForm } from 'react-hook-form';
 import type { LatLng, Story } from '../db';
-import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
+import { BooksSection } from './editor-sidebar/BooksSection';
+import { CharactersSection } from './editor-sidebar/CharactersSection';
+import { storyToFormValues, type FormValues } from './editor-sidebar/formValues';
+import { MapSection } from './editor-sidebar/MapSection';
+import { MarkersSection } from './editor-sidebar/MarkersSection';
+import { SidebarSection } from './editor-sidebar/SidebarSection';
+import { TelevisionSection } from './editor-sidebar/TelevisionSection';
 import { resolveTileUrlTemplate } from '../lib/tileUrl';
 import { StorySelector } from './StorySelector';
-import { TileUrlHelpDialog } from './TileUrlHelpDialog';
+
+type SectionId = 'map' | 'books' | 'television' | 'characters' | 'markers';
 
 interface EditorSidebarProps {
   stories: Story[];
@@ -39,26 +31,6 @@ interface EditorSidebarProps {
   mapPosition: { center: LatLng; zoom: number } | null;
 }
 
-interface FormValues {
-  name: string;
-  tileUrlValue: string;
-  tileLayerAuthor: string;
-  tileLayerAttributionUrl: string;
-  initialCenter: LatLng;
-  initialZoom: number;
-}
-
-function storyToFormValues(story: Story | null): FormValues {
-  return {
-    name: story?.name ?? '',
-    tileUrlValue: story?.tileUrlTemplate ?? '',
-    tileLayerAuthor: story?.tileLayerAuthor ?? '',
-    tileLayerAttributionUrl: story?.tileLayerAttributionUrl ?? '',
-    initialCenter: story?.initialCenter ?? DEFAULT_CENTER,
-    initialZoom: story?.initialZoom ?? DEFAULT_ZOOM,
-  };
-}
-
 export function EditorSidebar({
   stories,
   selectedStoryId,
@@ -75,17 +47,7 @@ export function EditorSidebar({
     formState: { errors, isDirty },
   } = useForm<FormValues>({ defaultValues: storyToFormValues(null) });
 
-  const initialCenter = useWatch({ control, name: 'initialCenter' });
-  const initialZoom = useWatch({ control, name: 'initialZoom' });
-  const tileUrlValue = useWatch({ control, name: 'tileUrlValue' });
-  const hasValidTileUrl = !!resolveTileUrlTemplate(tileUrlValue);
-  const hasMapMoved =
-    mapPosition !== null &&
-    (mapPosition.center.lat !== initialCenter.lat ||
-      mapPosition.center.lng !== initialCenter.lng ||
-      mapPosition.zoom !== initialZoom);
-
-  const [isTileUrlHelpOpen, setIsTileUrlHelpOpen] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<SectionId | false>('map');
 
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
@@ -100,13 +62,6 @@ export function EditorSidebar({
     const story = stories.find((candidate) => candidate.id === selectedStoryId) ?? null;
     reset(storyToFormValues(story));
   }, [selectedStoryId, stories, reset]);
-
-  function handleCapturePosition() {
-    const position = onCaptureMapPosition();
-    if (!position) return;
-    setValue('initialCenter', position.center, { shouldDirty: true });
-    setValue('initialZoom', position.zoom, { shouldDirty: true });
-  }
 
   function onValid(data: FormValues) {
     const resolved = resolveTileUrlTemplate(data.tileUrlValue)!;
@@ -126,146 +81,85 @@ export function EditorSidebar({
     reset({ ...data, tileUrlValue: resolved.template });
   }
 
-  const errorMessage = errors.name?.message ?? errors.tileUrlValue?.message;
+  function handleAccordionChange(section: SectionId) {
+    return (_event: SyntheticEvent, isExpanded: boolean) => {
+      setExpandedSection(isExpanded ? section : false);
+    };
+  }
 
   return (
     <Paper
       component="aside"
       elevation={4}
-      sx={{ position: 'absolute', top: 16, right: 16, zIndex: 1000, width: 280, p: 2 }}
+      sx={{
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 1000,
+        width: 280,
+        maxHeight: 'calc(100vh - 32px)',
+        overflowY: 'auto',
+        p: 2,
+      }}
     >
       <StorySelector stories={stories} selectedStoryId={selectedStoryId} onSelect={onSelectStory} />
 
       <Box component="form" onSubmit={handleSubmit(onValid)} sx={{ mt: 2 }}>
-        <Stack spacing={2}>
-          <Controller
-            name="name"
+        <SidebarSection
+          id="map-section"
+          title="Map"
+          expanded={expandedSection === 'map'}
+          onChange={handleAccordionChange('map')}
+        >
+          <MapSection
             control={control}
-            rules={{
-              validate: (value) => value.trim().length > 0 || 'Enter a name for this map.',
-            }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                id="map-name-input"
-                label="Map Name"
-                variant="outlined"
-                size="small"
-                fullWidth
-                placeholder="My Story Map"
-              />
-            )}
+            setValue={setValue}
+            errors={errors}
+            mapPosition={mapPosition}
+            onCaptureMapPosition={onCaptureMapPosition}
           />
+        </SidebarSection>
 
-          <Controller
-            name="tileUrlValue"
-            control={control}
-            rules={{
-              validate: (value) =>
-                !!resolveTileUrlTemplate(value) ||
-                'Enter a URL template with {x}, {y}, {z} (or {q}) placeholders, or a real tile URL to extract a {q} quadkey template from.',
-            }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                id="tile-url-input"
-                label="Tile Layer URL Template"
-                variant="outlined"
-                size="small"
-                fullWidth
-                placeholder="https://tile.example.com/{z}/{x}/{y}.png"
-                slotProps={{
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Tooltip title="How this field works" arrow>
-                          <IconButton
-                            size="small"
-                            aria-label="Explain how to fill in this field"
-                            onClick={() => setIsTileUrlHelpOpen(true)}
-                            edge="end"
-                          >
-                            <HelpOutlineIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
-            )}
-          />
+        <SidebarSection
+          id="books-section"
+          title="Books"
+          expanded={expandedSection === 'books'}
+          onChange={handleAccordionChange('books')}
+        >
+          <BooksSection />
+        </SidebarSection>
 
-          {hasValidTileUrl && (
-            <Stack spacing={2} sx={{ pl: 2 }}>
-              <Controller
-                name="tileLayerAuthor"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    id="tile-layer-author-input"
-                    label="Tile Layer Author"
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    placeholder="Jane Cartographer"
-                  />
-                )}
-              />
+        <SidebarSection
+          id="television-section"
+          title="Television"
+          expanded={expandedSection === 'television'}
+          onChange={handleAccordionChange('television')}
+        >
+          <TelevisionSection />
+        </SidebarSection>
 
-              <Controller
-                name="tileLayerAttributionUrl"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    id="tile-layer-attribution-url-input"
-                    label="Tile Layer Attribution URL"
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    placeholder="https://example.com"
-                  />
-                )}
-              />
-            </Stack>
-          )}
+        <SidebarSection
+          id="characters-section"
+          title="Characters"
+          expanded={expandedSection === 'characters'}
+          onChange={handleAccordionChange('characters')}
+        >
+          <CharactersSection />
+        </SidebarSection>
 
-          <FormControl fullWidth variant="outlined" size="small">
-            <InputLabel
-              shrink
-              htmlFor="initial-position-value"
-              sx={{ position: 'static', transform: 'none', ml: '14px', fontSize: '0.75rem' }}
-            >
-              Initial Position
-            </InputLabel>
-            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography id="initial-position-value" variant="body2" sx={{ ml: '14px' }}>
-                {initialCenter.lat.toFixed(4)}, {initialCenter.lng.toFixed(4)} · Zoom {initialZoom}
-              </Typography>
-              <Tooltip title="Use current map position" arrow>
-                <IconButton
-                  size="small"
-                  aria-label="Use current map position"
-                  onClick={handleCapturePosition}
-                  sx={{ visibility: hasMapMoved ? 'visible' : 'hidden' }}
-                >
-                  <PushPinOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Stack>
-          </FormControl>
+        <SidebarSection
+          id="markers-section"
+          title="Markers"
+          expanded={expandedSection === 'markers'}
+          onChange={handleAccordionChange('markers')}
+        >
+          <MarkersSection />
+        </SidebarSection>
 
-          {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
-
-          <Button type="submit" variant="contained" disabled={!isDirty}>
-            Save
-          </Button>
-        </Stack>
+        <Button type="submit" variant="contained" disabled={!isDirty} sx={{ mt: 2 }}>
+          Save
+        </Button>
       </Box>
-
-      <TileUrlHelpDialog open={isTileUrlHelpOpen} onClose={() => setIsTileUrlHelpOpen(false)} />
     </Paper>
   );
 }

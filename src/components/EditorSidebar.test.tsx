@@ -370,4 +370,53 @@ describe('EditorSidebar', () => {
     await user.click(screen.getByRole('button', { name: /close/i }));
     await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
   });
+
+  it('shows one section at a time, collapsing the previous one when another is opened', async () => {
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    expect(screen.getByLabelText(/map name/i)).toBeVisible();
+    expect(screen.getByText(/no books yet/i)).not.toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /^books$/i }));
+
+    expect(screen.getByText(/no books yet/i)).toBeVisible();
+    expect(screen.getByLabelText(/map name/i)).not.toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /^books$/i }));
+
+    expect(screen.getByText(/no books yet/i)).not.toBeVisible();
+  });
+
+  it('renders the Television, Characters, and Markers sections', async () => {
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /^television$/i }));
+    expect(screen.getByText(/no television seasons yet/i)).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /^characters$/i }));
+    expect(screen.getByText(/no characters yet/i)).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /^markers$/i }));
+    expect(screen.getByText(/no markers yet/i)).toBeVisible();
+  });
 });
