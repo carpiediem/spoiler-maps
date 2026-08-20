@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -49,7 +49,15 @@ async function seedBook(overrides: Partial<Parameters<typeof createBook>[0]> = {
   });
 }
 
-function Wrapper({ initialBook, chapters }: { initialBook: Book; chapters: Chapter[] }) {
+function Wrapper({
+  initialBook,
+  chapters,
+  onDelete,
+}: {
+  initialBook: Book;
+  chapters: Chapter[];
+  onDelete?: () => void;
+}) {
   const [book, setBook] = useState(initialBook);
   const [expanded, setExpanded] = useState(true);
   return (
@@ -60,6 +68,7 @@ function Wrapper({ initialBook, chapters }: { initialBook: Book; chapters: Chapt
       onToggle={(_event, isExpanded) => setExpanded(isExpanded)}
       onBookChange={setBook}
       onChaptersChange={vi.fn()}
+      onDelete={onDelete ?? vi.fn()}
     />
   );
 }
@@ -86,6 +95,7 @@ describe('BookItem', () => {
         onToggle={vi.fn()}
         onBookChange={vi.fn()}
         onChaptersChange={vi.fn()}
+        onDelete={vi.fn()}
       />,
     );
 
@@ -108,6 +118,7 @@ describe('BookItem', () => {
         onToggle={vi.fn()}
         onBookChange={vi.fn()}
         onChaptersChange={vi.fn()}
+        onDelete={vi.fn()}
       />,
     );
 
@@ -122,11 +133,11 @@ describe('BookItem', () => {
     const user = userEvent.setup();
     render(<Wrapper initialBook={book} chapters={[]} />);
 
-    await user.clear(screen.getByLabelText(/^name$/i));
-    await user.type(screen.getByLabelText(/^name$/i), 'A Clash of Kings');
+    await user.clear(screen.getByLabelText(/^title$/i));
+    await user.type(screen.getByLabelText(/^title$/i), 'A Clash of Kings');
     await user.type(screen.getByLabelText(/^author$/i), 'George R. R. Martin');
     await user.type(
-      screen.getByLabelText(/wiki url/i),
+      screen.getByLabelText(/^url$/i),
       'https://awoiaf.westeros.org/index.php/A_Clash_of_Kings',
     );
     await user.tab();
@@ -146,7 +157,7 @@ describe('BookItem', () => {
 
     await user.clear(screen.getByLabelText(/^author$/i));
     await user.tab();
-    await user.clear(screen.getByLabelText(/wiki url/i));
+    await user.clear(screen.getByLabelText(/^url$/i));
     await user.tab();
 
     const [persisted] = await listBooksForStory(book.storyId);
@@ -164,5 +175,64 @@ describe('BookItem', () => {
     await user.tab();
 
     expect(await getStory(book.storyId)).toEqual(before);
+  });
+
+  it('asks for confirmation before deleting, and does not delete when cancelled', async () => {
+    const book = await seedBook();
+    const onDelete = vi.fn();
+    const user = userEvent.setup();
+    render(<Wrapper initialBook={book} chapters={[]} onDelete={onDelete} />);
+
+    await user.click(screen.getByRole('button', { name: /delete book/i }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /cancel/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+    expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  it('falls back to "Untitled Book" in the delete confirmation title', async () => {
+    const book = await seedBook({ name: '' });
+    const user = userEvent.setup();
+    render(<Wrapper initialBook={book} chapters={[]} />);
+
+    await user.click(screen.getByRole('button', { name: /delete book/i }));
+
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Delete “Untitled Book”?');
+  });
+
+  it('closes the delete confirmation on Escape without deleting', async () => {
+    const book = await seedBook();
+    const onDelete = vi.fn();
+    const user = userEvent.setup();
+    render(<Wrapper initialBook={book} chapters={[]} onDelete={onDelete} />);
+
+    await user.click(screen.getByRole('button', { name: /delete book/i }));
+    await screen.findByRole('dialog');
+
+    await user.keyboard('{Escape}');
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+    expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  it('calls onDelete once the deletion is confirmed', async () => {
+    const book = await seedBook();
+    const onDelete = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <Wrapper
+        initialBook={book}
+        chapters={[{ id: 1, bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 }]}
+        onDelete={onDelete}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /delete book/i }));
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('1 of its chapter');
+
+    await user.click(screen.getByRole('button', { name: /^delete$/i }));
+
+    expect(onDelete).toHaveBeenCalledTimes(1);
   });
 });

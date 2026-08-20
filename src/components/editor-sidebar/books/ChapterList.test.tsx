@@ -49,10 +49,11 @@ async function seedBookId(): Promise<number> {
 }
 
 describe('ChapterList', () => {
-  it('renders no rows when there are no chapters', () => {
+  it('renders no rows or column headers when there are no chapters', () => {
     render(<ChapterList bookId={1} chapters={[]} onChaptersChange={vi.fn()} />);
 
-    expect(screen.getByText(/chapters/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add chapter/i })).toBeInTheDocument();
+    expect(screen.queryByText(/^title$/i)).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/chapter name/i)).not.toBeInTheDocument();
   });
 
@@ -152,6 +153,82 @@ describe('ChapterList', () => {
 
     expect(screen.getByDisplayValue('Prologue I')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Bran')).toBeInTheDocument();
+  });
+
+  it('moves focus between chapter name fields with the arrow keys', async () => {
+    const bookId = await seedBookId();
+    const chapter1 = await createChapter({ bookId, name: 'Prologue', url: null, sortOrder: 0 });
+    const chapter2 = await createChapter({ bookId, name: 'Bran', url: null, sortOrder: 1 });
+    const user = userEvent.setup();
+    render(
+      <ChapterList bookId={bookId} chapters={[chapter1, chapter2]} onChaptersChange={vi.fn()} />,
+    );
+
+    const prologueField = screen.getByDisplayValue('Prologue');
+    const branField = screen.getByDisplayValue('Bran');
+
+    prologueField.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(branField).toHaveFocus();
+
+    await user.keyboard('{ArrowUp}');
+    expect(prologueField).toHaveFocus();
+  });
+
+  it('moves focus between chapter Wiki URL fields with the arrow keys, independently of the name column', async () => {
+    const bookId = await seedBookId();
+    const chapter1 = await createChapter({
+      bookId,
+      name: 'Prologue',
+      url: 'https://example.com/1',
+      sortOrder: 0,
+    });
+    const chapter2 = await createChapter({
+      bookId,
+      name: 'Bran',
+      url: 'https://example.com/2',
+      sortOrder: 1,
+    });
+    const user = userEvent.setup();
+    render(
+      <ChapterList bookId={bookId} chapters={[chapter1, chapter2]} onChaptersChange={vi.fn()} />,
+    );
+
+    const firstUrlField = screen.getByDisplayValue('https://example.com/1');
+    const secondUrlField = screen.getByDisplayValue('https://example.com/2');
+
+    firstUrlField.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(secondUrlField).toHaveFocus();
+  });
+
+  it('does nothing when the arrow keys would move focus past the first or last chapter', async () => {
+    const bookId = await seedBookId();
+    const chapter = await createChapter({ bookId, name: 'Prologue', url: null, sortOrder: 0 });
+    const user = userEvent.setup();
+    render(<ChapterList bookId={bookId} chapters={[chapter]} onChaptersChange={vi.fn()} />);
+
+    const nameField = screen.getByDisplayValue('Prologue');
+    nameField.focus();
+
+    await user.keyboard('{ArrowUp}');
+    expect(nameField).toHaveFocus();
+
+    await user.keyboard('{ArrowDown}');
+    expect(nameField).toHaveFocus();
+  });
+
+  it('leaves other keys alone', async () => {
+    const bookId = await seedBookId();
+    const chapter = await createChapter({ bookId, name: 'Prologue', url: null, sortOrder: 0 });
+    const user = userEvent.setup();
+    render(<ChapterList bookId={bookId} chapters={[chapter]} onChaptersChange={vi.fn()} />);
+
+    const nameField = screen.getByDisplayValue('Prologue');
+    nameField.focus();
+    await user.keyboard('{ArrowLeft}');
+
+    expect(nameField).toHaveFocus();
   });
 
   it('deletes a chapter from the database and removes it from the list', async () => {

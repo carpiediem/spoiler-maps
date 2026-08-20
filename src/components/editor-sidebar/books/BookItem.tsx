@@ -1,17 +1,25 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  InputAdornment,
   Stack,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { SyntheticEvent } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import { updateBook, type Book, type Chapter } from '../../../db';
-import { ChapterList } from './ChapterList';
+import { ChapterEditorDialog } from './ChapterEditorDialog';
 
 interface BookItemProps {
   book: Book;
@@ -20,6 +28,7 @@ interface BookItemProps {
   onToggle: (event: SyntheticEvent, isExpanded: boolean) => void;
   onBookChange: (book: Book) => void;
   onChaptersChange: (chapters: Chapter[]) => void;
+  onDelete: () => void;
 }
 
 export function BookItem({
@@ -29,7 +38,11 @@ export function BookItem({
   onToggle,
   onBookChange,
   onChaptersChange,
+  onDelete,
 }: BookItemProps) {
+  const [isChaptersDialogOpen, setIsChaptersDialogOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
   function handleFieldChange(field: 'name' | 'author' | 'url', value: string) {
     onBookChange({ ...book, [field]: field === 'name' ? value : value || null });
   }
@@ -54,8 +67,6 @@ export function BookItem({
       sx={{
         boxShadow: 'none',
         '&::before': { display: 'none' },
-        border: 1,
-        borderColor: 'divider',
         borderRadius: 1,
       }}
     >
@@ -75,10 +86,10 @@ export function BookItem({
           </Tooltip>
         </Stack>
       </AccordionSummary>
-      <AccordionDetails sx={{ px: 1 }}>
+      <AccordionDetails sx={{ px: 1, backgroundColor: 'rgba(0, 0, 0, .015)' }}>
         <Stack spacing={1.5}>
           <TextField
-            label="Name"
+            label="Title"
             size="small"
             fullWidth
             value={book.name}
@@ -94,16 +105,70 @@ export function BookItem({
             onBlur={handleBlur}
           />
           <TextField
-            label="Wiki URL"
+            label="URL"
             size="small"
             fullWidth
             value={book.url ?? ''}
             onChange={(event) => handleFieldChange('url', event.target.value)}
             onBlur={handleBlur}
+            sx={{ '& .MuiInputBase-input': { fontSize: '0.8125rem' } }}
+            slotProps={{
+              input: {
+                endAdornment: book.url && (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      aria-label="Open URL"
+                      href={book.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      edge="end"
+                    >
+                      <OpenInNewIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
-          <ChapterList bookId={book.id} chapters={chapters} onChaptersChange={onChaptersChange} />
+          <Button size="small" onClick={() => setIsChaptersDialogOpen(true)} fullWidth>
+            Edit Chapters
+          </Button>
+          <Button size="small" color="error" onClick={() => setIsDeleteConfirmOpen(true)} fullWidth>
+            Delete Book
+          </Button>
         </Stack>
       </AccordionDetails>
+
+      <ChapterEditorDialog
+        open={isChaptersDialogOpen}
+        onClose={() => setIsChaptersDialogOpen(false)}
+        bookName={book.name}
+        bookId={book.id}
+        chapters={chapters}
+        onChaptersChange={onChaptersChange}
+      />
+
+      <Dialog open={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)}>
+        <DialogTitle>Delete “{book.name || 'Untitled Book'}”?</DialogTitle>
+        <DialogContentText sx={{ px: 3, pb: 2 }}>
+          {chapters.length === 0
+            ? 'This will permanently delete the book. This can’t be undone.'
+            : `This will permanently delete the book and all ${chapters.length} of its ${chapters.length === 1 ? 'chapter' : 'chapters'}. This can’t be undone.`}
+        </DialogContentText>
+        <DialogActions>
+          <Button onClick={() => setIsDeleteConfirmOpen(false)}>Cancel</Button>
+          <Button
+            color="error"
+            onClick={() => {
+              setIsDeleteConfirmOpen(false);
+              onDelete();
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Accordion>
   );
 }

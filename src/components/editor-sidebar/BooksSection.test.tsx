@@ -62,9 +62,9 @@ describe('BooksSection', () => {
     await user.click(screen.getByRole('button', { name: /add book/i }));
 
     await screen.findByText('Untitled Book');
-    const [existingNameField, newNameField] = screen.getAllByLabelText(/^name$/i);
-    await waitFor(() => expect(existingNameField).not.toBeVisible());
-    await waitFor(() => expect(newNameField).toBeVisible());
+    const [existingTitleField, newTitleField] = screen.getAllByLabelText(/^title$/i);
+    await waitFor(() => expect(existingTitleField).not.toBeVisible());
+    await waitFor(() => expect(newTitleField).toBeVisible());
     expect(await listBooksForStory(storyId)).toHaveLength(2);
   });
 
@@ -87,15 +87,18 @@ describe('BooksSection', () => {
 
     await user.click(await screen.findByText('A Game of Thrones'));
 
-    const nameField = screen.getByLabelText(/^name$/i);
-    await user.type(nameField, ' II');
+    const titleField = screen.getByLabelText(/^title$/i);
+    await user.type(titleField, ' II');
     expect(screen.getByText('A Game of Thrones II')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /add chapter/i }));
+    await user.click(screen.getByRole('button', { name: /edit chapters/i }));
+    await user.click(await screen.findByRole('button', { name: /add chapter/i }));
     expect(await screen.findByText('1')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /close/i }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
     await user.click(screen.getByText('A Game of Thrones II'));
-    await waitFor(() => expect(nameField).not.toBeVisible());
+    await waitFor(() => expect(titleField).not.toBeVisible());
   });
 
   it('editing one book does not affect a sibling book', async () => {
@@ -106,16 +109,32 @@ describe('BooksSection', () => {
     render(<BooksSection storyId={storyId} />);
 
     await user.click(await screen.findByText('A Game of Thrones'));
-    const visibleNameField = screen
-      .getAllByLabelText(/^name$/i)
+    const visibleTitleField = screen
+      .getAllByLabelText(/^title$/i)
       .find(
         (field) =>
           window.getComputedStyle(field.closest('.MuiCollapse-root')!).visibility !== 'hidden',
       )!;
-    await user.type(visibleNameField, ' II');
+    await user.type(visibleTitleField, ' II');
 
     expect(screen.getByText('A Game of Thrones II')).toBeInTheDocument();
     expect(screen.getByText('A Clash of Kings')).toBeInTheDocument();
+  });
+
+  it('deletes a book from the database and the list, collapsing back to nothing expanded', async () => {
+    const storyId = await seedStoryId();
+    await createBook({ storyId, name: 'A Game of Thrones', author: null, url: null, sortOrder: 0 });
+    await createBook({ storyId, name: 'A Clash of Kings', author: null, url: null, sortOrder: 1 });
+    const user = userEvent.setup();
+    render(<BooksSection storyId={storyId} />);
+
+    await user.click(await screen.findByText('A Game of Thrones'));
+    await user.click(screen.getByRole('button', { name: /delete book/i }));
+    await user.click(await screen.findByRole('button', { name: /^delete$/i }));
+
+    await waitFor(() => expect(screen.queryByText('A Game of Thrones')).not.toBeInTheDocument());
+    expect(screen.getByText('A Clash of Kings')).toBeInTheDocument();
+    expect(await listBooksForStory(storyId)).toHaveLength(1);
   });
 
   it('does not update state after unmounting while books are still loading', async () => {

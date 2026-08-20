@@ -3,6 +3,7 @@ import { Button, Stack, Typography } from '@mui/material';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import {
   createBook,
+  deleteBook,
   listBooksForStory,
   listChaptersForBook,
   type Book,
@@ -83,6 +84,20 @@ export function BooksSection({ storyId, initialExpandedIndex }: BooksSectionProp
     setChaptersByBookId((previous) => ({ ...previous, [bookId]: chapters }));
   }
 
+  // Only reachable while bookId is the expanded book: the Delete Book
+  // button that triggers this only renders inside that book's own
+  // AccordionDetails.
+  async function handleDeleteBook(bookId: number) {
+    await deleteBook(bookId);
+    setBooks((previous) => previous!.filter((book) => book.id !== bookId));
+    setChaptersByBookId((previous) => {
+      const next = { ...previous };
+      delete next[bookId];
+      return next;
+    });
+    setExpandedBookId(null);
+  }
+
   function handleToggle(bookId: number) {
     return (_event: SyntheticEvent, isExpanded: boolean) => {
       setExpandedBookId(isExpanded ? bookId : null);
@@ -114,6 +129,7 @@ export function BooksSection({ storyId, initialExpandedIndex }: BooksSectionProp
           onToggle={handleToggle(book.id)}
           onBookChange={handleBookChange}
           onChaptersChange={(chapters) => handleChaptersChange(book.id, chapters)}
+          onDelete={() => handleDeleteBook(book.id)}
         />
       ))}
 
