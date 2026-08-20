@@ -50,6 +50,9 @@ describe('EditorSidebar', () => {
         onSave={onSave}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -73,6 +76,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -90,6 +96,9 @@ describe('EditorSidebar', () => {
         onSave={onSave}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -120,6 +129,9 @@ describe('EditorSidebar', () => {
         onSave={onSave}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -147,6 +159,9 @@ describe('EditorSidebar', () => {
         onSave={onSave}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -170,6 +185,9 @@ describe('EditorSidebar', () => {
         onSave={onSave}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -195,6 +213,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -216,6 +237,9 @@ describe('EditorSidebar', () => {
         onSave={onSave}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -248,6 +272,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -259,6 +286,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -283,6 +313,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -304,6 +337,9 @@ describe('EditorSidebar', () => {
         onSave={onSave}
         onCaptureMapPosition={() => ({ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 })}
         mapPosition={{ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 }}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -332,6 +368,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={{ center: { lat: 10, lng: 10 }, zoom: 3 }}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -350,6 +389,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -376,6 +418,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -400,6 +445,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -426,6 +474,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -448,6 +499,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -468,6 +522,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -482,6 +539,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -498,6 +558,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -538,6 +601,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -555,6 +621,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -571,6 +640,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 
@@ -586,6 +658,9 @@ describe('EditorSidebar', () => {
         onSave={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
       />,
     );
 

@@ -15,6 +15,7 @@ function App() {
     center: DEFAULT_CENTER,
     zoom: DEFAULT_ZOOM,
   });
+  const [draftPosition, setDraftPosition] = useState<LatLng | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
 
   useEffect(() => {
@@ -65,6 +66,14 @@ function App() {
     return { center: { lat: center.lat, lng: center.lng }, zoom: map.getZoom() };
   }
 
+  function handleStartEditingPosition() {
+    setDraftPosition(mapPosition.center);
+  }
+
+  function handleEndEditingPosition() {
+    setDraftPosition(null);
+  }
+
   async function handleSave(input: {
     name: string;
     tileUrlTemplate: string;
@@ -101,6 +110,8 @@ function App() {
           center={mapCenter}
           zoom={mapZoom}
           onPositionChange={setMapPosition}
+          draftPosition={draftPosition}
+          onDraftPositionChange={setDraftPosition}
         />
       </main>
       <EditorSidebar
@@ -110,6 +121,9 @@ function App() {
         onSave={handleSave}
         onCaptureMapPosition={getCurrentMapPosition}
         mapPosition={mapPosition}
+        draftPosition={draftPosition}
+        onStartEditingPosition={handleStartEditingPosition}
+        onEndEditingPosition={handleEndEditingPosition}
       />
     </div>
   );

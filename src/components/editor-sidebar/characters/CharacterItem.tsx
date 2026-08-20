@@ -1,3 +1,4 @@
+import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
@@ -12,8 +13,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useState, type SyntheticEvent } from 'react';
-import { updateCharacter, type Character } from '../../../db';
+import { useEffect, useState, type SyntheticEvent } from 'react';
+import { listCharacterPositionsForCharacter, updateCharacter, type Character } from '../../../db';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
 
 const DEFAULT_COLOR = '#1976d2';
@@ -24,6 +25,8 @@ interface CharacterItemProps {
   onToggle: (event: SyntheticEvent, isExpanded: boolean) => void;
   onCharacterChange: (character: Character) => void;
   onDelete: () => void;
+  /** Called with the 1-based index the new position would have when "+ Position" is clicked. */
+  onAddPosition: (index: number) => void;
 }
 
 export function CharacterItem({
@@ -32,8 +35,21 @@ export function CharacterItem({
   onToggle,
   onCharacterChange,
   onDelete,
+  onAddPosition,
 }: CharacterItemProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [positionCount, setPositionCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listCharacterPositionsForCharacter(character.id).then((positions) => {
+      if (cancelled) return;
+      setPositionCount(positions.length);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [character.id]);
 
   function handleFieldChange(field: 'name' | 'group' | 'icon' | 'color', value: string) {
     onCharacterChange({
@@ -153,6 +169,17 @@ export function CharacterItem({
               },
             }}
           />
+          <Button
+            size="small"
+            startIcon={<AddIcon fontSize="small" />}
+            // Only reachable once positionCount has loaded: disabled below
+            // while it's still null.
+            onClick={() => onAddPosition(positionCount! + 1)}
+            disabled={positionCount === null}
+            fullWidth
+          >
+            Position
+          </Button>
           <Button size="small" color="error" onClick={() => setIsDeleteConfirmOpen(true)} fullWidth>
             Delete Character
           </Button>

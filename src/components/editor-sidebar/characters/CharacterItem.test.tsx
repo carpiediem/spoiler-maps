@@ -1,8 +1,20 @@
-import { fireEvent, render, screen, waitForElementToBeRemoved } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createCharacter, createStory, listCharactersForStory, type Character } from '../../../db';
+import {
+  createCharacter,
+  createCharacterPosition,
+  createStory,
+  listCharactersForStory,
+  type Character,
+} from '../../../db';
 import { resetDatabaseForTests } from '../../../db/client';
 import { CharacterItem } from './CharacterItem';
 
@@ -47,9 +59,11 @@ async function seedCharacter(
 function Wrapper({
   initialCharacter,
   onDelete,
+  onAddPosition,
 }: {
   initialCharacter: Character;
   onDelete?: () => void;
+  onAddPosition?: (index: number) => void;
 }) {
   const [character, setCharacter] = useState(initialCharacter);
   const [expanded, setExpanded] = useState(true);
@@ -60,6 +74,7 @@ function Wrapper({
       onToggle={(_event, isExpanded) => setExpanded(isExpanded)}
       onCharacterChange={setCharacter}
       onDelete={onDelete ?? vi.fn()}
+      onAddPosition={onAddPosition ?? vi.fn()}
     />
   );
 }
@@ -81,6 +96,7 @@ describe('CharacterItem', () => {
         onToggle={vi.fn()}
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
+        onAddPosition={vi.fn()}
       />,
     );
 
@@ -103,6 +119,7 @@ describe('CharacterItem', () => {
         onToggle={vi.fn()}
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
+        onAddPosition={vi.fn()}
       />,
     );
 
@@ -193,5 +210,45 @@ describe('CharacterItem', () => {
     await user.click(screen.getByRole('button', { name: /^delete$/i }));
 
     expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onAddPosition with 1 for a character with no existing positions', async () => {
+    const character = await seedCharacter();
+    const onAddPosition = vi.fn();
+    const user = userEvent.setup();
+    render(<Wrapper initialCharacter={character} onAddPosition={onAddPosition} />);
+
+    const positionButton = await screen.findByRole('button', { name: /^position$/i });
+    await waitFor(() => expect(positionButton).toBeEnabled());
+    await user.click(positionButton);
+
+    expect(onAddPosition).toHaveBeenCalledWith(1);
+  });
+
+  it('calls onAddPosition with the next 1-based index for a character with existing positions', async () => {
+    const character = await seedCharacter();
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onAddPosition = vi.fn();
+    const user = userEvent.setup();
+    render(<Wrapper initialCharacter={character} onAddPosition={onAddPosition} />);
+
+    const positionButton = await screen.findByRole('button', { name: /^position$/i });
+    await waitFor(() => expect(positionButton).toBeEnabled());
+    await user.click(positionButton);
+
+    expect(onAddPosition).toHaveBeenCalledWith(3);
   });
 });

@@ -106,6 +106,38 @@ describe('App', () => {
     expect(screen.getByText(/39\.8283, -98\.5795 · Zoom 5/)).toBeInTheDocument();
   });
 
+  it('shows a draggable map marker while editing a character position, and hides it again on back', async () => {
+    await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+    });
+    resetDatabaseForTests();
+
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^characters$/i }));
+    await user.click(screen.getByRole('button', { name: /add character/i }));
+    await screen.findByLabelText(/^name$/i);
+
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+
+    await user.click(screen.getByRole('button', { name: /^position$/i }));
+
+    expect(await screen.findByText('Position 1')).toBeInTheDocument();
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: /back to sidebar/i }));
+
+    expect(screen.queryByText('Position 1')).not.toBeInTheDocument();
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+  });
+
   it('does not update state after unmounting while stories are still loading', async () => {
     const { unmount } = render(<App />);
     unmount();

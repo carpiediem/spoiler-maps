@@ -7,10 +7,13 @@ import { CharactersSection } from './editor-sidebar/CharactersSection';
 import { storyToFormValues, type FormValues } from './editor-sidebar/formValues';
 import { MapSection } from './editor-sidebar/MapSection';
 import { MarkersSection } from './editor-sidebar/MarkersSection';
+import { PositionPanel } from './editor-sidebar/PositionPanel';
 import { SidebarSection } from './editor-sidebar/SidebarSection';
 import { TelevisionSection } from './editor-sidebar/TelevisionSection';
 import { resolveTileUrlTemplate } from '../lib/tileUrl';
 import { StorySelector } from './StorySelector';
+
+const SIDEBAR_HEIGHT_SX = { maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' } as const;
 
 type SectionId = 'map' | 'books' | 'television' | 'characters' | 'markers';
 
@@ -54,6 +57,10 @@ interface EditorSidebarProps {
   onCaptureMapPosition: () => { center: LatLng; zoom: number } | null;
   /** The map's current live position, to tell whether it has moved from what's stored in the form. */
   mapPosition: { center: LatLng; zoom: number } | null;
+  /** The draggable pin's current lat/lng while editing a character position. */
+  draftPosition: LatLng | null;
+  onStartEditingPosition: () => void;
+  onEndEditingPosition: () => void;
 }
 
 export function EditorSidebar({
@@ -63,6 +70,9 @@ export function EditorSidebar({
   onSave,
   onCaptureMapPosition,
   mapPosition,
+  draftPosition,
+  onStartEditingPosition,
+  onEndEditingPosition,
 }: EditorSidebarProps) {
   const {
     control,
@@ -87,6 +97,16 @@ export function EditorSidebar({
   const [charactersCount, setCharactersCount] = useState<number>();
   const [markersCount, setMarkersCount] = useState<number>();
 
+  // When set, the sidebar slides its main content out to the left and
+  // slides a Position form in from the right, in place of the accordion
+  // list — rather than opening a nested dialog like chapters/episodes,
+  // since a position is edited less like "one more row in a list" and
+  // more like a small dedicated screen of its own.
+  const [activePosition, setActivePosition] = useState<{
+    characterId: number;
+    index: number;
+  } | null>(null);
+
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
   // from under whatever the user is typing — only an actual change of
@@ -100,6 +120,9 @@ export function EditorSidebar({
     const story = stories.find((candidate) => candidate.id === selectedStoryId) ?? null;
     reset(storyToFormValues(story));
     setExpandedSection('map');
+    setActivePosition(null);
+    onEndEditingPosition();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStoryId, stories, reset]);
 
   // Re-applies the hash on demand: once more when selectedStoryId
@@ -143,6 +166,16 @@ export function EditorSidebar({
     };
   }
 
+  function handleAddPosition(characterId: number, index: number) {
+    setActivePosition({ characterId, index });
+    onStartEditingPosition();
+  }
+
+  function handleBackFromPosition() {
+    setActivePosition(null);
+    onEndEditingPosition();
+  }
+
   return (
     <Paper
       component="aside"
@@ -154,80 +187,113 @@ export function EditorSidebar({
         zIndex: 1000,
         width: 280,
         maxHeight: 'calc(100vh - 32px)',
-        overflowY: 'auto',
-        p: 2,
+        overflow: 'hidden',
       }}
     >
-      <StorySelector stories={stories} selectedStoryId={selectedStoryId} onSelect={onSelectStory} />
-
-      <Box component="form" onSubmit={handleSubmit(onValid)} sx={{ mt: 2 }}>
-        <SidebarSection
-          id="map-section"
-          title="Map"
-          expanded={expandedSection === 'map'}
-          onChange={handleAccordionChange('map')}
+      <Box
+        sx={{
+          display: 'flex',
+          width: '200%',
+          transform: activePosition ? 'translateX(-50%)' : 'translateX(0%)',
+          transition: 'transform 0.3s ease-in-out',
+        }}
+      >
+        <Box
+          sx={{ width: '50%', flexShrink: 0, boxSizing: 'border-box', p: 2, ...SIDEBAR_HEIGHT_SX }}
         >
-          <MapSection
-            control={control}
-            setValue={setValue}
-            errors={errors}
-            isDirty={isDirty}
-            mapPosition={mapPosition}
-            onCaptureMapPosition={onCaptureMapPosition}
+          <StorySelector
+            stories={stories}
+            selectedStoryId={selectedStoryId}
+            onSelect={onSelectStory}
           />
-        </SidebarSection>
 
-        {selectedStoryId !== null && (
-          <>
+          <Box component="form" onSubmit={handleSubmit(onValid)} sx={{ mt: 2 }}>
             <SidebarSection
-              id="books-section"
-              title="Books"
-              count={bookCount}
-              expanded={expandedSection === 'books'}
-              onChange={handleAccordionChange('books')}
+              id="map-section"
+              title="Map"
+              expanded={expandedSection === 'map'}
+              onChange={handleAccordionChange('map')}
             >
-              <BooksSection
-                storyId={selectedStoryId}
-                initialExpandedIndex={expandedSection === 'books' ? hashItemIndex : null}
-                onCountChange={setBookCount}
+              <MapSection
+                control={control}
+                setValue={setValue}
+                errors={errors}
+                isDirty={isDirty}
+                mapPosition={mapPosition}
+                onCaptureMapPosition={onCaptureMapPosition}
               />
             </SidebarSection>
 
-            <SidebarSection
-              id="television-section"
-              title="Television"
-              count={televisionCount}
-              expanded={expandedSection === 'television'}
-              onChange={handleAccordionChange('television')}
-            >
-              <TelevisionSection
-                storyId={selectedStoryId}
-                initialExpandedIndex={expandedSection === 'television' ? hashItemIndex : null}
-                onCountChange={setTelevisionCount}
-              />
-            </SidebarSection>
+            {selectedStoryId !== null && (
+              <>
+                <SidebarSection
+                  id="books-section"
+                  title="Books"
+                  count={bookCount}
+                  expanded={expandedSection === 'books'}
+                  onChange={handleAccordionChange('books')}
+                >
+                  <BooksSection
+                    storyId={selectedStoryId}
+                    initialExpandedIndex={expandedSection === 'books' ? hashItemIndex : null}
+                    onCountChange={setBookCount}
+                  />
+                </SidebarSection>
 
-            <SidebarSection
-              id="characters-section"
-              title="Characters"
-              count={charactersCount}
-              expanded={expandedSection === 'characters'}
-              onChange={handleAccordionChange('characters')}
-            >
-              <CharactersSection storyId={selectedStoryId} onCountChange={setCharactersCount} />
-            </SidebarSection>
+                <SidebarSection
+                  id="television-section"
+                  title="Television"
+                  count={televisionCount}
+                  expanded={expandedSection === 'television'}
+                  onChange={handleAccordionChange('television')}
+                >
+                  <TelevisionSection
+                    storyId={selectedStoryId}
+                    initialExpandedIndex={expandedSection === 'television' ? hashItemIndex : null}
+                    onCountChange={setTelevisionCount}
+                  />
+                </SidebarSection>
 
-            <SidebarSection
-              id="markers-section"
-              title="Markers"
-              count={markersCount}
-              expanded={expandedSection === 'markers'}
-              onChange={handleAccordionChange('markers')}
-            >
-              <MarkersSection storyId={selectedStoryId} onCountChange={setMarkersCount} />
-            </SidebarSection>
-          </>
-        )}
+                <SidebarSection
+                  id="characters-section"
+                  title="Characters"
+                  count={charactersCount}
+                  expanded={expandedSection === 'characters'}
+                  onChange={handleAccordionChange('characters')}
+                >
+                  <CharactersSection
+                    storyId={selectedStoryId}
+                    onCountChange={setCharactersCount}
+                    onAddPosition={handleAddPosition}
+                  />
+                </SidebarSection>
+
+                <SidebarSection
+                  id="markers-section"
+                  title="Markers"
+                  count={markersCount}
+                  expanded={expandedSection === 'markers'}
+                  onChange={handleAccordionChange('markers')}
+                >
+                  <MarkersSection storyId={selectedStoryId} onCountChange={setMarkersCount} />
+                </SidebarSection>
+              </>
+            )}
+          </Box>
+        </Box>
+
+        <Box
+          sx={{ width: '50%', flexShrink: 0, boxSizing: 'border-box', p: 2, ...SIDEBAR_HEIGHT_SX }}
+        >
+          {activePosition && selectedStoryId !== null && (
+            <PositionPanel
+              storyId={selectedStoryId}
+              index={activePosition.index}
+              position={draftPosition}
+              onBack={handleBackFromPosition}
+            />
+          )}
+        </Box>
       </Box>
     </Paper>
   );

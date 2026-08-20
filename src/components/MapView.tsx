@@ -1,6 +1,6 @@
-import type { Map as LeafletMap } from 'leaflet';
+import { divIcon, type Map as LeafletMap, type Marker as LeafletMarker } from 'leaflet';
 import type { RefObject } from 'react';
-import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLng } from '../db';
 import { detectTileUrlTemplateKind } from '../lib/tileUrl';
@@ -9,6 +9,16 @@ import { QuadkeyTileLayer } from './QuadkeyTileLayer';
 const DEFAULT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const DEFAULT_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+// A plain CSS pin instead of react-leaflet's default marker icon, which
+// needs its image assets specially reconfigured to resolve under a
+// bundler — not worth it for a single draggable draft-position pin.
+const DRAFT_POSITION_ICON = divIcon({
+  className: '',
+  html: '<div style="width: 20px; height: 20px; border-radius: 50% 50% 50% 0; background: #d32f2f; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5); transform: rotate(-45deg);"></div>',
+  iconSize: [20, 20],
+  iconAnchor: [10, 20],
+});
 
 interface MapViewProps {
   tileUrl: string | null;
@@ -19,6 +29,30 @@ interface MapViewProps {
   mapRef?: RefObject<LeafletMap | null>;
   /** Called whenever the user pans or zooms the map. */
   onPositionChange?: (position: { center: LatLng; zoom: number }) => void;
+  /** A draggable pin shown while editing a character position's lat/lng. */
+  draftPosition?: LatLng | null;
+  onDraftPositionChange?: (position: LatLng) => void;
+}
+
+interface DraftPositionMarkerProps {
+  position: LatLng;
+  onChange: (position: LatLng) => void;
+}
+
+function DraftPositionMarker({ position, onChange }: DraftPositionMarkerProps) {
+  return (
+    <Marker
+      position={[position.lat, position.lng]}
+      icon={DRAFT_POSITION_ICON}
+      draggable
+      eventHandlers={{
+        dragend: (event) => {
+          const latLng = (event.target as LeafletMarker).getLatLng();
+          onChange({ lat: latLng.lat, lng: latLng.lng });
+        },
+      }}
+    />
+  );
 }
 
 interface MapPositionTrackerProps {
@@ -46,6 +80,8 @@ export function MapView({
   zoom,
   mapRef,
   onPositionChange,
+  draftPosition,
+  onDraftPositionChange,
 }: MapViewProps) {
   const activeTileUrl = tileUrl ?? DEFAULT_TILE_URL;
   const kind = tileUrl ? detectTileUrlTemplateKind(tileUrl) : 'xyz';
@@ -59,6 +95,9 @@ export function MapView({
       style={{ position: 'absolute', inset: 0 }}
     >
       {onPositionChange && <MapPositionTracker onPositionChange={onPositionChange} />}
+      {draftPosition && onDraftPositionChange && (
+        <DraftPositionMarker position={draftPosition} onChange={onDraftPositionChange} />
+      )}
       {kind === 'quadkey' ? (
         <QuadkeyTileLayer
           key={activeTileUrl}

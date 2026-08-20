@@ -7,9 +7,15 @@ import { CharacterItem } from './characters/CharacterItem';
 interface CharactersSectionProps {
   storyId: number;
   onCountChange?: (count: number) => void;
+  /** Called with (characterId, 1-based new position index) when "+ Position" is clicked. */
+  onAddPosition: (characterId: number, index: number) => void;
 }
 
-export function CharactersSection({ storyId, onCountChange }: CharactersSectionProps) {
+export function CharactersSection({
+  storyId,
+  onCountChange,
+  onAddPosition,
+}: CharactersSectionProps) {
   const [characters, setCharacters] = useState<Character[] | null>(null);
   const [expandedCharacterId, setExpandedCharacterId] = useState<number | null>(null);
 
@@ -97,6 +103,7 @@ export function CharactersSection({ storyId, onCountChange }: CharactersSectionP
           onToggle={handleToggle(character.id)}
           onCharacterChange={handleCharacterChange}
           onDelete={() => handleDeleteCharacter(character.id)}
+          onAddPosition={(index) => onAddPosition(character.id, index)}
         />
       ))}
 

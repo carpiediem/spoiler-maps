@@ -1,4 +1,4 @@
-import type { Map as LeafletMap } from 'leaflet';
+import { Marker as LeafletMarker, type Map as LeafletMap } from 'leaflet';
 import { act, render } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -59,5 +59,49 @@ describe('MapView', () => {
     expect(position.zoom).toBe(7);
     expect(position.center.lat).toBeCloseTo(41);
     expect(position.center.lng).toBeCloseTo(-101);
+  });
+
+  it('does not render a draft position marker when draftPosition is not set', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(<MapView tileUrl={null} center={center} zoom={5} mapRef={mapRef} />);
+
+    let markerCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) markerCount += 1;
+    });
+    expect(markerCount).toBe(0);
+  });
+
+  it('renders a draggable draft position marker and reports its new lat/lng on drag end', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onDraftPositionChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        draftPosition={{ lat: 41, lng: -101 }}
+        onDraftPositionChange={onDraftPositionChange}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    expect(marker).toBeDefined();
+    expect(marker!.getLatLng().lat).toBeCloseTo(41);
+    expect(marker!.getLatLng().lng).toBeCloseTo(-101);
+
+    act(() => {
+      marker!.setLatLng([42, -102]);
+      marker!.fire('dragend', { target: marker });
+    });
+
+    expect(onDraftPositionChange).toHaveBeenCalledTimes(1);
+    const [reported] = onDraftPositionChange.mock.calls[0] as [{ lat: number; lng: number }];
+    expect(reported.lat).toBeCloseTo(42);
+    expect(reported.lng).toBeCloseTo(-102);
   });
 });
