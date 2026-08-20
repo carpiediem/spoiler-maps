@@ -1,5 +1,6 @@
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
 import { detectTileUrlTemplateKind } from '../lib/tileUrl';
 import { QuadkeyTileLayer } from './QuadkeyTileLayer';
 
@@ -16,7 +17,11 @@ export function MapView({ tileUrl }: MapViewProps) {
   const kind = tileUrl ? detectTileUrlTemplateKind(tileUrl) : 'xyz';
 
   return (
-    <MapContainer center={[39.8283, -98.5795]} zoom={4} style={{ position: 'absolute', inset: 0 }}>
+    <MapContainer
+      center={[DEFAULT_CENTER.lat, DEFAULT_CENTER.lng]}
+      zoom={DEFAULT_ZOOM}
+      style={{ position: 'absolute', inset: 0 }}
+    >
       {kind === 'quadkey' ? (
         <QuadkeyTileLayer key={activeTileUrl} url={activeTileUrl} />
       ) : (
