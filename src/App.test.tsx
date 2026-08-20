@@ -47,12 +47,16 @@ describe('App', () => {
     await createStory({
       name: 'A Song of Ice and Fire',
       tileUrlTemplate: 'https://tile.example.com/asoiaf/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
     });
     await createStory({
       name: 'The Wheel of Time',
       tileUrlTemplate: 'https://tile.example.com/wot/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
     });

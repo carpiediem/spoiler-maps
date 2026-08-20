@@ -6,8 +6,8 @@ import { toKeyholeQuadkey } from '../lib/quadkey';
 class KeyholeTileLayer extends L.TileLayer {
   private readonly template: string;
 
-  constructor(template: string) {
-    super(template);
+  constructor(template: string, options?: L.TileLayerOptions) {
+    super(template, options);
     this.template = template;
   }
 
@@ -19,19 +19,20 @@ class KeyholeTileLayer extends L.TileLayer {
 
 interface QuadkeyTileLayerProps {
   url: string;
+  attribution?: string;
 }
 
 // react-leaflet's TileLayer only understands {x}/{y}/{z}/{s} placeholders, so
 // a {q} (keyhole quadtree) template needs its own imperative Leaflet layer.
-export function QuadkeyTileLayer({ url }: QuadkeyTileLayerProps) {
+export function QuadkeyTileLayer({ url, attribution }: QuadkeyTileLayerProps) {
   const map = useMap();
 
   useEffect(() => {
-    const layer = new KeyholeTileLayer(url).addTo(map);
+    const layer = new KeyholeTileLayer(url, { attribution }).addTo(map);
     return () => {
       layer.remove();
     };
-  }, [map, url]);
+  }, [map, url, attribution]);
 
   return null;
 }

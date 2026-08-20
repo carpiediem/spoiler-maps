@@ -12,14 +12,17 @@ const DEFAULT_ATTRIBUTION =
 
 interface MapViewProps {
   tileUrl: string | null;
+  /** Overrides the default OpenStreetMap attribution, e.g. a story's own tile layer credit. */
+  attribution?: string | null;
   center: LatLng;
   zoom: number;
   mapRef?: RefObject<LeafletMap | null>;
 }
 
-export function MapView({ tileUrl, center, zoom, mapRef }: MapViewProps) {
+export function MapView({ tileUrl, attribution, center, zoom, mapRef }: MapViewProps) {
   const activeTileUrl = tileUrl ?? DEFAULT_TILE_URL;
   const kind = tileUrl ? detectTileUrlTemplateKind(tileUrl) : 'xyz';
+  const resolvedAttribution = attribution ?? (tileUrl ? undefined : DEFAULT_ATTRIBUTION);
 
   return (
     <MapContainer
@@ -29,13 +32,13 @@ export function MapView({ tileUrl, center, zoom, mapRef }: MapViewProps) {
       style={{ position: 'absolute', inset: 0 }}
     >
       {kind === 'quadkey' ? (
-        <QuadkeyTileLayer key={activeTileUrl} url={activeTileUrl} />
-      ) : (
-        <TileLayer
+        <QuadkeyTileLayer
           key={activeTileUrl}
           url={activeTileUrl}
-          attribution={tileUrl ? undefined : DEFAULT_ATTRIBUTION}
+          attribution={resolvedAttribution}
         />
+      ) : (
+        <TileLayer key={activeTileUrl} url={activeTileUrl} attribution={resolvedAttribution} />
       )}
     </MapContainer>
   );

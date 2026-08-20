@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Story } from '../db';
@@ -10,6 +10,8 @@ function makeStory(overrides: Partial<Story>): Story {
     id: 1,
     name: 'A Song of Ice and Fire',
     tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+    tileLayerAuthor: null,
+    tileLayerAttributionUrl: null,
     initialCenter: { lat: 51.5, lng: -0.1278 },
     initialZoom: 6,
     ...overrides,
@@ -39,6 +41,8 @@ describe('EditorSidebar', () => {
     expect(onSave).toHaveBeenCalledWith({
       name: 'A Song of Ice and Fire',
       tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
       initialCenter: DEFAULT_CENTER,
       initialZoom: DEFAULT_ZOOM,
     });
@@ -114,7 +118,11 @@ describe('EditorSidebar', () => {
   });
 
   it('prefills the form from the selected story', () => {
-    const story = makeStory({ id: 1 });
+    const story = makeStory({
+      id: 1,
+      tileLayerAuthor: 'Jane Cartographer',
+      tileLayerAttributionUrl: 'https://example.com',
+    });
     render(
       <EditorSidebar
         stories={[story]}
@@ -127,7 +135,41 @@ describe('EditorSidebar', () => {
 
     expect(screen.getByLabelText(/map name/i)).toHaveValue(story.name);
     expect(screen.getByLabelText(/tile url template/i)).toHaveValue(story.tileUrlTemplate);
+    expect(screen.getByLabelText(/tile layer author/i)).toHaveValue('Jane Cartographer');
+    expect(screen.getByLabelText(/tile layer attribution url/i)).toHaveValue('https://example.com');
     expect(screen.getByText(/51\.5000, -0\.1278 · Zoom 6/)).toBeInTheDocument();
+  });
+
+  it('saves the tile layer author and attribution URL when both are provided', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    fireEvent.change(screen.getByLabelText(/tile url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    await user.type(screen.getByLabelText(/tile layer author/i), '  Jane Cartographer  ');
+    await user.type(
+      screen.getByLabelText(/tile layer attribution url/i),
+      '  https://example.com  ',
+    );
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tileLayerAuthor: 'Jane Cartographer',
+        tileLayerAttributionUrl: 'https://example.com',
+      }),
+    );
   });
 
   it('clears the form when switching to "New Map"', () => {
@@ -225,5 +267,72 @@ describe('EditorSidebar', () => {
     await user.click(screen.getByRole('button', { name: /use current map position/i }));
 
     expect(screen.getByText(/51\.5000, -0\.1278 · Zoom 6/)).toBeInTheDocument();
+  });
+
+  it('hides the tile layer author/attribution fields until the tile URL template is valid', async () => {
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+      />,
+    );
+
+    expect(screen.queryByLabelText(/tile layer author/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/tile layer attribution url/i)).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/tile url template/i), 'not-a-valid-url');
+    expect(screen.queryByLabelText(/tile layer author/i)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/tile url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    expect(screen.getByLabelText(/tile layer author/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/tile layer attribution url/i)).toBeInTheDocument();
+  });
+
+  it('opens and closes the tile URL template help dialog', async () => {
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+      />,
+    );
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /explain how to fill in this field/i }));
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent(/keyhole/i);
+
+    await user.click(screen.getByRole('button', { name: /close/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+  });
+
+  it('closes the tile URL template help dialog when pressing Escape', async () => {
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /explain how to fill in this field/i }));
+    await screen.findByRole('dialog');
+
+    await user.keyboard('{Escape}');
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
   });
 });

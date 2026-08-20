@@ -1,10 +1,17 @@
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlined';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import {
   Alert,
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   IconButton,
+  InputAdornment,
   InputLabel,
   Paper,
   Stack,
@@ -12,7 +19,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import type { LatLng, Story } from '../db';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
@@ -26,6 +33,8 @@ interface EditorSidebarProps {
   onSave: (input: {
     name: string;
     tileUrlTemplate: string;
+    tileLayerAuthor: string | null;
+    tileLayerAttributionUrl: string | null;
     initialCenter: LatLng;
     initialZoom: number;
   }) => void;
@@ -35,6 +44,8 @@ interface EditorSidebarProps {
 interface FormValues {
   name: string;
   tileUrlValue: string;
+  tileLayerAuthor: string;
+  tileLayerAttributionUrl: string;
   initialCenter: LatLng;
   initialZoom: number;
 }
@@ -43,6 +54,8 @@ function storyToFormValues(story: Story | null): FormValues {
   return {
     name: story?.name ?? '',
     tileUrlValue: story?.tileUrlTemplate ?? '',
+    tileLayerAuthor: story?.tileLayerAuthor ?? '',
+    tileLayerAttributionUrl: story?.tileLayerAttributionUrl ?? '',
     initialCenter: story?.initialCenter ?? DEFAULT_CENTER,
     initialZoom: story?.initialZoom ?? DEFAULT_ZOOM,
   };
@@ -65,6 +78,10 @@ export function EditorSidebar({
 
   const initialCenter = useWatch({ control, name: 'initialCenter' });
   const initialZoom = useWatch({ control, name: 'initialZoom' });
+  const tileUrlValue = useWatch({ control, name: 'tileUrlValue' });
+  const hasValidTileUrl = !!resolveTileUrlTemplate(tileUrlValue);
+
+  const [isTileUrlHelpOpen, setIsTileUrlHelpOpen] = useState(false);
 
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
@@ -92,6 +109,8 @@ export function EditorSidebar({
     onSave({
       name: data.name.trim(),
       tileUrlTemplate: resolved.template,
+      tileLayerAuthor: data.tileLayerAuthor.trim() || null,
+      tileLayerAttributionUrl: data.tileLayerAttributionUrl.trim() || null,
       initialCenter: data.initialCenter,
       initialZoom: data.initialZoom,
     });
@@ -145,9 +164,63 @@ export function EditorSidebar({
                 size="small"
                 fullWidth
                 placeholder="https://tile.example.com/{z}/{x}/{y}.png"
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <Tooltip title="How this field works">
+                          <IconButton
+                            size="small"
+                            aria-label="Explain how to fill in this field"
+                            onClick={() => setIsTileUrlHelpOpen(true)}
+                            edge="end"
+                          >
+                            <HelpOutlineIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
               />
             )}
           />
+
+          {hasValidTileUrl && (
+            <Stack spacing={2} sx={{ pl: 2 }}>
+              <Controller
+                name="tileLayerAuthor"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    id="tile-layer-author-input"
+                    label="Tile Layer Author"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    placeholder="Jane Cartographer"
+                  />
+                )}
+              />
+
+              <Controller
+                name="tileLayerAttributionUrl"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    id="tile-layer-attribution-url-input"
+                    label="Tile Layer Attribution URL"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    placeholder="https://example.com"
+                  />
+                )}
+              />
+            </Stack>
+          )}
 
           <FormControl fullWidth variant="outlined" size="small">
             <InputLabel
@@ -180,6 +253,41 @@ export function EditorSidebar({
           </Button>
         </Stack>
       </Box>
+
+      <Dialog open={isTileUrlHelpOpen} onClose={() => setIsTileUrlHelpOpen(false)}>
+        <DialogTitle>Tile URL template</DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div">
+            <p>
+              Enter the URL your map tiles are served from, with placeholders for the parts that
+              change per tile:
+            </p>
+            <ul>
+              <li>
+                <code>{'{x}'}</code>, <code>{'{y}'}</code>, <code>{'{z}'}</code> — the standard
+                scheme most tile servers use (column, row, zoom level). Example:{' '}
+                <code>
+                  http://services.arcgisonline.com/arcgis/rest/services/World_Physical_Map/MapServer/tile/
+                  {z}/{y}/{x}
+                </code>
+              </li>
+              <li>
+                <code>{'{q}'}</code> — a single placeholder for a "keyhole" quadkey string, used by
+                some custom tile sets. Example:{' '}
+                <code>https://carpiediem.github.io/game-of-thrones-map/fsm/{q}.jpg</code>
+              </li>
+            </ul>
+            <p>
+              If you paste a real, working tile URL instead of a template — e.g. one copied while a
+              map is open — a <code>{'{q}'}</code> template will be extracted from it automatically
+              when possible.
+            </p>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsTileUrlHelpOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 }

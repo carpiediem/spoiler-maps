@@ -9,6 +9,8 @@ function makeStory(overrides: Partial<Story>): Story {
     id: 1,
     name: 'Untitled',
     tileUrlTemplate: null,
+    tileLayerAuthor: null,
+    tileLayerAttributionUrl: null,
     initialCenter: { lat: 0, lng: 0 },
     initialZoom: 4,
     ...overrides,

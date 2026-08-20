@@ -7,6 +7,9 @@ export interface Story {
   id: number;
   name: string;
   tileUrlTemplate: string | null;
+  /** Credited alongside tileLayerAttributionUrl in the map's attribution control, if both are set. */
+  tileLayerAuthor: string | null;
+  tileLayerAttributionUrl: string | null;
   initialCenter: LatLng;
   initialZoom: number;
 }

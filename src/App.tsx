@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { EditorSidebar } from './components/EditorSidebar';
 import { MapView } from './components/MapView';
 import { createStory, listStories, updateStory, type LatLng, type Story } from './db';
+import { buildTileAttribution } from './lib/attribution';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from './lib/mapDefaults';
 import './App.css';
 
@@ -32,6 +33,10 @@ function App() {
   const selectedStory = stories.find((s) => s.id === selectedStoryId) ?? null;
   const mapCenter = selectedStory?.initialCenter ?? DEFAULT_CENTER;
   const mapZoom = selectedStory?.initialZoom ?? DEFAULT_ZOOM;
+  const tileAttribution = buildTileAttribution(
+    selectedStory?.tileLayerAuthor ?? null,
+    selectedStory?.tileLayerAttributionUrl ?? null,
+  );
 
   function handleSelectStory(storyId: number | null) {
     setSelectedStoryId(storyId);
@@ -50,6 +55,8 @@ function App() {
   async function handleSave(input: {
     name: string;
     tileUrlTemplate: string;
+    tileLayerAuthor: string | null;
+    tileLayerAttributionUrl: string | null;
     initialCenter: LatLng;
     initialZoom: number;
   }) {
@@ -77,6 +84,7 @@ function App() {
           key={selectedStoryId ?? 'new'}
           mapRef={mapRef}
           tileUrl={tileUrl}
+          attribution={tileAttribution}
           center={mapCenter}
           zoom={mapZoom}
         />

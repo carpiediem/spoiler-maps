@@ -61,6 +61,8 @@ afterEach(async () => {
 const exampleStory: NewStory = {
   name: 'A Song of Ice and Fire',
   tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+  tileLayerAuthor: null,
+  tileLayerAttributionUrl: null,
   initialCenter: { lat: 39.8283, lng: -98.5795 },
   initialZoom: 4,
 };
