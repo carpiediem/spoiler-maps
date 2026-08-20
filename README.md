@@ -33,7 +33,11 @@ npm install
 npm run dev
 ```
 
+<!-- markdownlint-disable MD034 -->
+
 The app will be available at http://localhost:5173.
+
+<!-- markdownlint-enable MD034 -->
 
 ## Available Scripts
 
