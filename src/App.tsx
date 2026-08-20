@@ -8,7 +8,9 @@ function App() {
 
   return (
     <div className="app">
-      <MapView tileUrl={tileUrl} />
+      <main aria-label="Map">
+        <MapView tileUrl={tileUrl} />
+      </main>
       <TileSourceSidebar onApply={setTileUrl} />
     </div>
   );

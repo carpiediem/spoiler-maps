@@ -18,4 +18,16 @@ describe('App', () => {
 
     expect(container.querySelector('.leaflet-container')).toBeInTheDocument();
   });
+
+  it('contains all content within landmark regions', () => {
+    render(<App />);
+
+    // Regression test for https://github.com/carpiediem/spoiler-maps/issues/1:
+    // the map and its Leaflet controls must live inside a landmark, or
+    // accessibility scanners flag them as unowned page content.
+    expect(screen.getByRole('main')).toContainElement(document.querySelector('.leaflet-container'));
+    expect(screen.getByRole('complementary')).toContainElement(
+      screen.getByRole('heading', { name: /tile source/i }),
+    );
+  });
 });
