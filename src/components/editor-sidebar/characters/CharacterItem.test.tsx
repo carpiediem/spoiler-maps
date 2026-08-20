@@ -251,4 +251,49 @@ describe('CharacterItem', () => {
 
     expect(onAddPosition).toHaveBeenCalledWith(3);
   });
+
+  it('lists existing positions, labeled with their chapter/episode range', async () => {
+    const character = await seedCharacter();
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      chapterRange: { startChapterId: null, endChapterId: null },
+      episodeRange: null,
+    });
+    render(<Wrapper initialCharacter={character} />);
+
+    expect(await screen.findByText('1. Always visible')).toBeInTheDocument();
+    expect(screen.getByText('2. Always visible')).toBeInTheDocument();
+  });
+
+  it('does not render a positions list for a character with none', async () => {
+    const character = await seedCharacter();
+    render(<Wrapper initialCharacter={character} />);
+
+    await screen.findByRole('button', { name: /^position$/i });
+    expect(screen.queryByText(/always visible/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the character icon in the summary instead of the color swatch when set', async () => {
+    const character = await seedCharacter({ icon: 'https://example.com/jon.png' });
+    render(<Wrapper initialCharacter={character} />);
+
+    const icon = screen.getByRole('img', { name: character.name });
+    expect(icon).toHaveAttribute('src', 'https://example.com/jon.png');
+  });
+
+  it('falls back to "Unnamed Character" as the icon alt text for a blank name', async () => {
+    const character = await seedCharacter({ name: '', icon: 'https://example.com/jon.png' });
+    render(<Wrapper initialCharacter={character} />);
+
+    expect(screen.getByRole('img', { name: /unnamed character/i })).toBeInTheDocument();
+  });
 });

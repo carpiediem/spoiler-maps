@@ -14,8 +14,14 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState, type SyntheticEvent } from 'react';
-import { listCharacterPositionsForCharacter, updateCharacter, type Character } from '../../../db';
+import {
+  listCharacterPositionsForCharacter,
+  updateCharacter,
+  type Character,
+  type CharacterPosition,
+} from '../../../db';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
+import { describePositionRange, useRangeOptions } from './rangeOptions';
 
 const DEFAULT_COLOR = '#1976d2';
 
@@ -38,13 +44,14 @@ export function CharacterItem({
   onAddPosition,
 }: CharacterItemProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [positionCount, setPositionCount] = useState<number | null>(null);
+  const [positions, setPositions] = useState<CharacterPosition[] | null>(null);
+  const { chapterOptions, episodeOptions } = useRangeOptions(character.storyId);
 
   useEffect(() => {
     let cancelled = false;
-    listCharacterPositionsForCharacter(character.id).then((positions) => {
+    listCharacterPositionsForCharacter(character.id).then((loadedPositions) => {
       if (cancelled) return;
-      setPositionCount(positions.length);
+      setPositions(loadedPositions);
     });
     return () => {
       cancelled = true;
@@ -86,17 +93,34 @@ export function CharacterItem({
         sx={{ backgroundColor: 'rgba(0, 0, 0, .03)', px: 1, minHeight: 40 }}
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-          <Box
-            sx={{
-              width: 14,
-              height: 14,
-              borderRadius: '50%',
-              backgroundColor: character.color ?? DEFAULT_COLOR,
-              border: 1,
-              borderColor: 'divider',
-              flexShrink: 0,
-            }}
-          />
+          {character.icon ? (
+            <Box
+              component="img"
+              src={character.icon}
+              alt={character.name || 'Unnamed Character'}
+              sx={{
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: 1,
+                borderColor: 'divider',
+                flexShrink: 0,
+              }}
+            />
+          ) : (
+            <Box
+              sx={{
+                width: 14,
+                height: 14,
+                borderRadius: '50%',
+                backgroundColor: character.color ?? DEFAULT_COLOR,
+                border: 1,
+                borderColor: 'divider',
+                flexShrink: 0,
+              }}
+            />
+          )}
           <Typography variant="body2" sx={{ fontWeight: 500 }}>
             {character.name || 'Unnamed Character'}
           </Typography>
@@ -169,13 +193,22 @@ export function CharacterItem({
               },
             }}
           />
+          {!!positions?.length && (
+            <Stack spacing={0.5}>
+              {positions.map((position, positionIndex) => (
+                <Typography key={position.id} variant="body2" color="text.secondary">
+                  {`${positionIndex + 1}. ${describePositionRange(position.chapterRange, position.episodeRange, chapterOptions, episodeOptions)}`}
+                </Typography>
+              ))}
+            </Stack>
+          )}
           <Button
             size="small"
             startIcon={<AddIcon fontSize="small" />}
-            // Only reachable once positionCount has loaded: disabled below
+            // Only reachable once positions have loaded: disabled below
             // while it's still null.
-            onClick={() => onAddPosition(positionCount! + 1)}
-            disabled={positionCount === null}
+            onClick={() => onAddPosition(positions!.length + 1)}
+            disabled={positions === null}
             fullWidth
           >
             Position
