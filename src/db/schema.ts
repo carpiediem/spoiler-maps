@@ -1,6 +1,6 @@
 // Bumped whenever SCHEMA_SQL changes, so a stored database from an older
 // schema version can be detected and discarded rather than opened as-is.
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const SCHEMA_SQL = `
   CREATE TABLE stories (
@@ -93,14 +93,17 @@ export const SCHEMA_SQL = `
     story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     "group" TEXT,
-    icon TEXT
+    icon TEXT,
+    color TEXT
   );
 
+  -- dead is stored as 0/1, since SQLite has no native boolean type.
   CREATE TABLE character_positions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
     lat REAL NOT NULL,
     lng REAL NOT NULL,
+    dead INTEGER NOT NULL DEFAULT 0,
     chapter_range_start_chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
     chapter_range_end_chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
     episode_range_start_episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL,

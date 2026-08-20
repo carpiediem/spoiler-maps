@@ -553,6 +553,7 @@ function rowToCharacter(row: Row): Character {
     name: row.name as string,
     group: row.group as string | null,
     icon: row.icon as string | null,
+    color: row.color as string | null,
   };
 }
 
@@ -560,8 +561,8 @@ export async function createCharacter(input: NewCharacter): Promise<Character> {
   const db = await getDatabase();
   const id = insert(
     db,
-    'INSERT INTO characters (story_id, name, "group", icon) VALUES (?, ?, ?, ?);',
-    [input.storyId, input.name, input.group, input.icon],
+    'INSERT INTO characters (story_id, name, "group", icon, color) VALUES (?, ?, ?, ?, ?);',
+    [input.storyId, input.name, input.group, input.icon, input.color],
   );
   await persist();
   return { id, ...input };
@@ -576,13 +577,10 @@ export async function listCharactersForStory(storyId: number): Promise<Character
 
 export async function updateCharacter(id: number, input: NewCharacter): Promise<void> {
   const db = await getDatabase();
-  db.run('UPDATE characters SET story_id = ?, name = ?, "group" = ?, icon = ? WHERE id = ?;', [
-    input.storyId,
-    input.name,
-    input.group,
-    input.icon,
-    id,
-  ]);
+  db.run(
+    'UPDATE characters SET story_id = ?, name = ?, "group" = ?, icon = ?, color = ? WHERE id = ?;',
+    [input.storyId, input.name, input.group, input.icon, input.color, id],
+  );
   await persist();
 }
 
@@ -597,6 +595,7 @@ function rowToCharacterPosition(row: Row): CharacterPosition {
     id: row.id as number,
     characterId: row.character_id as number,
     position: { lat: row.lat as number, lng: row.lng as number },
+    dead: (row.dead as number) !== 0,
     chapterRange: rowToChapterRange(row),
     episodeRange: rowToEpisodeRange(row),
   };
@@ -611,14 +610,15 @@ export async function createCharacterPosition(
   const id = insert(
     db,
     `INSERT INTO character_positions (
-       character_id, lat, lng,
+       character_id, lat, lng, dead,
        chapter_range_start_chapter_id, chapter_range_end_chapter_id,
        episode_range_start_episode_id, episode_range_end_episode_id
-     ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       input.characterId,
       input.position.lat,
       input.position.lng,
+      input.dead ? 1 : 0,
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
     ],
@@ -653,7 +653,7 @@ export async function updateCharacterPosition(
   assertEpisodeRangeOrder(db, input.episodeRange);
   db.run(
     `UPDATE character_positions
-     SET character_id = ?, lat = ?, lng = ?,
+     SET character_id = ?, lat = ?, lng = ?, dead = ?,
          chapter_range_start_chapter_id = ?, chapter_range_end_chapter_id = ?,
          episode_range_start_episode_id = ?, episode_range_end_episode_id = ?
      WHERE id = ?;`,
@@ -661,6 +661,7 @@ export async function updateCharacterPosition(
       input.characterId,
       input.position.lat,
       input.position.lng,
+      input.dead ? 1 : 0,
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
       id,

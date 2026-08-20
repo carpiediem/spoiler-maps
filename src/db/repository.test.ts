@@ -288,6 +288,7 @@ describe('characters', () => {
       name: 'Jon Snow',
       group: 'Stark',
       icon: null,
+      color: null,
     });
 
     expect(await listCharactersForStory(story.id)).toEqual([character]);
@@ -308,6 +309,7 @@ describe('character positions', () => {
       name: 'Jon Snow',
       group: 'Stark',
       icon: null,
+      color: null,
     });
     const book = await createBook({
       storyId: story.id,
@@ -326,6 +328,7 @@ describe('character positions', () => {
     const position = await createCharacterPosition({
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
+      dead: false,
       chapterRange: null,
       episodeRange: null,
     });
@@ -337,8 +340,26 @@ describe('character positions', () => {
       position: { lat: 10, lng: 20 },
     });
 
+    await updateCharacterPosition(position.id, { ...position, dead: true });
+    expect((await listCharacterPositionsForCharacter(character.id))[0]).toMatchObject({
+      dead: true,
+    });
+
     await deleteCharacterPosition(position.id);
     expect(await listCharacterPositionsForCharacter(character.id)).toEqual([]);
+  });
+
+  it('creates a position already marked dead', async () => {
+    const { character } = await seedCharacterAndBook();
+    const position = await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 54.5, lng: -1.5 },
+      dead: true,
+      chapterRange: null,
+      episodeRange: null,
+    });
+
+    expect(await listCharacterPositionsForCharacter(character.id)).toEqual([position]);
   });
 
   it('round-trips a bounded chapter range', async () => {
@@ -346,6 +367,7 @@ describe('character positions', () => {
     const position = await createCharacterPosition({
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
+      dead: false,
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
     });
@@ -358,6 +380,7 @@ describe('character positions', () => {
     const position = await createCharacterPosition({
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
+      dead: false,
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id },
       episodeRange: null,
     });
@@ -372,6 +395,7 @@ describe('character positions', () => {
       name: 'Jon Snow',
       group: 'Stark',
       icon: null,
+      color: null,
     });
     const book1 = await createBook({
       storyId: story.id,
@@ -401,6 +425,7 @@ describe('character positions', () => {
     const position = await createCharacterPosition({
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
+      dead: false,
       chapterRange: { startChapterId: book1Chapter10.id, endChapterId: book2Chapter5.id },
       episodeRange: null,
     });
@@ -415,6 +440,7 @@ describe('character positions', () => {
       createCharacterPosition({
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
+        dead: false,
         chapterRange: { startChapterId: chapter2.id, endChapterId: chapter1.id },
         episodeRange: null,
       }),
@@ -428,6 +454,7 @@ describe('character positions', () => {
       createCharacterPosition({
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
+        dead: false,
         chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id + 1000 },
         episodeRange: null,
       }),
@@ -439,6 +466,7 @@ describe('character positions', () => {
     const position = await createCharacterPosition({
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
+      dead: false,
       chapterRange: { startChapterId: chapter1.id, endChapterId: null },
       episodeRange: null,
     });
@@ -451,6 +479,7 @@ describe('character positions', () => {
     const position = await createCharacterPosition({
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
+      dead: false,
       chapterRange: { startChapterId: null, endChapterId: null },
       episodeRange: null,
     });
@@ -468,6 +497,7 @@ describe('character positions', () => {
       name: 'Jon Snow',
       group: 'Stark',
       icon: null,
+      color: null,
     });
     const season = await createTvSeason({ storyId: story.id, url: null, sortOrder: 0 });
     const episode1 = await createEpisode({
@@ -490,6 +520,7 @@ describe('character positions', () => {
     const position = await createCharacterPosition({
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
+      dead: false,
       chapterRange: null,
       episodeRange: { startEpisodeId: episode1.id, endEpisodeId: episode2.id },
     });
@@ -502,6 +533,7 @@ describe('character positions', () => {
     const position = await createCharacterPosition({
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
+      dead: false,
       chapterRange: null,
       episodeRange: { startEpisodeId: episode1.id, endEpisodeId: null },
     });
@@ -516,6 +548,7 @@ describe('character positions', () => {
       createCharacterPosition({
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
+        dead: false,
         chapterRange: null,
         episodeRange: { startEpisodeId: episode2.id, endEpisodeId: episode1.id },
       }),
@@ -529,6 +562,7 @@ describe('character positions', () => {
       createCharacterPosition({
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
+        dead: false,
         chapterRange: null,
         episodeRange: { startEpisodeId: episode1.id, endEpisodeId: episode1.id + 1000 },
       }),
@@ -540,6 +574,7 @@ describe('character positions', () => {
     const position = await createCharacterPosition({
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
+      dead: false,
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
     });
@@ -559,6 +594,7 @@ describe('character positions', () => {
     await createCharacterPosition({
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
+      dead: false,
       chapterRange: null,
       episodeRange: null,
     });

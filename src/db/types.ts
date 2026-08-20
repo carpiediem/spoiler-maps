@@ -97,6 +97,8 @@ export interface Character {
   name: string;
   group: string | null;
   icon: string | null;
+  /** CSS color (e.g. a hex string), used for the character's icon and/or positions. */
+  color: string | null;
 }
 
 /**
@@ -109,6 +111,8 @@ export interface CharacterPosition {
   id: number;
   characterId: number;
   position: LatLng;
+  /** Whether the character has died as of this position. */
+  dead: boolean;
   chapterRange: ChapterRange | null;
   episodeRange: EpisodeRange | null;
 }
