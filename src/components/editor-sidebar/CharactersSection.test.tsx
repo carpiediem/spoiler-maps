@@ -768,6 +768,7 @@ describe('CharactersSection', () => {
           points: [
             { lat: 2, lng: 2 },
             { lat: 1.5, lng: 1.5 },
+            { lat: 1, lng: 1 },
           ],
           color: '#ff0000',
           opacity: 1,
@@ -1003,7 +1004,7 @@ describe('CharactersSection', () => {
       position: { lat: 2, lng: 2 },
       dead: false,
       note: null,
-      tail: null,
+      tail: [{ lat: 1.5, lng: 1.5 }],
       chapterRange: null,
       episodeRange: null,
     });
@@ -1052,6 +1053,18 @@ describe('CharactersSection', () => {
         points: [
           { lat: 1, lng: 1 },
           { lat: 0.5, lng: 0.5 },
+        ],
+        color: '#ff0000',
+        opacity: 0.75,
+      },
+      {
+        characterId: jon.id,
+        // A trailing point of the preceding position's own lat/lng, so the
+        // tail visually connects to it rather than dead-ending mid-map.
+        points: [
+          { lat: 2, lng: 2 },
+          { lat: 1.5, lng: 1.5 },
+          { lat: 1, lng: 1 },
         ],
         color: '#ff0000',
         opacity: 0.75,

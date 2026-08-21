@@ -123,9 +123,14 @@ export function CharactersSection({
         });
 
         if (position.tail && position.tail.length > 0) {
+          const precedingPosition = positions?.[positionIndex - 1];
           tails.push({
             characterId: expandedCharacterId,
-            points: [position.position, ...position.tail],
+            points: [
+              position.position,
+              ...position.tail,
+              ...(precedingPosition ? [precedingPosition.position] : []),
+            ],
             color,
             opacity: 1,
           });
@@ -166,9 +171,14 @@ export function CharactersSection({
         });
 
         if (position.tail && position.tail.length > 0) {
+          const precedingPosition = positions[positionIndex - 1];
           tails.push({
             characterId,
-            points: [position.position, ...position.tail],
+            points: [
+              position.position,
+              ...position.tail,
+              ...(precedingPosition ? [precedingPosition.position] : []),
+            ],
             color,
             opacity: 0.75,
           });
