@@ -2,19 +2,23 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutlined';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import {
   Alert,
+  Box,
   Button,
+  Divider,
   FormControl,
   IconButton,
   InputAdornment,
+  InputBase,
   InputLabel,
   Stack,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Controller,
+  useFormState,
   useWatch,
   type Control,
   type FieldErrors,
@@ -22,8 +26,13 @@ import {
 } from 'react-hook-form';
 import type { LatLng } from '../../db';
 import { resolveTileUrlTemplate } from '../../lib/tileUrl';
+import { detectMaxZoom } from '../../lib/zoomLimitDetection';
 import { TileUrlHelpDialog } from './TileUrlHelpDialog';
 import type { FormValues } from './formValues';
+
+// How long to wait, after the tile URL field stops changing, before probing
+// it for zoom limits — avoids firing off a probe per keystroke.
+const ZOOM_DETECTION_DEBOUNCE_MS = 600;
 
 interface MapSectionProps {
   control: Control<FormValues>;
@@ -45,6 +54,7 @@ export function MapSection({
   const initialCenter = useWatch({ control, name: 'initialCenter' });
   const initialZoom = useWatch({ control, name: 'initialZoom' });
   const tileUrlValue = useWatch({ control, name: 'tileUrlValue' });
+  const minZoom = useWatch({ control, name: 'minZoom' });
   const hasValidTileUrl = !!resolveTileUrlTemplate(tileUrlValue);
   const hasMapMoved =
     mapPosition !== null &&
@@ -53,6 +63,39 @@ export function MapSection({
       mapPosition.zoom !== initialZoom);
 
   const [isTileUrlHelpOpen, setIsTileUrlHelpOpen] = useState(false);
+  const [isDetectingZoom, setIsDetectingZoom] = useState(false);
+
+  // Only a user actually editing the URL (not a story load/reset, which
+  // also changes tileUrlValue) should trigger a network probe.
+  const { dirtyFields } = useFormState({ control, name: 'tileUrlValue' });
+  const isTileUrlDirty = !!dirtyFields.tileUrlValue;
+
+  useEffect(() => {
+    const resolved = isTileUrlDirty ? resolveTileUrlTemplate(tileUrlValue) : null;
+    if (!resolved) return;
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      setIsDetectingZoom(true);
+      detectMaxZoom(resolved, initialCenter, minZoom, undefined, controller.signal)
+        .then((detected) => {
+          if (detected !== null) {
+            setValue('maxZoom', detected, { shouldDirty: true });
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setIsDetectingZoom(false);
+        });
+    }, ZOOM_DETECTION_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+    // Only re-probe when the URL itself changes — initialCenter/minZoom are
+    // read at probe time, not re-triggers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tileUrlValue, isTileUrlDirty]);
 
   function handleCapturePosition() {
     const position = onCaptureMapPosition();
@@ -61,7 +104,8 @@ export function MapSection({
     setValue('initialZoom', position.zoom, { shouldDirty: true });
   }
 
-  const errorMessage = errors.name?.message ?? errors.tileUrlValue?.message;
+  const errorMessage =
+    errors.name?.message ?? errors.tileUrlValue?.message ?? errors.maxZoom?.message;
 
   return (
     <Stack spacing={2}>
@@ -125,6 +169,78 @@ export function MapSection({
 
       {hasValidTileUrl && (
         <Stack spacing={2} sx={{ pl: 2 }}>
+          <Box sx={{ position: 'relative', border: 1, borderColor: 'divider', borderRadius: 1 }}>
+            <InputLabel
+              shrink
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 8,
+                transform: 'translateY(-50%)',
+                px: 0.5,
+                fontSize: '0.75rem',
+                backgroundColor: 'background.paper',
+                width: 'fit-content',
+              }}
+            >
+              Zoom Range
+            </InputLabel>
+            {isDetectingZoom && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 8,
+                  transform: 'translateY(-50%)',
+                  px: 0.5,
+                  backgroundColor: 'background.paper',
+                }}
+              >
+                Detecting…
+              </Typography>
+            )}
+            <Stack direction="row" sx={{ alignItems: 'center', px: '14px', py: '4.5px' }}>
+              <Controller
+                name="minZoom"
+                control={control}
+                render={({ field }) => (
+                  <InputBase
+                    {...field}
+                    type="number"
+                    inputProps={{ 'aria-label': 'Minimum zoom' }}
+                    onChange={(event) =>
+                      field.onChange((event.target as HTMLInputElement).valueAsNumber)
+                    }
+                    sx={{ flex: 1, fontSize: '0.875rem' }}
+                  />
+                )}
+              />
+              <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+              <Controller
+                name="maxZoom"
+                control={control}
+                rules={{
+                  validate: (value, formValues) =>
+                    value >= formValues.minZoom ||
+                    'The zoom range maximum must not be less than the minimum.',
+                }}
+                render={({ field }) => (
+                  <InputBase
+                    {...field}
+                    type="number"
+                    inputProps={{ 'aria-label': 'Maximum zoom' }}
+                    onChange={(event) =>
+                      field.onChange((event.target as HTMLInputElement).valueAsNumber)
+                    }
+                    sx={{ flex: 1, fontSize: '0.875rem' }}
+                  />
+                )}
+              />
+            </Stack>
+          </Box>
+
           <Controller
             name="tileLayerAuthor"
             control={control}

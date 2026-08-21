@@ -1,7 +1,8 @@
 import { Box, Paper } from '@mui/material';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
-import type { LatLng, Story } from '../db';
+import type { CharacterPosition, LatLng, Story } from '../db';
+import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
 import { storyToFormValues, type FormValues } from './editor-sidebar/formValues';
@@ -21,14 +22,14 @@ const HASH_PATTERN = /^#(map|books|television|characters|markers)(?:-(\d+))?$/;
 
 interface HashTarget {
   section: SectionId;
-  /** 1-based index of the book/season named by a #books-N or #television-N fragment. */
+  /** 1-based index of the book/season/character named by a #books-N, #television-N, or #characters-N fragment. */
   itemIndex: number | null;
 }
 
 // Reads a #section or #section-N fragment (e.g. #books, #books-1,
-// #television-2). A section other than Map only exists once a story has
-// been saved, so the fragment is ignored (rather than left pending) while
-// selectedStoryId is still null.
+// #television-2, #characters-1). A section other than Map only exists once
+// a story has been saved, so the fragment is ignored (rather than left
+// pending) while selectedStoryId is still null.
 function parseHash(hash: string, selectedStoryId: number | null): HashTarget | null {
   const match = hash.match(HASH_PATTERN);
   if (!match) return null;
@@ -38,7 +39,9 @@ function parseHash(hash: string, selectedStoryId: number | null): HashTarget | n
   return {
     section: section as SectionId,
     itemIndex:
-      (section === 'books' || section === 'television') && indexStr ? Number(indexStr) : null,
+      (section === 'books' || section === 'television' || section === 'characters') && indexStr
+        ? Number(indexStr)
+        : null,
   };
 }
 
@@ -53,14 +56,44 @@ interface EditorSidebarProps {
     tileLayerAttributionUrl: string | null;
     initialCenter: LatLng;
     initialZoom: number;
+    minZoom: number;
+    maxZoom: number;
   }) => void;
   onCaptureMapPosition: () => { center: LatLng; zoom: number } | null;
   /** The map's current live position, to tell whether it has moved from what's stored in the form. */
   mapPosition: { center: LatLng; zoom: number } | null;
   /** The draggable pin's current lat/lng while editing a character position. */
   draftPosition: LatLng | null;
-  onStartEditingPosition: () => void;
-  onEndEditingPosition: () => void;
+  /** Which character/position is currently open in the Position panel, if any. */
+  activePosition: {
+    characterId: number;
+    index: number;
+    existing: CharacterPosition | null;
+  } | null;
+  /** Called with (characterId, 1-based new position index, character color) when "+ Position" is clicked. */
+  onAddPosition: (characterId: number, index: number, color: string | null) => void;
+  /** Called with (characterId, 1-based index, position, character color) when an existing position is clicked. */
+  onEditPosition: (
+    characterId: number,
+    index: number,
+    position: CharacterPosition,
+    color: string | null,
+  ) => void;
+  /** Called when the Position panel's back arrow is clicked. */
+  onBackFromPosition: () => void;
+  /** Bumped whenever a position editing session ends, so each CharacterItem re-fetches its list. */
+  positionsVersion: number;
+  /** Called with the expanded character's numbered position pins, or null once collapsed. */
+  onVisiblePositionsChange: (pins: CharacterPositionPin[] | null) => void;
+  /** Called with the tails to draw for every character toggled visible on the map. */
+  onVisibleTailsChange: (tails: CharacterTailOverlay[]) => void;
+  /** Whether the map is currently in tail-drawing mode. */
+  isDrawingTail: boolean;
+  /** Points clicked so far while drawing a tail. */
+  tailDraftPoints: LatLng[];
+  onStartDrawingTail: () => void;
+  /** Called when Save or Cancel is clicked, to leave drawing mode either way. */
+  onFinishDrawingTail: () => void;
 }
 
 export function EditorSidebar({
@@ -71,8 +104,17 @@ export function EditorSidebar({
   onCaptureMapPosition,
   mapPosition,
   draftPosition,
-  onStartEditingPosition,
-  onEndEditingPosition,
+  activePosition,
+  onAddPosition,
+  onEditPosition,
+  onBackFromPosition,
+  positionsVersion,
+  onVisiblePositionsChange,
+  onVisibleTailsChange,
+  isDrawingTail,
+  tailDraftPoints,
+  onStartDrawingTail,
+  onFinishDrawingTail,
 }: EditorSidebarProps) {
   const {
     control,
@@ -97,17 +139,6 @@ export function EditorSidebar({
   const [charactersCount, setCharactersCount] = useState<number>();
   const [markersCount, setMarkersCount] = useState<number>();
 
-  // When set, the sidebar slides its main content out to the left and
-  // slides a Position form in from the right, in place of the accordion
-  // list — rather than opening a nested dialog like chapters/episodes,
-  // since a position is edited less like "one more row in a list" and
-  // more like a small dedicated screen of its own.
-  const [activePosition, setActivePosition] = useState<{
-    characterId: number;
-    index: number;
-  } | null>(null);
-  const [positionsVersion, setPositionsVersion] = useState(0);
-
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
   // from under whatever the user is typing — only an actual change of
@@ -121,8 +152,6 @@ export function EditorSidebar({
     const story = stories.find((candidate) => candidate.id === selectedStoryId) ?? null;
     reset(storyToFormValues(story));
     setExpandedSection('map');
-    setActivePosition(null);
-    onEndEditingPosition();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStoryId, stories, reset]);
 
@@ -152,6 +181,8 @@ export function EditorSidebar({
       tileLayerAttributionUrl: data.tileLayerAttributionUrl.trim() || null,
       initialCenter: data.initialCenter,
       initialZoom: data.initialZoom,
+      minZoom: data.minZoom,
+      maxZoom: data.maxZoom,
     });
     // Marks these values (with tileUrlValue normalized to the resolved
     // template, in case a real tile URL was extrapolated) as the new clean
@@ -165,21 +196,6 @@ export function EditorSidebar({
     return (_event: SyntheticEvent, isExpanded: boolean) => {
       setExpandedSection(isExpanded ? section : false);
     };
-  }
-
-  function handleAddPosition(characterId: number, index: number) {
-    setActivePosition({ characterId, index });
-    onStartEditingPosition();
-  }
-
-  function handleBackFromPosition() {
-    setActivePosition(null);
-    onEndEditingPosition();
-    // Bumps a value each character's CharacterItem depends on when
-    // re-fetching its positions list, so the list picks up whatever was
-    // just created/updated while its accordion stayed mounted (and
-    // silently stale) behind the Position panel.
-    setPositionsVersion((previous) => previous + 1);
   }
 
   return (
@@ -269,9 +285,13 @@ export function EditorSidebar({
                 >
                   <CharactersSection
                     storyId={selectedStoryId}
+                    initialExpandedIndex={expandedSection === 'characters' ? hashItemIndex : null}
                     onCountChange={setCharactersCount}
-                    onAddPosition={handleAddPosition}
+                    onAddPosition={onAddPosition}
+                    onEditPosition={onEditPosition}
                     positionsVersion={positionsVersion}
+                    onVisiblePositionsChange={onVisiblePositionsChange}
+                    onVisibleTailsChange={onVisibleTailsChange}
                   />
                 </SidebarSection>
 
@@ -290,7 +310,16 @@ export function EditorSidebar({
         </Box>
 
         <Box
-          sx={{ width: '50%', flexShrink: 0, boxSizing: 'border-box', p: 2, ...SIDEBAR_HEIGHT_SX }}
+          sx={{
+            width: '50%',
+            flexShrink: 0,
+            boxSizing: 'border-box',
+            p: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            height: SIDEBAR_HEIGHT_SX.maxHeight,
+            overflowY: SIDEBAR_HEIGHT_SX.overflowY,
+          }}
         >
           {activePosition && selectedStoryId !== null && (
             <PositionPanel
@@ -298,7 +327,12 @@ export function EditorSidebar({
               characterId={activePosition.characterId}
               index={activePosition.index}
               position={draftPosition}
-              onBack={handleBackFromPosition}
+              existingPosition={activePosition.existing}
+              onBack={onBackFromPosition}
+              isDrawingTail={isDrawingTail}
+              tailDraftPoints={tailDraftPoints}
+              onStartDrawingTail={onStartDrawingTail}
+              onFinishDrawingTail={onFinishDrawingTail}
             />
           )}
         </Box>

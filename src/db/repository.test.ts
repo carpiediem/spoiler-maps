@@ -65,6 +65,8 @@ const exampleStory: NewStory = {
   tileLayerAttributionUrl: null,
   initialCenter: { lat: 39.8283, lng: -98.5795 },
   initialZoom: 4,
+  minZoom: 0,
+  maxZoom: 19,
 };
 
 async function seedStory() {
@@ -296,6 +298,7 @@ describe('characters', () => {
       group: 'Stark',
       icon: null,
       color: null,
+      sortOrder: 0,
     });
 
     expect(await listCharactersForStory(story.id)).toEqual([character]);
@@ -317,6 +320,7 @@ describe('character positions', () => {
       group: 'Stark',
       icon: null,
       color: null,
+      sortOrder: 1,
     });
     const book = await createBook({
       storyId: story.id,
@@ -346,6 +350,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -360,10 +366,35 @@ describe('character positions', () => {
     await updateCharacterPosition(position.id, { ...position, dead: true });
     expect((await listCharacterPositionsForCharacter(character.id))[0]).toMatchObject({
       dead: true,
+      note: null,
+      tail: null,
     });
 
     await deleteCharacterPosition(position.id);
     expect(await listCharacterPositionsForCharacter(character.id)).toEqual([]);
+  });
+
+  it('round-trips a tail', async () => {
+    const { character } = await seedCharacterAndBook();
+    const position = await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 54.5, lng: -1.5 },
+      dead: false,
+      note: null,
+      tail: [
+        { lat: 54.6, lng: -1.6 },
+        { lat: 54.7, lng: -1.7 },
+      ],
+      chapterRange: null,
+      episodeRange: null,
+    });
+
+    expect(await listCharacterPositionsForCharacter(character.id)).toEqual([position]);
+
+    await updateCharacterPosition(position.id, { ...position, tail: null });
+    expect((await listCharacterPositionsForCharacter(character.id))[0]).toMatchObject({
+      tail: null,
+    });
   });
 
   it('creates a position already marked dead', async () => {
@@ -372,6 +403,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: true,
+      note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -385,6 +418,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
+      tail: null,
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
     });
@@ -398,6 +433,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
+      tail: null,
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id },
       episodeRange: null,
     });
@@ -413,6 +450,7 @@ describe('character positions', () => {
       group: 'Stark',
       icon: null,
       color: null,
+      sortOrder: 2,
     });
     const book1 = await createBook({
       storyId: story.id,
@@ -445,6 +483,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
+      tail: null,
       chapterRange: { startChapterId: book1Chapter10.id, endChapterId: book2Chapter5.id },
       episodeRange: null,
     });
@@ -460,6 +500,8 @@ describe('character positions', () => {
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
         dead: false,
+        note: null,
+        tail: null,
         chapterRange: { startChapterId: chapter2.id, endChapterId: chapter1.id },
         episodeRange: null,
       }),
@@ -474,6 +516,8 @@ describe('character positions', () => {
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
         dead: false,
+        note: null,
+        tail: null,
         chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id + 1000 },
         episodeRange: null,
       }),
@@ -486,6 +530,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
+      tail: null,
       chapterRange: { startChapterId: chapter1.id, endChapterId: null },
       episodeRange: null,
     });
@@ -499,6 +545,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
+      tail: null,
       chapterRange: { startChapterId: null, endChapterId: null },
       episodeRange: null,
     });
@@ -517,6 +565,7 @@ describe('character positions', () => {
       group: 'Stark',
       icon: null,
       color: null,
+      sortOrder: 3,
     });
     const season = await createTvSeason({ storyId: story.id, url: null, sortOrder: 0 });
     const episode1 = await createEpisode({
@@ -540,6 +589,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: { startEpisodeId: episode1.id, endEpisodeId: episode2.id },
     });
@@ -553,6 +604,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: { startEpisodeId: episode1.id, endEpisodeId: null },
     });
@@ -568,6 +621,8 @@ describe('character positions', () => {
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
         dead: false,
+        note: null,
+        tail: null,
         chapterRange: null,
         episodeRange: { startEpisodeId: episode2.id, endEpisodeId: episode1.id },
       }),
@@ -582,6 +637,8 @@ describe('character positions', () => {
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
         dead: false,
+        note: null,
+        tail: null,
         chapterRange: null,
         episodeRange: { startEpisodeId: episode1.id, endEpisodeId: episode1.id + 1000 },
       }),
@@ -594,6 +651,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
+      tail: null,
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
     });
@@ -614,6 +673,8 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });

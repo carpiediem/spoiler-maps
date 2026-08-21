@@ -5,11 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createBook,
   createCharacter,
+  createCharacterPosition,
   createChapter,
   createEpisode,
   createStory,
   createTvSeason,
   listCharacterPositionsForCharacter,
+  type CharacterPosition,
   type LatLng,
 } from '../../db';
 import { resetDatabaseForTests } from '../../db/client';
@@ -40,6 +42,8 @@ async function seedStoryId(): Promise<number> {
     tileLayerAttributionUrl: null,
     initialCenter: { lat: 0, lng: 0 },
     initialZoom: 4,
+    minZoom: 0,
+    maxZoom: 19,
   });
   return story.id;
 }
@@ -52,14 +56,33 @@ async function seedCharacter(): Promise<{ storyId: number; characterId: number }
     group: null,
     icon: null,
     color: null,
+    sortOrder: 0,
   });
   return { storyId, characterId: character.id };
 }
 
 const INITIAL_POSITION: LatLng = { lat: 39.8283, lng: -98.5795 };
 
-function DraggableWrapper({ storyId, characterId }: { storyId: number; characterId: number }) {
-  const [position, setPosition] = useState<LatLng | null>(INITIAL_POSITION);
+function DraggableWrapper({
+  storyId,
+  characterId,
+  existingPosition = null,
+  isDrawingTail = false,
+  tailDraftPoints = [],
+  onStartDrawingTail,
+  onFinishDrawingTail,
+}: {
+  storyId: number;
+  characterId: number;
+  existingPosition?: CharacterPosition | null;
+  isDrawingTail?: boolean;
+  tailDraftPoints?: LatLng[];
+  onStartDrawingTail?: () => void;
+  onFinishDrawingTail?: () => void;
+}) {
+  const [position, setPosition] = useState<LatLng | null>(
+    existingPosition?.position ?? INITIAL_POSITION,
+  );
   return (
     <>
       <PositionPanel
@@ -68,6 +91,11 @@ function DraggableWrapper({ storyId, characterId }: { storyId: number; character
         index={1}
         position={position}
         onBack={vi.fn()}
+        existingPosition={existingPosition}
+        isDrawingTail={isDrawingTail}
+        tailDraftPoints={tailDraftPoints}
+        onStartDrawingTail={onStartDrawingTail ?? vi.fn()}
+        onFinishDrawingTail={onFinishDrawingTail ?? vi.fn()}
       />
       <button onClick={() => setPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag 1</button>
       <button onClick={() => setPosition({ lat: 40.7128, lng: -74.006 })}>Simulate drag 2</button>
@@ -81,7 +109,18 @@ describe('PositionPanel', () => {
     const onBack = vi.fn();
     const user = userEvent.setup();
     render(
-      <PositionPanel storyId={storyId} characterId={1} index={3} position={null} onBack={onBack} />,
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={3}
+        position={null}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+        onBack={onBack}
+      />,
     );
 
     expect(screen.getByText('Position 3')).toBeInTheDocument();
@@ -99,6 +138,11 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -114,6 +158,11 @@ describe('PositionPanel', () => {
         index={1}
         position={{ lat: 51.5, lng: -0.1278 }}
         onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -129,6 +178,11 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -163,6 +217,11 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -198,6 +257,11 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -205,10 +269,10 @@ describe('PositionPanel', () => {
     await user.click(screen.getByLabelText(/^start episode$/i));
 
     expect(
-      await screen.findByRole('option', { name: '1. Season 1: Winter Is Coming' }),
+      await screen.findByRole('option', { name: '1. S01E01: Winter Is Coming' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('option', { name: '2. Season 2: The North Remembers' }),
+      screen.getByRole('option', { name: '2. S02E01: The North Remembers' }),
     ).toBeInTheDocument();
   });
 
@@ -229,6 +293,11 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -251,13 +320,18 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
     await user.click(await screen.findByLabelText(/^start episode$/i));
 
     expect(
-      await screen.findByRole('option', { name: '1. Season 1: Untitled Episode' }),
+      await screen.findByRole('option', { name: '1. S01E01: Untitled Episode' }),
     ).toBeInTheDocument();
   });
 
@@ -279,6 +353,11 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -303,6 +382,11 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -311,6 +395,137 @@ describe('PositionPanel', () => {
 
     await user.click(deadCheckbox);
     expect(deadCheckbox).toBeChecked();
+  });
+
+  it('types into the Note field', async () => {
+    const storyId = await seedStoryId();
+    const user = userEvent.setup();
+    render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    const noteField = screen.getByLabelText(/^note$/i);
+    await user.type(noteField, 'Hiding at the Wall');
+
+    expect(noteField).toHaveValue('Hiding at the Wall');
+  });
+
+  it('shows the "Add a tail" button with its tooltip, disabled until a position is set', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const user = userEvent.setup();
+    const onStartDrawingTail = vi.fn();
+    const { rerender } = render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={characterId}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={onStartDrawingTail}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    const tailButton = screen.getByRole('button', { name: /add a tail/i });
+    expect(tailButton).toBeDisabled();
+
+    // Hover the Tooltip's wrapping <span>, not the disabled button itself:
+    // a disabled element gets pointer-events: none, which blocks hover.
+    await user.hover(tailButton.parentElement!);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Add a tail');
+
+    rerender(
+      <PositionPanel
+        storyId={storyId}
+        characterId={characterId}
+        index={1}
+        position={{ lat: 51.5, lng: -0.1278 }}
+        onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={onStartDrawingTail}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    const enabledTailButton = screen.getByRole('button', { name: /add a tail/i });
+    expect(enabledTailButton).toBeEnabled();
+    await user.click(enabledTailButton);
+    expect(onStartDrawingTail).toHaveBeenCalledTimes(1);
+
+    await waitFor(async () => {
+      expect(await listCharacterPositionsForCharacter(characterId)).toHaveLength(1);
+    });
+  });
+
+  it('shows Save/Cancel instead of the tail button while drawing, and Save persists the drawn points', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const onFinishDrawingTail = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        isDrawingTail
+        tailDraftPoints={[
+          { lat: 51.5, lng: -0.1278 },
+          { lat: 52, lng: -1 },
+        ]}
+        onFinishDrawingTail={onFinishDrawingTail}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /add a tail/i })).not.toBeInTheDocument();
+    // The marker itself must actually move before any position row exists
+    // to attach a tail to.
+    await user.click(screen.getByRole('button', { name: /simulate drag 1/i }));
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(onFinishDrawingTail).toHaveBeenCalledTimes(1);
+    await waitFor(async () => {
+      const [saved] = await listCharacterPositionsForCharacter(characterId);
+      expect(saved.tail).toEqual([
+        { lat: 51.5, lng: -0.1278 },
+        { lat: 52, lng: -1 },
+      ]);
+    });
+  });
+
+  it('discards the drawn points when Cancel is clicked', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const onFinishDrawingTail = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        isDrawingTail
+        tailDraftPoints={[{ lat: 51.5, lng: -0.1278 }]}
+        onFinishDrawingTail={onFinishDrawingTail}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+    expect(onFinishDrawingTail).toHaveBeenCalledTimes(1);
+    // Nothing has moved yet, so no position row exists at all — proving
+    // Cancel didn't trigger a save.
+    expect(await listCharacterPositionsForCharacter(characterId)).toEqual([]);
   });
 
   it('does not update state after unmounting while books/seasons are still loading', async () => {
@@ -322,6 +537,11 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -353,6 +573,51 @@ describe('PositionPanel', () => {
     const [saved] = await listCharacterPositionsForCharacter(characterId);
     expect(saved.position).toEqual({ lat: 51.5, lng: -0.1278 });
     expect(saved.dead).toBe(false);
+    expect(saved.note).toBeNull();
+  });
+
+  it('saves a typed note, trimmed, as part of the created position', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const user = userEvent.setup();
+    render(<DraggableWrapper storyId={storyId} characterId={characterId} />);
+
+    await user.type(screen.getByLabelText(/^note$/i), '  Hiding at the Wall  ');
+    await user.click(screen.getByRole('button', { name: /simulate drag 1/i }));
+
+    await waitFor(async () => {
+      const [saved] = await listCharacterPositionsForCharacter(characterId);
+      expect(saved.note).toBe('Hiding at the Wall');
+    });
+  });
+
+  it('clears a blank note back to null', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      note: 'Hiding at the Wall',
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+      />,
+    );
+
+    const noteField = screen.getByLabelText(/^note$/i);
+    expect(noteField).toHaveValue('Hiding at the Wall');
+    await user.clear(noteField);
+
+    await waitFor(async () => {
+      const [updated] = await listCharacterPositionsForCharacter(characterId);
+      expect(updated.note).toBeNull();
+    });
   });
 
   it('updates the same position row on further marker moves and field changes', async () => {
@@ -382,5 +647,131 @@ describe('PositionPanel', () => {
     expect(allPositions).toHaveLength(1);
     expect(allPositions[0]!.id).toBe(firstSaved.id);
     expect(allPositions[0]!.dead).toBe(true);
+  });
+
+  it('prefills its fields from an existing position', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: true,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+      />,
+    );
+
+    expect(screen.getByRole('checkbox', { name: /dead/i })).toBeChecked();
+  });
+
+  it('prefills the chapter and episode range selects from an existing position', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter = await createChapter({
+      bookId: book.id,
+      name: 'Prologue',
+      url: null,
+      sortOrder: 0,
+    });
+    const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
+    const episode = await createEpisode({
+      seasonId: season.id,
+      name: 'Winter Is Coming',
+      url: null,
+      sortOrder: 0,
+    });
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: { startChapterId: chapter.id, endChapterId: null },
+      episodeRange: { startEpisodeId: episode.id, endEpisodeId: null },
+    });
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+      />,
+    );
+
+    expect(await screen.findByLabelText(/^start chapter$/i)).toHaveTextContent('1. AGOT: Prologue');
+    expect(screen.getByLabelText(/^end chapter$/i)).toHaveTextContent('Open');
+    expect(screen.getByLabelText(/^start episode$/i)).toHaveTextContent(
+      '1. S01E01: Winter Is Coming',
+    );
+  });
+
+  it('does not write to the database merely from opening an existing position', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+      />,
+    );
+
+    await screen.findByRole('checkbox', { name: /dead/i });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const [current] = await listCharacterPositionsForCharacter(characterId);
+    expect(current).toEqual(existingPosition);
+  });
+
+  it('updates (rather than duplicates) an existing position when its marker moves', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /simulate drag 1/i }));
+
+    await waitFor(async () => {
+      const [updated] = await listCharacterPositionsForCharacter(characterId);
+      expect(updated.position).toEqual({ lat: 51.5, lng: -0.1278 });
+    });
+
+    const allPositions = await listCharacterPositionsForCharacter(characterId);
+    expect(allPositions).toHaveLength(1);
+    expect(allPositions[0]!.id).toBe(existingPosition.id);
   });
 });

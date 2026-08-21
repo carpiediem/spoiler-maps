@@ -13,6 +13,8 @@ function makeStory(overrides: Partial<Story>): Story {
     tileLayerAttributionUrl: null,
     initialCenter: { lat: 0, lng: 0 },
     initialZoom: 4,
+    minZoom: 0,
+    maxZoom: 19,
     ...overrides,
   };
 }

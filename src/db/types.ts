@@ -12,6 +12,9 @@ export interface Story {
   tileLayerAttributionUrl: string | null;
   initialCenter: LatLng;
   initialZoom: number;
+  /** Limits how far Leaflet's zoom control will let the map zoom out/in. */
+  minZoom: number;
+  maxZoom: number;
 }
 
 export interface Book {
@@ -103,6 +106,8 @@ export interface Character {
   icon: string | null;
   /** CSS color (e.g. a hex string), used for the character's icon and/or positions. */
   color: string | null;
+  /** Fractional index, zero-based; see ordering.ts. Not a display number. */
+  sortOrder: number;
 }
 
 /**
@@ -117,6 +122,9 @@ export interface CharacterPosition {
   position: LatLng;
   /** Whether the character has died as of this position. */
   dead: boolean;
+  note: string | null;
+  /** A path leading away from this position's own lat/lng, e.g. a journey. */
+  tail: LatLng[] | null;
   chapterRange: ChapterRange | null;
   episodeRange: EpisodeRange | null;
 }

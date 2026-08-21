@@ -71,6 +71,8 @@ function rowToStory(row: Row): Story {
       lng: row.initial_center_lng as number,
     },
     initialZoom: row.initial_zoom as number,
+    minZoom: row.min_zoom as number,
+    maxZoom: row.max_zoom as number,
   };
 }
 
@@ -80,8 +82,8 @@ export async function createStory(input: NewStory): Promise<Story> {
     db,
     `INSERT INTO stories (
        name, tile_url_template, tile_layer_author, tile_layer_attribution_url,
-       initial_center_lat, initial_center_lng, initial_zoom
-     ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
+       initial_center_lat, initial_center_lng, initial_zoom, min_zoom, max_zoom
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       input.name,
       input.tileUrlTemplate,
@@ -90,6 +92,8 @@ export async function createStory(input: NewStory): Promise<Story> {
       input.initialCenter.lat,
       input.initialCenter.lng,
       input.initialZoom,
+      input.minZoom,
+      input.maxZoom,
     ],
   );
   await persist();
@@ -111,7 +115,7 @@ export async function updateStory(id: number, input: NewStory): Promise<void> {
   db.run(
     `UPDATE stories
      SET name = ?, tile_url_template = ?, tile_layer_author = ?, tile_layer_attribution_url = ?,
-         initial_center_lat = ?, initial_center_lng = ?, initial_zoom = ?
+         initial_center_lat = ?, initial_center_lng = ?, initial_zoom = ?, min_zoom = ?, max_zoom = ?
      WHERE id = ?;`,
     [
       input.name,
@@ -121,6 +125,8 @@ export async function updateStory(id: number, input: NewStory): Promise<void> {
       input.initialCenter.lat,
       input.initialCenter.lng,
       input.initialZoom,
+      input.minZoom,
+      input.maxZoom,
       id,
     ],
   );
@@ -565,6 +571,7 @@ function rowToCharacter(row: Row): Character {
     group: row.group as string | null,
     icon: row.icon as string | null,
     color: row.color as string | null,
+    sortOrder: row.sort_order as number,
   };
 }
 
@@ -572,8 +579,8 @@ export async function createCharacter(input: NewCharacter): Promise<Character> {
   const db = await getDatabase();
   const id = insert(
     db,
-    'INSERT INTO characters (story_id, name, "group", icon, color) VALUES (?, ?, ?, ?, ?);',
-    [input.storyId, input.name, input.group, input.icon, input.color],
+    'INSERT INTO characters (story_id, name, "group", icon, color, sort_order) VALUES (?, ?, ?, ?, ?, ?);',
+    [input.storyId, input.name, input.group, input.icon, input.color, input.sortOrder],
   );
   await persist();
   return { id, ...input };
@@ -581,16 +588,19 @@ export async function createCharacter(input: NewCharacter): Promise<Character> {
 
 export async function listCharactersForStory(storyId: number): Promise<Character[]> {
   const db = await getDatabase();
-  return selectAll(db, 'SELECT * FROM characters WHERE story_id = ? ORDER BY id;', rowToCharacter, [
-    storyId,
-  ]);
+  return selectAll(
+    db,
+    'SELECT * FROM characters WHERE story_id = ? ORDER BY sort_order;',
+    rowToCharacter,
+    [storyId],
+  );
 }
 
 export async function updateCharacter(id: number, input: NewCharacter): Promise<void> {
   const db = await getDatabase();
   db.run(
-    'UPDATE characters SET story_id = ?, name = ?, "group" = ?, icon = ?, color = ? WHERE id = ?;',
-    [input.storyId, input.name, input.group, input.icon, input.color, id],
+    'UPDATE characters SET story_id = ?, name = ?, "group" = ?, icon = ?, color = ?, sort_order = ? WHERE id = ?;',
+    [input.storyId, input.name, input.group, input.icon, input.color, input.sortOrder, id],
   );
   await persist();
 }
@@ -601,12 +611,23 @@ export async function deleteCharacter(id: number): Promise<void> {
   await persist();
 }
 
+function tailToColumn(tail: LatLng[] | null): string | null {
+  return tail ? JSON.stringify(tail) : null;
+}
+
+function rowToTail(row: Row): LatLng[] | null {
+  const column = row.tail as string | null;
+  return column ? (JSON.parse(column) as LatLng[]) : null;
+}
+
 function rowToCharacterPosition(row: Row): CharacterPosition {
   return {
     id: row.id as number,
     characterId: row.character_id as number,
     position: { lat: row.lat as number, lng: row.lng as number },
     dead: (row.dead as number) !== 0,
+    note: row.note as string | null,
+    tail: rowToTail(row),
     chapterRange: rowToChapterRange(row),
     episodeRange: rowToEpisodeRange(row),
   };
@@ -621,15 +642,17 @@ export async function createCharacterPosition(
   const id = insert(
     db,
     `INSERT INTO character_positions (
-       character_id, lat, lng, dead,
+       character_id, lat, lng, dead, note, tail,
        chapter_range_start_chapter_id, chapter_range_end_chapter_id,
        episode_range_start_episode_id, episode_range_end_episode_id
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       input.characterId,
       input.position.lat,
       input.position.lng,
       input.dead ? 1 : 0,
+      input.note,
+      tailToColumn(input.tail),
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
     ],
@@ -664,7 +687,7 @@ export async function updateCharacterPosition(
   assertEpisodeRangeOrder(db, input.episodeRange);
   db.run(
     `UPDATE character_positions
-     SET character_id = ?, lat = ?, lng = ?, dead = ?,
+     SET character_id = ?, lat = ?, lng = ?, dead = ?, note = ?, tail = ?,
          chapter_range_start_chapter_id = ?, chapter_range_end_chapter_id = ?,
          episode_range_start_episode_id = ?, episode_range_end_episode_id = ?
      WHERE id = ?;`,
@@ -673,6 +696,8 @@ export async function updateCharacterPosition(
       input.position.lat,
       input.position.lng,
       input.dead ? 1 : 0,
+      input.note,
+      tailToColumn(input.tail),
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
       id,

@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -8,7 +9,15 @@ import {
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createBook, createCharacter, createStory, type LatLng, type Story } from '../db';
+import {
+  createBook,
+  createCharacter,
+  createCharacterPosition,
+  createStory,
+  type CharacterPosition,
+  type LatLng,
+  type Story,
+} from '../db';
 import { resetDatabaseForTests } from '../db/client';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
 import { EditorSidebar } from './EditorSidebar';
@@ -40,11 +49,13 @@ function makeStory(overrides: Partial<Story>): Story {
     tileLayerAttributionUrl: null,
     initialCenter: { lat: 51.5, lng: -0.1278 },
     initialZoom: 6,
+    minZoom: 0,
+    maxZoom: 19,
     ...overrides,
   };
 }
 
-/** Stands in for App: owns draftPosition and drives it the way a real marker drag would. */
+/** Stands in for App: owns draftPosition/activePosition and drives them the way a real marker drag or position click would. */
 function DraggableEditorSidebar({
   stories,
   selectedStoryId,
@@ -53,6 +64,29 @@ function DraggableEditorSidebar({
   selectedStoryId: number;
 }) {
   const [draftPosition, setDraftPosition] = useState<LatLng | null>(null);
+  const [activePosition, setActivePosition] = useState<{
+    characterId: number;
+    index: number;
+    existing: CharacterPosition | null;
+  } | null>(null);
+  const [positionsVersion, setPositionsVersion] = useState(0);
+
+  function handleAddPosition(characterId: number, index: number) {
+    setActivePosition({ characterId, index, existing: null });
+    setDraftPosition({ lat: 39.8283, lng: -98.5795 });
+  }
+
+  function handleEditPosition(characterId: number, index: number, existing: CharacterPosition) {
+    setActivePosition({ characterId, index, existing });
+    setDraftPosition(existing.position);
+  }
+
+  function handleBackFromPosition() {
+    setActivePosition(null);
+    setDraftPosition(null);
+    setPositionsVersion((previous) => previous + 1);
+  }
+
   return (
     <>
       <EditorSidebar
@@ -63,8 +97,17 @@ function DraggableEditorSidebar({
         onCaptureMapPosition={() => null}
         mapPosition={{ center: { lat: 39.8283, lng: -98.5795 }, zoom: 4 }}
         draftPosition={draftPosition}
-        onStartEditingPosition={() => setDraftPosition({ lat: 39.8283, lng: -98.5795 })}
-        onEndEditingPosition={() => setDraftPosition(null)}
+        activePosition={activePosition}
+        onAddPosition={handleAddPosition}
+        onEditPosition={handleEditPosition}
+        onBackFromPosition={handleBackFromPosition}
+        positionsVersion={positionsVersion}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />
       <button onClick={() => setDraftPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag</button>
     </>
@@ -85,8 +128,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -111,8 +163,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -131,8 +192,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -149,6 +219,8 @@ describe('EditorSidebar', () => {
       tileLayerAttributionUrl: null,
       initialCenter: DEFAULT_CENTER,
       initialZoom: DEFAULT_ZOOM,
+      minZoom: 0,
+      maxZoom: 19,
     });
   });
 
@@ -164,8 +236,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -194,8 +275,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -220,8 +310,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -248,8 +347,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -272,8 +380,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -296,6 +413,282 @@ describe('EditorSidebar', () => {
     );
   });
 
+  it('saves an updated zoom range', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    fireEvent.change(screen.getByLabelText(/minimum zoom/i), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText(/maximum zoom/i), { target: { value: '15' } });
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ minZoom: 2, maxZoom: 15 }));
+  });
+
+  it('rejects a zoom range whose maximum is below its minimum', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    fireEvent.change(screen.getByLabelText(/minimum zoom/i), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText(/maximum zoom/i), { target: { value: '5' } });
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/must not be less than/i);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('auto-detects the max zoom by probing the tile URL once the field settles', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn((url: string) => {
+      const zoom = Number(String(url).split('/')[3]);
+      return Promise.resolve({ ok: zoom <= 9 } as Response);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      render(
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+        />,
+      );
+
+      fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+        target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+
+      await act(() => vi.advanceTimersByTimeAsync(600));
+
+      expect(screen.getByLabelText(/maximum zoom/i)).toHaveValue(9);
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          method: 'HEAD',
+        }),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
+  it('leaves the zoom range alone when auto-detection is inconclusive', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(() => Promise.reject(new Error('CORS-blocked')));
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      render(
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+        />,
+      );
+
+      fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+        target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+      });
+      await act(() => vi.advanceTimersByTimeAsync(600));
+
+      expect(screen.getByLabelText(/maximum zoom/i)).toHaveValue(19);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
+  it('debounces detection, only probing the URL the user settled on', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn((url: string) => {
+      const zoom = Number(String(url).split('/')[3]);
+      return Promise.resolve({ ok: zoom <= 4 } as Response);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      render(
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+        />,
+      );
+
+      fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+        target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+      });
+      await act(() => vi.advanceTimersByTimeAsync(200));
+      fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+        target: { value: 'https://tile2.example.com/{z}/{x}/{y}.png' },
+      });
+      await act(() => vi.advanceTimersByTimeAsync(600));
+
+      expect(screen.getByLabelText(/maximum zoom/i)).toHaveValue(4);
+      expect(fetchMock.mock.calls.every(([url]) => String(url).includes('tile2.'))).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
+  it('cancels an in-flight probe on unmount, without warning about a state update after unmount', async () => {
+    vi.useFakeTimers();
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn(
+      (_url: string, opts?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          opts?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          );
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const { unmount } = render(
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+        />,
+      );
+
+      fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+        target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+      });
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      unmount();
+      await act(() => vi.advanceTimersByTimeAsync(0));
+
+      expect(consoleError).not.toHaveBeenCalledWith(
+        expect.stringContaining("Can't perform a React state update"),
+        expect.anything(),
+      );
+    } finally {
+      consoleError.mockRestore();
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
   it('clears the form when switching to "New Map"', () => {
     const story = makeStory({ id: 1 });
     const { rerender } = render(
@@ -307,8 +700,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -321,8 +723,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -348,8 +759,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -372,8 +792,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => ({ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 })}
         mapPosition={{ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 }}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -387,6 +816,8 @@ describe('EditorSidebar', () => {
       expect.objectContaining({
         initialCenter: { lat: 40.7128, lng: -74.006 },
         initialZoom: 10,
+        minZoom: 0,
+        maxZoom: 19,
       }),
     );
   });
@@ -403,8 +834,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={{ center: { lat: 10, lng: 10 }, zoom: 3 }}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -424,8 +864,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -453,8 +902,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -480,8 +938,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -509,8 +976,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -534,8 +1010,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -557,8 +1042,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -574,8 +1068,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -593,8 +1096,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -610,6 +1122,8 @@ describe('EditorSidebar', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 0, lng: 0 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     await createBook({
       storyId: story.id,
@@ -636,13 +1150,86 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
     expect(await screen.findByDisplayValue('A Clash of Kings')).toBeVisible();
     expect(screen.getByDisplayValue('A Game of Thrones')).not.toBeVisible();
+  });
+
+  it('expands the Nth character from a #characters-N URL hash', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+    });
+    await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+    });
+    await createCharacter({
+      storyId: story.id,
+      name: 'Daenerys Targaryen',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 1,
+    });
+    window.location.hash = '#characters-2';
+
+    render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={story.id}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Jon Snow');
+    await waitFor(() => {
+      const visibleNameField = screen
+        .getAllByLabelText(/^name$/i)
+        .find(
+          (field) =>
+            window.getComputedStyle(field.closest('.MuiCollapse-root')!).visibility !== 'hidden',
+        );
+      expect(visibleNameField).toHaveValue('Daenerys Targaryen');
+    });
   });
 
   it('ignores a #books hash for a brand new, unsaved map', () => {
@@ -656,8 +1243,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -675,8 +1271,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -693,8 +1298,17 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -713,6 +1327,8 @@ describe('EditorSidebar', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     await createCharacter({
       storyId: story.id,
@@ -720,6 +1336,7 @@ describe('EditorSidebar', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 2,
     });
     const user = userEvent.setup();
     render(<DraggableEditorSidebar stories={[story]} selectedStoryId={story.id} />);
@@ -733,6 +1350,48 @@ describe('EditorSidebar', () => {
 
     await user.click(screen.getByRole('button', { name: /back to sidebar/i }));
 
-    expect(await screen.findByText('1. Always visible')).toBeInTheDocument();
+    expect(await screen.findByText('Always visible')).toBeInTheDocument();
+  });
+
+  it('reopens an existing position, prefilled, when it is clicked in the list', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+    });
+    const character = await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 3,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 51.5, lng: -0.1278 },
+      dead: true,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const user = userEvent.setup();
+    render(<DraggableEditorSidebar stories={[story]} selectedStoryId={story.id} />);
+
+    await user.click(screen.getByRole('button', { name: /^characters$/i }));
+    await user.click(await screen.findByText('Jon Snow'));
+    await user.click(await screen.findByText('Always visible'));
+
+    expect(await screen.findByText('Position 1')).toBeInTheDocument();
+    // Matches both the panel's own lat/lng caption and the (now offscreen)
+    // list item's primary text for the same position.
+    expect(screen.getAllByText('51.5000, -0.1278')).toHaveLength(2);
+    expect(screen.getByRole('checkbox', { name: /dead/i })).toBeChecked();
   });
 });

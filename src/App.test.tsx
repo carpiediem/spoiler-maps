@@ -1,9 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { resetDatabaseForTests } from './db/client';
-import { createStory } from './db';
+import { createCharacter, createCharacterPosition, createStory } from './db';
 
 async function deleteStoredDatabase(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
@@ -51,6 +51,8 @@ describe('App', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     await createStory({
       name: 'The Wheel of Time',
@@ -59,6 +61,8 @@ describe('App', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     resetDatabaseForTests();
 
@@ -114,6 +118,8 @@ describe('App', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     resetDatabaseForTests();
 
@@ -137,6 +143,171 @@ describe('App', () => {
     expect(screen.queryByText('Position 1')).not.toBeInTheDocument();
     expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
   });
+
+  it('opens the Position panel, prefilled, when a map pin is clicked', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+    });
+    const character = await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 51.5, lng: -0.1278 },
+      dead: true,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    resetDatabaseForTests();
+
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^characters/i }));
+    await user.click(await screen.findByText('Jon Snow'));
+
+    let marker: Element | null = null;
+    await vi.waitFor(() => {
+      marker = container.querySelector('.leaflet-marker-icon');
+      expect(marker).not.toBeNull();
+    });
+    fireEvent.click(marker!);
+
+    expect(await screen.findByText('Position 1')).toBeInTheDocument();
+    // Matches both the panel's own lat/lng caption and the (now offscreen)
+    // list item's primary text for the same position.
+    expect(screen.getAllByText('51.5000, -0.1278')).toHaveLength(2);
+    expect(screen.getByRole('checkbox', { name: /dead/i })).toBeChecked();
+
+    // The position (London) is far outside the story's initial view (the
+    // continental US at zoom 4), so opening it recentered the map — shown
+    // by the pushpin button, which only appears once the map has moved
+    // from the story's saved position.
+    expect(
+      await screen.findByRole('button', { name: /use current map position/i }),
+    ).toBeInTheDocument();
+
+    // Only the pin being edited is draggable; clicking Back removes it
+    // entirely along with the rest of the map markers.
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: /back to sidebar/i }));
+
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+  });
+
+  it('does not move the map when the position being edited is already in view', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+    });
+    const character = await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 1,
+    });
+    // The story's own initial center is, by definition, within its initial
+    // view.
+    await createCharacterPosition({
+      characterId: character.id,
+      position: story.initialCenter,
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    resetDatabaseForTests();
+
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^characters/i }));
+    await user.click(await screen.findByText('Jon Snow'));
+
+    let marker: Element | null = null;
+    await vi.waitFor(() => {
+      marker = container.querySelector('.leaflet-marker-icon');
+      expect(marker).not.toBeNull();
+    });
+    fireEvent.click(marker!);
+
+    expect(await screen.findByText('Position 1')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /use current map position/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  // Runs several real user interactions and a waitFor in sequence; slower CI
+  // runners can exceed the default 5000ms test timeout.
+  it('draws a tail by clicking the map, then saves it onto the position', async () => {
+    await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+    });
+    resetDatabaseForTests();
+
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^characters$/i }));
+    await user.click(screen.getByRole('button', { name: /add character/i }));
+    await screen.findByLabelText(/^name$/i);
+    await user.click(screen.getByRole('button', { name: /^position$/i }));
+
+    await screen.findByText('Position 1');
+    const tailButton = screen.getByRole('button', { name: /add a tail/i });
+    expect(tailButton).toBeEnabled();
+    await user.click(tailButton);
+
+    // While drawing, the tail button is replaced by Save/Cancel, and
+    // clicking the map appends a point instead of doing nothing.
+    expect(screen.queryByRole('button', { name: /add a tail/i })).not.toBeInTheDocument();
+    const mapContainer = container.querySelector('.leaflet-container')!;
+    fireEvent.click(mapContainer, { clientX: 120, clientY: 80 });
+    fireEvent.click(mapContainer, { clientX: 160, clientY: 100 });
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('.leaflet-interactive')).not.toHaveLength(0);
+    });
+
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    // Drawing mode ends and the tail button reappears.
+    expect(await screen.findByRole('button', { name: /add a tail/i })).toBeInTheDocument();
+  }, 10000);
 
   it('does not update state after unmounting while stories are still loading', async () => {
     const { unmount } = render(<App />);

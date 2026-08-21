@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 10;
 
 export interface Migration {
   version: number;
@@ -170,6 +170,42 @@ export const MIGRATIONS: Migration[] = [
     version: 6,
     sql: `
       ALTER TABLE chapters ADD COLUMN url TEXT;
+    `,
+  },
+  {
+    version: 7,
+    sql: `
+      ALTER TABLE character_positions ADD COLUMN note TEXT;
+    `,
+  },
+  {
+    version: 8,
+    sql: `
+      -- tail is a JSON-encoded array of {lat, lng} points tracing a path
+      -- away from this position's own lat/lng (e.g. a journey leading up
+      -- to it) — same JSON-column approach as markers.polygon.
+      ALTER TABLE character_positions ADD COLUMN tail TEXT;
+    `,
+  },
+  {
+    version: 9,
+    sql: `
+      -- Limits how far Leaflet's zoom control will let the map zoom in/out.
+      -- Existing stories default to 0-19, the usable range of Leaflet's own
+      -- default (OpenStreetMap) tileset.
+      ALTER TABLE stories ADD COLUMN min_zoom INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE stories ADD COLUMN max_zoom INTEGER NOT NULL DEFAULT 19;
+    `,
+  },
+  {
+    version: 10,
+    sql: `
+      -- Lets characters be drag-and-drop reordered in the sidebar list; see
+      -- the fractional-indexing comment on the books table above. Existing
+      -- characters get their id as their initial sort_order, preserving the
+      -- ORDER BY id ordering they were always listed under.
+      ALTER TABLE characters ADD COLUMN sort_order REAL NOT NULL DEFAULT 0;
+      UPDATE characters SET sort_order = id;
     `,
   },
 ];

@@ -40,6 +40,8 @@ async function seedSeason(
     tileLayerAttributionUrl: null,
     initialCenter: { lat: 0, lng: 0 },
     initialZoom: 4,
+    minZoom: 0,
+    maxZoom: 19,
   });
   return createTvSeason({ storyId: story.id, url: null, sortOrder: 0, ...overrides });
 }

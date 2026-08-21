@@ -1,5 +1,8 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import RouteIcon from '@mui/icons-material/Route';
 import {
+  Box,
+  Button,
   Checkbox,
   FormControl,
   FormControlLabel,
@@ -8,11 +11,18 @@ import {
   MenuItem,
   Select,
   Stack,
+  TextField,
+  Tooltip,
   Typography,
   type SelectChangeEvent,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import { createCharacterPosition, updateCharacterPosition, type LatLng } from '../../db';
+import {
+  createCharacterPosition,
+  updateCharacterPosition,
+  type CharacterPosition,
+  type LatLng,
+} from '../../db';
 import { useRangeOptions, type FlatOption } from './characters/rangeOptions';
 
 const OPEN_END_VALUE = '';
@@ -62,7 +72,16 @@ interface PositionPanelProps {
   /** 1-based ordinal of this position among the character's positions. */
   index: number;
   position: LatLng | null;
+  /** The CharacterPosition being edited, or null when creating a new one. */
+  existingPosition: CharacterPosition | null;
   onBack: () => void;
+  /** Whether the map is currently in tail-drawing mode. */
+  isDrawingTail: boolean;
+  /** Points clicked so far while drawing a tail. */
+  tailDraftPoints: LatLng[];
+  onStartDrawingTail: () => void;
+  /** Called when Save or Cancel is clicked, to leave drawing mode either way. */
+  onFinishDrawingTail: () => void;
 }
 
 export function PositionPanel({
@@ -70,36 +89,64 @@ export function PositionPanel({
   characterId,
   index,
   position,
+  existingPosition,
   onBack,
+  isDrawingTail,
+  tailDraftPoints,
+  onStartDrawingTail,
+  onFinishDrawingTail,
 }: PositionPanelProps) {
   const { chapterOptions, episodeOptions, hasBooks, hasSeasons } = useRangeOptions(storyId);
 
-  const [chapterRangeStart, setChapterRangeStart] = useState<number | null>(null);
-  const [chapterRangeEnd, setChapterRangeEnd] = useState<number | null>(null);
-  const [episodeRangeStart, setEpisodeRangeStart] = useState<number | null>(null);
-  const [episodeRangeEnd, setEpisodeRangeEnd] = useState<number | null>(null);
-  const [dead, setDead] = useState(false);
+  const [chapterRangeStart, setChapterRangeStart] = useState<number | null>(
+    existingPosition?.chapterRange?.startChapterId ?? null,
+  );
+  const [chapterRangeEnd, setChapterRangeEnd] = useState<number | null>(
+    existingPosition?.chapterRange?.endChapterId ?? null,
+  );
+  const [episodeRangeStart, setEpisodeRangeStart] = useState<number | null>(
+    existingPosition?.episodeRange?.startEpisodeId ?? null,
+  );
+  const [episodeRangeEnd, setEpisodeRangeEnd] = useState<number | null>(
+    existingPosition?.episodeRange?.endEpisodeId ?? null,
+  );
+  const [dead, setDead] = useState(existingPosition?.dead ?? false);
+  const [note, setNote] = useState(existingPosition?.note ?? '');
+  const [tail, setTail] = useState<LatLng[] | null>(existingPosition?.tail ?? null);
 
-  // The pin starts at the map's current center; nothing is saved until the
-  // user actually drags it away from that starting point. Captured once on
-  // mount (a fresh PositionPanel instance per "+ Position" click) so later
-  // renders can tell "the marker moved" apart from "the panel re-rendered".
+  // The pin starts at the map's current center (or the existing position's
+  // lat/lng, when editing); nothing is saved until the user actually drags
+  // it away from that starting point. Captured once on mount (a fresh
+  // PositionPanel instance per opening) so later renders can tell "the
+  // marker moved" apart from "the panel re-rendered".
   const initialPositionRef = useRef(position);
-  // Set once the position row exists, so later field/marker changes update
-  // it instead of creating another one. A ref (not state) so setting it
-  // doesn't itself trigger another save via the effect below.
-  const savedPositionIdRef = useRef<number | null>(null);
+  // Set immediately when editing an existing position, or once a new one is
+  // first created, so later field/marker changes update it instead of
+  // creating another one. A ref (not state) so setting it doesn't itself
+  // trigger another save via the effect below.
+  const savedPositionIdRef = useRef<number | null>(existingPosition?.id ?? null);
+  // Skips this effect's very first run when opening an existing position —
+  // nothing has changed yet, so there's nothing worth writing back.
+  const hasRunEffectRef = useRef(false);
 
   useEffect(() => {
     if (position === null) return;
     const chapterRange = { startChapterId: chapterRangeStart, endChapterId: chapterRangeEnd };
     const episodeRange = { startEpisodeId: episodeRangeStart, endEpisodeId: episodeRangeEnd };
+    const trimmedNote = note.trim() || null;
+
+    if (!hasRunEffectRef.current) {
+      hasRunEffectRef.current = true;
+      if (savedPositionIdRef.current !== null) return;
+    }
 
     if (savedPositionIdRef.current !== null) {
       updateCharacterPosition(savedPositionIdRef.current, {
         characterId,
         position,
         dead,
+        note: trimmedNote,
+        tail,
         chapterRange,
         episodeRange,
       });
@@ -108,11 +155,17 @@ export function PositionPanel({
 
     if (position === initialPositionRef.current) return;
 
-    createCharacterPosition({ characterId, position, dead, chapterRange, episodeRange }).then(
-      (created) => {
-        savedPositionIdRef.current = created.id;
-      },
-    );
+    createCharacterPosition({
+      characterId,
+      position,
+      dead,
+      note: trimmedNote,
+      tail,
+      chapterRange,
+      episodeRange,
+    }).then((created) => {
+      savedPositionIdRef.current = created.id;
+    });
   }, [
     characterId,
     position,
@@ -121,10 +174,12 @@ export function PositionPanel({
     episodeRangeStart,
     episodeRangeEnd,
     dead,
+    note,
+    tail,
   ]);
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2} sx={{ flexGrow: 1 }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
         <IconButton size="small" aria-label="Back to sidebar" onClick={onBack}>
           <ArrowBackIcon fontSize="small" />
@@ -134,11 +189,61 @@ export function PositionPanel({
         </Typography>
       </Stack>
 
-      <Typography variant="body2" color="text.secondary">
-        {position
-          ? `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`
-          : 'Drag the pin on the map to set a position.'}
-      </Typography>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          {position
+            ? `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`
+            : 'Drag the pin on the map to set a position.'}
+        </Typography>
+
+        {isDrawingTail ? (
+          <Stack direction="row" spacing={1}>
+            <Button
+              size="small"
+              onClick={() => {
+                setTail(tailDraftPoints);
+                onFinishDrawingTail();
+              }}
+            >
+              Save
+            </Button>
+            <Button size="small" onClick={onFinishDrawingTail}>
+              Cancel
+            </Button>
+          </Stack>
+        ) : (
+          <Tooltip title="Add a tail">
+            <span>
+              <IconButton
+                size="small"
+                aria-label="Add a tail"
+                onClick={onStartDrawingTail}
+                disabled={position === null}
+              >
+                <RouteIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
+      </Stack>
+
+      <TextField
+        label="Note"
+        size="small"
+        fullWidth
+        multiline
+        value={note}
+        onChange={(event) => setNote(event.target.value)}
+      />
+
+      <FormControlLabel
+        control={<Checkbox checked={dead} onChange={(event) => setDead(event.target.checked)} />}
+        label="Dead"
+      />
 
       {hasBooks && (
         <Stack spacing={1.5}>
@@ -180,10 +285,25 @@ export function PositionPanel({
         </Stack>
       )}
 
-      <FormControlLabel
-        control={<Checkbox checked={dead} onChange={(event) => setDead(event.target.checked)} />}
-        label="Dead"
-      />
+      {/* !important beats Stack's own "& > * ~ *" margin-top rule, which
+          otherwise overrides a plain mt: 'auto' here. */}
+      {(hasBooks || hasSeasons) && (
+        <Box
+          sx={{
+            mt: 'auto !important',
+            backgroundColor: 'action.hover',
+            borderRadius: 1,
+            p: 1.5,
+            lineHeight: 1,
+          }}
+        >
+          <Typography variant="caption" color="text.secondary">
+            Start is the first chapter or episode where we know they’re in this location; End is the
+            last one that still has them here. A brief visit they leave again belongs on this
+            position’s tail, not as a separate Route entry.
+          </Typography>
+        </Box>
+      )}
     </Stack>
   );
 }
