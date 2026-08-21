@@ -401,6 +401,37 @@ describe('App', () => {
     }
   });
 
+  it('falls back to "story.yaml" when the story name has no sluggable characters', async () => {
+    let downloadedFilename: string | undefined;
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        downloadedFilename = this.download;
+      });
+    try {
+      await createStory({
+        name: '!!!',
+        tileUrlTemplate: null,
+        tileLayerAuthor: null,
+        tileLayerAttributionUrl: null,
+        initialCenter: { lat: 0, lng: 0 },
+        initialZoom: 4,
+        minZoom: 0,
+        maxZoom: 19,
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      const exportButton = await screen.findByRole('button', { name: /export as yaml/i });
+      await user.click(exportButton);
+
+      await waitFor(() => expect(clickSpy).toHaveBeenCalled());
+      expect(downloadedFilename).toBe('story.yaml');
+    } finally {
+      clickSpy.mockRestore();
+    }
+  });
+
   it('deletes the selected story once confirmed, returning to a fresh "New Map"', async () => {
     await createStory({
       name: 'A Song of Ice and Fire',

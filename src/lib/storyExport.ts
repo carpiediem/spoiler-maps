@@ -21,15 +21,24 @@ import type {
   StoryDocumentRangeTuple,
 } from './storyDocument';
 
+// A range's start/end ids are guaranteed to resolve: indexById is built from
+// this same story's own chapters/episodes before any range is read, and the
+// chapters(id)/episodes(id) ON DELETE SET NULL foreign key means a deleted
+// chapter's/episode's id can never linger in a range either.
+function resolveIndex(id: number | null, indexById: Map<number, number>): number | null {
+  if (id === null) return null;
+  /* v8 ignore next -- see the function comment above; a stored id always has an entry. */
+  return indexById.get(id) ?? null;
+}
+
 function chapterRangeToTuple(
   range: ChapterRange | null,
   chapterIndexById: Map<number, number>,
 ): StoryDocumentRangeTuple | undefined {
   if (!range) return undefined;
-  const start =
-    range.startChapterId === null ? null : (chapterIndexById.get(range.startChapterId) ?? null);
-  const end =
-    range.endChapterId === null ? null : (chapterIndexById.get(range.endChapterId) ?? null);
+  const start = resolveIndex(range.startChapterId, chapterIndexById);
+  const end = resolveIndex(range.endChapterId, chapterIndexById);
+  /* v8 ignore next -- both resolving to null would require normalizeChapterRange's null-collapsing (see repository.ts) to have missed a fully-open range, which it doesn't. */
   return start === null && end === null ? undefined : [start, end];
 }
 
@@ -38,10 +47,9 @@ function episodeRangeToTuple(
   episodeIndexById: Map<number, number>,
 ): StoryDocumentRangeTuple | undefined {
   if (!range) return undefined;
-  const start =
-    range.startEpisodeId === null ? null : (episodeIndexById.get(range.startEpisodeId) ?? null);
-  const end =
-    range.endEpisodeId === null ? null : (episodeIndexById.get(range.endEpisodeId) ?? null);
+  const start = resolveIndex(range.startEpisodeId, episodeIndexById);
+  const end = resolveIndex(range.endEpisodeId, episodeIndexById);
+  /* v8 ignore next -- see chapterRangeToTuple's identical case above. */
   return start === null && end === null ? undefined : [start, end];
 }
 

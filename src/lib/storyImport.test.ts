@@ -183,6 +183,49 @@ markerSets:
       },
     ]);
   });
+
+  it('defaults each nested list to empty when its key is omitted entirely', () => {
+    const yamlText = `
+name: Test
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+books:
+  - name: Book One
+television:
+  - url: https://example.com/season1
+characters:
+  - name: Jon Snow
+markerSets:
+  - name: Cities
+    markers:
+      - label: Winterfell
+        lat: 3
+        lng: 3
+`;
+    const document = parseStoryDocument(yamlText);
+
+    expect(document.books[0]!.chapters).toEqual([]);
+    expect(document.television[0]!.episodes).toEqual([]);
+    expect(document.characters[0]!.positions).toEqual([]);
+    expect(document.markerSets[0]!.markers[0]!.polygon).toBeUndefined();
+  });
+
+  it('defaults a marker set with no markers key to an empty list', () => {
+    const yamlText = `
+name: Test
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+markerSets:
+  - name: Cities
+`;
+    const document = parseStoryDocument(yamlText);
+
+    expect(document.markerSets[0]!.markers).toEqual([]);
+  });
 });
 
 describe('importStoryDocument', () => {

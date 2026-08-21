@@ -113,6 +113,22 @@ describe('buildStoryDocument', () => {
     ]);
   });
 
+  it('includes a book author/url when set', async () => {
+    const storyId = await seedStoryId();
+    await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: 'George RR Martin',
+      url: 'https://example.com/agot',
+      sortOrder: 0,
+    });
+
+    const document = await buildStoryDocument(storyId);
+
+    expect(document.books[0]!.author).toBe('George RR Martin');
+    expect(document.books[0]!.url).toBe('https://example.com/agot');
+  });
+
   it('nests episodes under their season', async () => {
     const storyId = await seedStoryId();
     const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
@@ -126,6 +142,21 @@ describe('buildStoryDocument', () => {
     const document = await buildStoryDocument(storyId);
 
     expect(document.television).toEqual([{ episodes: [{ name: 'Winter Is Coming' }] }]);
+  });
+
+  it('includes an episode url when set', async () => {
+    const storyId = await seedStoryId();
+    const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
+    await createEpisode({
+      seasonId: season.id,
+      name: 'Winter Is Coming',
+      url: 'https://example.com/s1e1',
+      sortOrder: 0,
+    });
+
+    const document = await buildStoryDocument(storyId);
+
+    expect(document.television[0]!.episodes[0]!.url).toBe('https://example.com/s1e1');
   });
 
   it('resolves a chapter range spanning two books to flat 0-based indices', async () => {
@@ -213,6 +244,39 @@ describe('buildStoryDocument', () => {
     expect(document.characters[0]!.positions[0]!.chapters).toEqual([0, null]);
   });
 
+  it('represents a range with an open start as a null first boundary', async () => {
+    const storyId = await seedStoryId();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter = await createChapter({ bookId: book.id, name: 'Bran', url: null, sortOrder: 0 });
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: { startChapterId: null, endChapterId: chapter.id },
+      episodeRange: null,
+    });
+
+    const document = await buildStoryDocument(storyId);
+
+    expect(document.characters[0]!.positions[0]!.chapters).toEqual([null, 0]);
+  });
+
   it('includes a dead/note/tail position, omitting them for a default one', async () => {
     const storyId = await seedStoryId();
     const character = await createCharacter({
@@ -293,6 +357,38 @@ describe('buildStoryDocument', () => {
     expect(document.characters[0]!.positions[0]!.episodes).toEqual([0, 0]);
   });
 
+  it('represents an episode range with an open start as a null first boundary', async () => {
+    const storyId = await seedStoryId();
+    const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
+    const episode = await createEpisode({
+      seasonId: season.id,
+      name: 'Winter Is Coming',
+      url: null,
+      sortOrder: 0,
+    });
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: { startEpisodeId: null, endEpisodeId: episode.id },
+    });
+
+    const document = await buildStoryDocument(storyId);
+
+    expect(document.characters[0]!.positions[0]!.episodes).toEqual([null, 0]);
+  });
+
   it('nests markers under their marker set, with a polygon and range when set', async () => {
     const storyId = await seedStoryId();
     const book = await createBook({
@@ -339,6 +435,37 @@ describe('buildStoryDocument', () => {
         ],
       },
     ]);
+  });
+
+  it('omits an unset marker color, and includes an episode range when set', async () => {
+    const storyId = await seedStoryId();
+    const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
+    const episode = await createEpisode({
+      seasonId: season.id,
+      name: 'Winter Is Coming',
+      url: null,
+      sortOrder: 0,
+    });
+    const markerSet = await createMarkerSet({ storyId, name: 'Cities' });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      color: null,
+      position: { lat: 3, lng: 3 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: { startEpisodeId: episode.id, endEpisodeId: episode.id },
+    });
+
+    const document = await buildStoryDocument(storyId);
+
+    expect(document.markerSets[0]!.markers[0]).toEqual({
+      label: 'Winterfell',
+      lat: 3,
+      lng: 3,
+      episodes: [0, 0],
+    });
   });
 });
 

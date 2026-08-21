@@ -76,9 +76,9 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
   try {
     raw = parse(yamlText);
   } catch (error) {
-    throw new StoryDocumentError(
-      `Could not parse YAML: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    /* v8 ignore next -- the yaml package's parser only ever throws YAMLParseError, an Error subclass; the String(error) fallback exists only in case that contract ever changes. */
+    const message = error instanceof Error ? error.message : String(error);
+    throw new StoryDocumentError(`Could not parse YAML: ${message}`);
   }
   assert(
     raw && typeof raw === 'object' && !Array.isArray(raw),

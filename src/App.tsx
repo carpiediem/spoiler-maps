@@ -206,6 +206,7 @@ function App() {
   }
 
   async function handleExportStory() {
+    /* v8 ignore next -- the Export button only renders once a story is selected. */
     if (selectedStoryId === null) return;
     const story = stories.find((s) => s.id === selectedStoryId);
     /* v8 ignore next -- the Export button only renders once selectedStoryId names a story already in `stories`. */

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Story } from '../db';
@@ -279,6 +279,46 @@ describe('StorySelector', () => {
     await user.upload(screen.getByLabelText(/import from file/i), file);
 
     expect(await screen.findByText('name must be a string.')).toBeInTheDocument();
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+  });
+
+  it('stringifies a non-Error rejection from onImportFile', async () => {
+    const user = userEvent.setup();
+    const onImportFile = vi.fn().mockRejectedValue('boom');
+    const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={onImportFile}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
+    const file = new File(['bad'], 'story.yaml', { type: 'text/yaml' });
+    await user.upload(screen.getByLabelText(/import from file/i), file);
+
+    expect(await screen.findByText('boom')).toBeInTheDocument();
+  });
+
+  it('does nothing when the file picker is opened but no file is chosen', async () => {
+    const user = userEvent.setup();
+    const onImportFile = vi.fn();
+    const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={onImportFile}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
+    fireEvent.change(screen.getByLabelText(/import from file/i), { target: { files: [] } });
+
+    expect(onImportFile).not.toHaveBeenCalled();
     expect(screen.getByRole('listbox')).toBeInTheDocument();
   });
 
