@@ -11,7 +11,7 @@ import {
   type Story,
 } from './db';
 import { buildTileAttribution } from './lib/attribution';
-import type { CharacterPositionPin } from './lib/characterPositionPins';
+import type { CharacterPositionPin, CharacterTailOverlay } from './lib/characterPositionPins';
 import {
   DEFAULT_CENTER,
   DEFAULT_MAX_ZOOM,
@@ -32,6 +32,7 @@ function App() {
   const [characterPositionPins, setCharacterPositionPins] = useState<CharacterPositionPin[] | null>(
     null,
   );
+  const [characterTails, setCharacterTails] = useState<CharacterTailOverlay[]>([]);
   // When set, the sidebar slides its main content out to the left and
   // slides a Position form in from the right, in place of the accordion
   // list. Owned here (rather than by EditorSidebar) so a click on a map
@@ -132,7 +133,7 @@ function App() {
   }
 
   function handlePinClick(pin: CharacterPositionPin) {
-    handleEditPosition(pin.characterId, Number(pin.label), pin.characterPosition, pin.color);
+    handleEditPosition(pin.characterId, pin.positionIndex, pin.characterPosition, pin.color);
   }
 
   function handleBackFromPosition() {
@@ -202,6 +203,7 @@ function App() {
           draftPosition={draftPosition}
           onDraftPositionChange={setDraftPosition}
           characterPositionPins={characterPositionPins}
+          characterTails={characterTails}
           editingPositionId={activePosition?.existing?.id ?? null}
           onCharacterPositionPinClick={handlePinClick}
           tailDraftPoints={tailDraftPoints}
@@ -223,6 +225,7 @@ function App() {
         onBackFromPosition={handleBackFromPosition}
         positionsVersion={positionsVersion}
         onVisiblePositionsChange={setCharacterPositionPins}
+        onVisibleTailsChange={setCharacterTails}
         isDrawingTail={tailDraftPoints !== null}
         tailDraftPoints={tailDraftPoints ?? []}
         onStartDrawingTail={handleStartDrawingTail}

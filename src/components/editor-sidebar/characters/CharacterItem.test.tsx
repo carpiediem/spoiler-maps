@@ -78,11 +78,14 @@ function Wrapper({
 }) {
   const [character, setCharacter] = useState(initialCharacter);
   const [expanded, setExpanded] = useState(true);
+  const [visible, setVisible] = useState(false);
   return (
     <CharacterItem
       character={character}
       expanded={expanded}
       onToggle={(_event, isExpanded) => setExpanded(isExpanded)}
+      visible={visible}
+      onToggleVisible={() => setVisible((previous) => !previous)}
       onCharacterChange={setCharacter}
       onDelete={onDelete ?? vi.fn()}
       onAddPosition={onAddPosition ?? vi.fn()}
@@ -108,6 +111,8 @@ describe('CharacterItem', () => {
         character={character}
         expanded={false}
         onToggle={vi.fn()}
+        visible={false}
+        onToggleVisible={vi.fn()}
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
         onAddPosition={vi.fn()}
@@ -134,6 +139,8 @@ describe('CharacterItem', () => {
         character={character}
         expanded={false}
         onToggle={vi.fn()}
+        visible={false}
+        onToggleVisible={vi.fn()}
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
         onAddPosition={vi.fn()}
@@ -230,6 +237,22 @@ describe('CharacterItem', () => {
     await user.click(screen.getByRole('button', { name: /^delete$/i }));
 
     expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts hidden, and toggles the visibility icon/label without collapsing the accordion', async () => {
+    const character = await seedCharacter();
+    const user = userEvent.setup();
+    render(<Wrapper initialCharacter={character} />);
+
+    const toggle = await screen.findByRole('button', { name: /show on map/i });
+    expect(screen.getByTestId('VisibilityOffOutlinedIcon')).toBeInTheDocument();
+
+    await user.click(toggle);
+
+    expect(screen.getByRole('button', { name: /hide on map/i })).toBeInTheDocument();
+    expect(screen.getByTestId('VisibilityOutlinedIcon')).toBeInTheDocument();
+    // Toggling visibility must not also collapse the accordion.
+    expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
   });
 
   it('calls onAddPosition with 1 for a character with no existing positions', async () => {

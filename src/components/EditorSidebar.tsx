@@ -2,7 +2,7 @@ import { Box, Paper } from '@mui/material';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import type { CharacterPosition, LatLng, Story } from '../db';
-import type { CharacterPositionPin } from '../lib/characterPositionPins';
+import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
 import { storyToFormValues, type FormValues } from './editor-sidebar/formValues';
@@ -85,6 +85,8 @@ interface EditorSidebarProps {
   positionsVersion: number;
   /** Called with the expanded character's numbered position pins, or null once collapsed. */
   onVisiblePositionsChange: (pins: CharacterPositionPin[] | null) => void;
+  /** Called with the tails to draw for every character toggled visible on the map. */
+  onVisibleTailsChange: (tails: CharacterTailOverlay[]) => void;
   /** Whether the map is currently in tail-drawing mode. */
   isDrawingTail: boolean;
   /** Points clicked so far while drawing a tail. */
@@ -108,6 +110,7 @@ export function EditorSidebar({
   onBackFromPosition,
   positionsVersion,
   onVisiblePositionsChange,
+  onVisibleTailsChange,
   isDrawingTail,
   tailDraftPoints,
   onStartDrawingTail,
@@ -288,6 +291,7 @@ export function EditorSidebar({
                     onEditPosition={onEditPosition}
                     positionsVersion={positionsVersion}
                     onVisiblePositionsChange={onVisiblePositionsChange}
+                    onVisibleTailsChange={onVisibleTailsChange}
                   />
                 </SidebarSection>
 

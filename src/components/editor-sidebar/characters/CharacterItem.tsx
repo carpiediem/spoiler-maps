@@ -3,6 +3,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PersonalVideoIcon from '@mui/icons-material/PersonalVideo';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   Accordion,
   AccordionDetails,
@@ -79,6 +81,9 @@ interface CharacterItemProps {
   character: Character;
   expanded: boolean;
   onToggle: (event: SyntheticEvent, isExpanded: boolean) => void;
+  /** Whether this character's last position + tails should show on the map even while collapsed. */
+  visible: boolean;
+  onToggleVisible: () => void;
   onCharacterChange: (character: Character) => void;
   onDelete: () => void;
   /** Called with the 1-based index the new position would have when "+ Position" is clicked. */
@@ -95,6 +100,8 @@ export function CharacterItem({
   character,
   expanded,
   onToggle,
+  visible,
+  onToggleVisible,
   onCharacterChange,
   onDelete,
   onAddPosition,
@@ -154,44 +161,69 @@ export function CharacterItem({
         borderRadius: 1,
       }}
     >
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
-        sx={{ backgroundColor: 'rgba(0, 0, 0, .03)', px: 1, minHeight: 40 }}
-      >
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-          {character.icon ? (
-            <Box
-              component="img"
-              src={character.icon}
-              alt={character.name || 'Unnamed Character'}
-              sx={{
-                width: 16,
-                height: 16,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: 1,
-                borderColor: 'divider',
-                flexShrink: 0,
-              }}
-            />
-          ) : (
-            <Box
-              sx={{
-                width: 14,
-                height: 14,
-                borderRadius: '50%',
-                backgroundColor: characterColor,
-                border: 1,
-                borderColor: 'divider',
-                flexShrink: 0,
-              }}
-            />
-          )}
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            {character.name || 'Unnamed Character'}
-          </Typography>
-        </Stack>
-      </AccordionSummary>
+      <Box sx={{ position: 'relative' }}>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          sx={{ backgroundColor: 'rgba(0, 0, 0, .03)', px: 1, minHeight: 40 }}
+        >
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ alignItems: 'center', flexGrow: 1, minWidth: 0, pr: 6 }}
+          >
+            {character.icon ? (
+              <Box
+                component="img"
+                src={character.icon}
+                alt={character.name || 'Unnamed Character'}
+                sx={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: 1,
+                  borderColor: 'divider',
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: '50%',
+                  backgroundColor: characterColor,
+                  border: 1,
+                  borderColor: 'divider',
+                  flexShrink: 0,
+                }}
+              />
+            )}
+            <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+              {character.name || 'Unnamed Character'}
+            </Typography>
+          </Stack>
+        </AccordionSummary>
+        {/* A sibling of AccordionSummary — not a child — since AccordionSummary's
+            root is itself a <button>, and nesting this IconButton's own
+            <button> inside it is invalid HTML that browsers silently
+            mis-parse (breaking click handling on one or both). Absolutely
+            positioned so it still reads as part of the summary row. */}
+        <Tooltip title={visible ? 'Hide on map' : 'Show on map'} arrow>
+          <IconButton
+            size="small"
+            aria-label={visible ? 'Hide on map' : 'Show on map'}
+            onClick={onToggleVisible}
+            sx={{ position: 'absolute', right: 36, top: '50%', transform: 'translateY(-50%)' }}
+          >
+            {visible ? (
+              <VisibilityOutlinedIcon fontSize="small" />
+            ) : (
+              <VisibilityOffOutlinedIcon fontSize="small" />
+            )}
+          </IconButton>
+        </Tooltip>
+      </Box>
       <AccordionDetails sx={{ px: 1, backgroundColor: 'rgba(0, 0, 0, .015)' }}>
         <Stack spacing={1.5}>
           <TextField

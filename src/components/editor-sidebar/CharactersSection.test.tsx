@@ -51,6 +51,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -68,6 +69,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -93,6 +95,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -110,6 +113,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -127,6 +131,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -158,6 +163,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -184,6 +190,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -202,6 +209,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -231,6 +239,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -265,6 +274,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -287,6 +297,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -331,6 +342,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -342,12 +354,14 @@ describe('CharactersSection', () => {
           characterId: character.id,
           characterPosition: expect.objectContaining({ position: { lat: 1, lng: 1 } }),
           label: '1',
+          positionIndex: 1,
           color: '#ff0000',
         },
         {
           characterId: character.id,
           characterPosition: expect.objectContaining({ position: { lat: 2, lng: 2 } }),
           label: '2',
+          positionIndex: 2,
           color: '#ff0000',
         },
       ]),
@@ -381,6 +395,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -436,6 +451,7 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 
@@ -446,6 +462,7 @@ describe('CharactersSection', () => {
           characterId: jon.id,
           characterPosition: expect.objectContaining({ position: { lat: 1, lng: 1 } }),
           label: '1',
+          positionIndex: 1,
           color: null,
         },
       ]),
@@ -463,10 +480,150 @@ describe('CharactersSection', () => {
           characterId: daenerys.id,
           characterPosition: expect.objectContaining({ position: { lat: 2, lng: 2 } }),
           label: '1',
+          positionIndex: 1,
           color: null,
         },
       ]),
     );
+  });
+
+  it('shows an initialed pin for the last position, a dot for earlier ones, plus every tail, once toggled visible while collapsed', async () => {
+    const storyId = await seedStoryId();
+    const jon = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+    });
+    const firstPosition = await createCharacterPosition({
+      characterId: jon.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: [{ lat: 0.5, lng: 0.5 }],
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const lastPosition = await createCharacterPosition({
+      characterId: jon.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const onVisibleTailsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={onVisibleTailsChange}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: /show on map/i }));
+
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
+        {
+          characterId: jon.id,
+          characterPosition: expect.objectContaining({ id: firstPosition.id }),
+          label: '',
+          positionIndex: 1,
+          color: '#ff0000',
+          style: 'dot',
+        },
+        {
+          characterId: jon.id,
+          characterPosition: expect.objectContaining({ id: lastPosition.id }),
+          label: 'JS',
+          positionIndex: 2,
+          color: '#ff0000',
+          style: 'pin',
+        },
+      ]),
+    );
+    expect(onVisibleTailsChange).toHaveBeenLastCalledWith([
+      { characterId: jon.id, points: [{ lat: 0.5, lng: 0.5 }], color: '#ff0000' },
+    ]);
+
+    await user.click(screen.getByRole('button', { name: /hide on map/i }));
+
+    await waitFor(() => expect(onVisiblePositionsChange).toHaveBeenLastCalledWith(null));
+    expect(onVisibleTailsChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it('skips the visible-toggle pin for the currently expanded character, since it is already shown numbered', async () => {
+    const storyId = await seedStoryId();
+    const jon = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    await createCharacterPosition({
+      characterId: jon.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: /show on map/i }));
+    await user.click(screen.getByText('Jon Snow'));
+
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
+        expect.objectContaining({ label: '1' }),
+      ]),
+    );
+  });
+
+  it('clears a deleted character out of the visible set, without leaving it toggled on for a later character', async () => {
+    const storyId = await seedStoryId();
+    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: /show on map/i }));
+    await user.click(screen.getByText('Jon Snow'));
+    await user.click(screen.getByRole('button', { name: /delete character/i }));
+    await user.click(await screen.findByRole('button', { name: /^delete$/i }));
+
+    await waitFor(() => expect(screen.queryByText('Jon Snow')).not.toBeInTheDocument());
+    expect(await listCharactersForStory(storyId)).toHaveLength(0);
   });
 
   it('calls onEditPosition with (characterId, index, position) when a list item is clicked', async () => {
@@ -496,6 +653,7 @@ describe('CharactersSection', () => {
         onEditPosition={onEditPosition}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
       />,
     );
 

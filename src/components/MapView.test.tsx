@@ -7,6 +7,7 @@ import {
 import { act, render } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
 import { MapView } from './MapView';
 
 const center = { lat: 40, lng: -100 };
@@ -140,6 +141,7 @@ describe('MapView', () => {
         episodeRange: null,
       },
       label,
+      positionIndex: id,
       color: id === 1 ? '#ff0000' : null,
     };
   }
@@ -224,6 +226,64 @@ describe('MapView', () => {
     });
 
     expect(onCharacterPositionPinClick).toHaveBeenCalledWith(pin);
+  });
+
+  it('renders a solid colored dot, not a labeled pin, for a "dot"-style position', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onCharacterPositionPinClick = vi.fn();
+    const dotPin = { ...makePin(1, { lat: 41, lng: -101 }, ''), style: 'dot' as const };
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        characterPositionPins={[dotPin]}
+        onCharacterPositionPinClick={onCharacterPositionPinClick}
+      />,
+    );
+
+    let markerCount = 0;
+    let circle: LeafletCircleMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) markerCount += 1;
+      if (layer instanceof LeafletCircleMarker) circle = layer;
+    });
+    expect(markerCount).toBe(0);
+    expect(circle).toBeDefined();
+    expect((circle!.options as { fillColor?: string }).fillColor).toBe('#ff0000');
+    expect((circle!.options as { fillOpacity?: number }).fillOpacity).toBe(1);
+
+    act(() => {
+      circle!.fire('click');
+    });
+    expect(onCharacterPositionPinClick).toHaveBeenCalledWith(dotPin);
+  });
+
+  it('renders a "dot"-style position under active editing as the usual draggable pin instead', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const dotPin = { ...makePin(1, { lat: 41, lng: -101 }, ''), style: 'dot' as const };
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        characterPositionPins={[dotPin]}
+        editingPositionId={1}
+        draftPosition={{ lat: 41, lng: -101 }}
+        onDraftPositionChange={vi.fn()}
+      />,
+    );
+
+    let markerCount = 0;
+    let circleCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) markerCount += 1;
+      if (layer instanceof LeafletCircleMarker) circleCount += 1;
+    });
+    expect(markerCount).toBe(1);
+    expect(circleCount).toBe(0);
   });
 
   it('renders the pin matching editingPositionId as draggable, tracking draftPosition', () => {
@@ -380,6 +440,42 @@ describe('MapView', () => {
       if (layer instanceof LeafletPolyline) polylineCount += 1;
     });
     expect(polylineCount).toBe(0);
+  });
+
+  it('renders a polyline for each character tail overlay', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        characterTails={[
+          {
+            characterId: 1,
+            points: [
+              { lat: 41, lng: -101 },
+              { lat: 42, lng: -102 },
+            ],
+            color: '#00ff00',
+          },
+          {
+            characterId: 1,
+            points: [{ lat: 43, lng: -103 }],
+            color: null,
+          },
+        ]}
+      />,
+    );
+
+    const polylines: LeafletPolyline[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolyline) polylines.push(layer);
+    });
+
+    expect(polylines).toHaveLength(2);
+    expect((polylines[0].options as { color?: string }).color).toBe('#00ff00');
+    expect((polylines[1].options as { color?: string }).color).toBe(DEFAULT_CHARACTER_COLOR);
   });
 
   it('applies the initial zoom limits to the underlying Leaflet map', () => {

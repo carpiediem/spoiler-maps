@@ -13,7 +13,7 @@ import {
 import 'leaflet/dist/leaflet.css';
 import type { LatLng } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
-import type { CharacterPositionPin } from '../lib/characterPositionPins';
+import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import { buildPinIcon, buildSkullIcon } from '../lib/pinIcon';
 import { detectTileUrlTemplateKind } from '../lib/tileUrl';
 import { QuadkeyTileLayer } from './QuadkeyTileLayer';
@@ -21,6 +21,11 @@ import { QuadkeyTileLayer } from './QuadkeyTileLayer';
 const DEFAULT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const DEFAULT_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+// Shared so a 'dot'-style position marker's diameter (2 * radius) works out
+// to exactly double a tail polyline's width, as they're drawn together for
+// a visible-but-collapsed character.
+const CHARACTER_TAIL_WEIGHT = 5;
 
 // A plain CSS pin instead of react-leaflet's default marker icon, which
 // needs its image assets specially reconfigured to resolve under a
@@ -48,6 +53,8 @@ interface MapViewProps {
   onDraftPositionChange?: (position: LatLng) => void;
   /** Numbered pins for the currently expanded character's saved positions. */
   characterPositionPins?: CharacterPositionPin[] | null;
+  /** Saved tails to draw for every character toggled visible on the map, independent of characterPositionPins. */
+  characterTails?: CharacterTailOverlay[] | null;
   /** The id of the existing CharacterPosition currently open in the editor, if any. */
   editingPositionId?: number | null;
   /** Called when a non-editing character position pin is clicked, to open it for editing. */
@@ -150,6 +157,7 @@ export function MapView({
   draftPosition,
   onDraftPositionChange,
   characterPositionPins,
+  characterTails,
   editingPositionId,
   onCharacterPositionPinClick,
   tailDraftPoints,
@@ -181,7 +189,10 @@ export function MapView({
         <>
           <Polyline
             positions={[draftPosition, ...tailDraftPoints].map((point) => [point.lat, point.lng])}
-            pathOptions={{ color: tailColor ?? DEFAULT_CHARACTER_COLOR }}
+            pathOptions={{
+              color: tailColor ?? DEFAULT_CHARACTER_COLOR,
+              weight: CHARACTER_TAIL_WEIGHT,
+            }}
           />
           {tailDraftPoints.map((point, index) => (
             <CircleMarker
@@ -197,13 +208,42 @@ export function MapView({
           ))}
         </>
       )}
+      {characterTails?.map((tail, tailIndex) => (
+        <Polyline
+          key={`${tail.characterId}-${tailIndex}`}
+          positions={tail.points.map((point) => [point.lat, point.lng])}
+          pathOptions={{
+            color: tail.color ?? DEFAULT_CHARACTER_COLOR,
+            weight: CHARACTER_TAIL_WEIGHT,
+          }}
+        />
+      ))}
       {characterPositionPins?.map((pin) => {
         const color = pin.color ?? DEFAULT_CHARACTER_COLOR;
+        const isEditingThisPin =
+          pin.characterPosition.id === editingPositionId && draftPosition && onDraftPositionChange;
+
+        // A visible-but-collapsed character's non-last positions render as
+        // plain colored dots rather than labeled pins — unless this is the
+        // one currently open for editing, which always gets the full
+        // draggable pin below so it's clearly the one being moved.
+        if (!isEditingThisPin && pin.style === 'dot') {
+          return (
+            <CircleMarker
+              key={pin.characterPosition.id}
+              center={[pin.characterPosition.position.lat, pin.characterPosition.position.lng]}
+              radius={CHARACTER_TAIL_WEIGHT}
+              pathOptions={{ color, fillColor: color, fillOpacity: 1 }}
+              eventHandlers={{
+                click: () => onCharacterPositionPinClick?.(pin),
+              }}
+            />
+          );
+        }
+
         const icon = pin.characterPosition.dead ? buildSkullIcon() : buildPinIcon(pin.label, color);
 
-        return pin.characterPosition.id === editingPositionId &&
-          draftPosition &&
-          onDraftPositionChange ? (
+        return isEditingThisPin ? (
           <Marker
             key={pin.characterPosition.id}
             position={[draftPosition.lat, draftPosition.lng]}

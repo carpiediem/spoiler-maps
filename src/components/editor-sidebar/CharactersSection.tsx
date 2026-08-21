@@ -8,7 +8,8 @@ import {
   type Character,
   type CharacterPosition,
 } from '../../db';
-import type { CharacterPositionPin } from '../../lib/characterPositionPins';
+import { characterInitials } from '../../lib/characterInitials';
+import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
 import { CharacterItem } from './characters/CharacterItem';
 
 interface CharactersSectionProps {
@@ -29,6 +30,8 @@ interface CharactersSectionProps {
   positionsVersion: number;
   /** Called with the expanded character's numbered position pins, or null once collapsed. */
   onVisiblePositionsChange: (pins: CharacterPositionPin[] | null) => void;
+  /** Called with the tails to draw for every character toggled visible (independent of which is expanded). */
+  onVisibleTailsChange: (tails: CharacterTailOverlay[]) => void;
 }
 
 export function CharactersSection({
@@ -39,9 +42,14 @@ export function CharactersSection({
   onEditPosition,
   positionsVersion,
   onVisiblePositionsChange,
+  onVisibleTailsChange,
 }: CharactersSectionProps) {
   const [characters, setCharacters] = useState<Character[] | null>(null);
   const [expandedCharacterId, setExpandedCharacterId] = useState<number | null>(null);
+  // A character stays visible on the map (last position + tails) once
+  // toggled on, independent of — and in addition to — whichever character's
+  // accordion happens to be expanded.
+  const [visibleCharacterIds, setVisibleCharacterIds] = useState<Set<number>>(new Set());
   const appliedInitialIndexRef = useRef(false);
   // Keyed by character id, so map pins can be recomputed here — the single
   // place that already knows which character is expanded — instead of each
@@ -60,6 +68,7 @@ export function CharactersSection({
     function resetForNewStory() {
       setCharacters(null);
       setExpandedCharacterId(null);
+      setVisibleCharacterIds(new Set());
       setPositionsByCharacterId({});
       appliedInitialIndexRef.current = false;
     }
@@ -88,25 +97,64 @@ export function CharactersSection({
   }, [characters, initialExpandedIndex]);
 
   useEffect(() => {
-    if (expandedCharacterId === null) {
-      onVisiblePositionsChange(null);
-      return;
+    const pins: CharacterPositionPin[] = [];
+    const tails: CharacterTailOverlay[] = [];
+
+    if (expandedCharacterId !== null) {
+      const positions = positionsByCharacterId[expandedCharacterId];
+      const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
+      positions?.forEach((position, positionIndex) => {
+        pins.push({
+          characterId: expandedCharacterId,
+          characterPosition: position,
+          label: String(positionIndex + 1),
+          positionIndex: positionIndex + 1,
+          color: character?.color ?? null,
+        });
+      });
     }
-    const positions = positionsByCharacterId[expandedCharacterId];
-    if (!positions) {
-      onVisiblePositionsChange(null);
-      return;
-    }
-    const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
-    onVisiblePositionsChange(
-      positions.map((position, positionIndex) => ({
-        characterId: expandedCharacterId,
-        characterPosition: position,
-        label: String(positionIndex + 1),
-        color: character?.color ?? null,
-      })),
-    );
-  }, [expandedCharacterId, positionsByCharacterId, characters, onVisiblePositionsChange]);
+
+    // A visible-but-collapsed character shows its last position as an
+    // initialed pin, every earlier position as a plain dot, plus every
+    // position's tail — the expanded character above already shows all of
+    // its positions numbered, so it's skipped here to avoid redundant pins
+    // for the same positions.
+    visibleCharacterIds.forEach((characterId) => {
+      if (characterId === expandedCharacterId) return;
+      const positions = positionsByCharacterId[characterId];
+      if (!positions || positions.length === 0) return;
+      const character = characters?.find((candidate) => candidate.id === characterId);
+      /* v8 ignore next -- character can only be undefined here if visibleCharacterIds still names a just-deleted character, but handleDeleteCharacter clears both in the same batched update. */
+      const color = character?.color ?? null;
+
+      positions.forEach((position, positionIndex) => {
+        const isLast = positionIndex === positions.length - 1;
+        pins.push({
+          characterId,
+          characterPosition: position,
+          /* v8 ignore next -- see the v8 ignore above; same unreachable-in-practice fallback. */
+          label: isLast ? characterInitials(character?.name ?? '') : '',
+          positionIndex: positionIndex + 1,
+          color,
+          style: isLast ? 'pin' : 'dot',
+        });
+
+        if (position.tail && position.tail.length > 0) {
+          tails.push({ characterId, points: position.tail, color });
+        }
+      });
+    });
+
+    onVisiblePositionsChange(pins.length > 0 ? pins : null);
+    onVisibleTailsChange(tails);
+  }, [
+    expandedCharacterId,
+    visibleCharacterIds,
+    positionsByCharacterId,
+    characters,
+    onVisiblePositionsChange,
+    onVisibleTailsChange,
+  ]);
 
   // Stable across renders (functional setState form needs no deps) so it
   // doesn't itself become a new dependency that re-triggers the effect in
@@ -151,12 +199,30 @@ export function CharactersSection({
       const { [characterId]: _removed, ...rest } = previous;
       return rest;
     });
+    setVisibleCharacterIds((previous) => {
+      if (!previous.has(characterId)) return previous;
+      const next = new Set(previous);
+      next.delete(characterId);
+      return next;
+    });
   }
 
   function handleToggle(characterId: number) {
     return (_event: SyntheticEvent, isExpanded: boolean) => {
       setExpandedCharacterId(isExpanded ? characterId : null);
     };
+  }
+
+  function handleToggleVisible(characterId: number) {
+    setVisibleCharacterIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(characterId)) {
+        next.delete(characterId);
+      } else {
+        next.add(characterId);
+      }
+      return next;
+    });
   }
 
   if (characters === null) {
@@ -181,6 +247,8 @@ export function CharactersSection({
           character={character}
           expanded={expandedCharacterId === character.id}
           onToggle={handleToggle(character.id)}
+          visible={visibleCharacterIds.has(character.id)}
+          onToggleVisible={() => handleToggleVisible(character.id)}
           onCharacterChange={handleCharacterChange}
           onDelete={() => handleDeleteCharacter(character.id)}
           onAddPosition={(index) => onAddPosition(character.id, index, character.color)}
