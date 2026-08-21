@@ -1,11 +1,13 @@
 import { divIcon, type Map as LeafletMap, type Marker as LeafletMarker } from 'leaflet';
 import type { RefObject } from 'react';
+import { useEffect } from 'react';
 import {
   CircleMarker,
   MapContainer,
   Marker,
   Polyline,
   TileLayer,
+  useMap,
   useMapEvents,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -36,6 +38,8 @@ interface MapViewProps {
   attribution?: string | null;
   center: LatLng;
   zoom: number;
+  minZoom?: number;
+  maxZoom?: number;
   mapRef?: RefObject<LeafletMap | null>;
   /** Called whenever the user pans or zooms the map. */
   onPositionChange?: (position: { center: LatLng; zoom: number }) => void;
@@ -93,6 +97,29 @@ function TailDrawingCatcher({ onPointClick }: TailDrawingCatcherProps) {
   return null;
 }
 
+interface ZoomLimitsProps {
+  minZoom?: number;
+  maxZoom?: number;
+}
+
+// MapContainer only applies minZoom/maxZoom when the map is first created,
+// not on later prop changes — so editing a story's zoom range and saving
+// (without remounting MapView) would otherwise leave the live map's zoom
+// control out of sync until the page reloads.
+function ZoomLimits({ minZoom, maxZoom }: ZoomLimitsProps) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (minZoom !== undefined) map.setMinZoom(minZoom);
+  }, [map, minZoom]);
+
+  useEffect(() => {
+    if (maxZoom !== undefined) map.setMaxZoom(maxZoom);
+  }, [map, maxZoom]);
+
+  return null;
+}
+
 interface MapPositionTrackerProps {
   onPositionChange: (position: { center: LatLng; zoom: number }) => void;
 }
@@ -116,6 +143,8 @@ export function MapView({
   attribution,
   center,
   zoom,
+  minZoom,
+  maxZoom,
   mapRef,
   onPositionChange,
   draftPosition,
@@ -136,8 +165,11 @@ export function MapView({
       ref={mapRef}
       center={[center.lat, center.lng]}
       zoom={zoom}
+      minZoom={minZoom}
+      maxZoom={maxZoom}
       style={{ position: 'absolute', inset: 0 }}
     >
+      <ZoomLimits minZoom={minZoom} maxZoom={maxZoom} />
       {onPositionChange && <MapPositionTracker onPositionChange={onPositionChange} />}
       {tailDraftPoints && onTailPointClick && (
         <TailDrawingCatcher onPointClick={onTailPointClick} />

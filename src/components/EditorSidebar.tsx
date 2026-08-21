@@ -56,6 +56,8 @@ interface EditorSidebarProps {
     tileLayerAttributionUrl: string | null;
     initialCenter: LatLng;
     initialZoom: number;
+    minZoom: number;
+    maxZoom: number;
   }) => void;
   onCaptureMapPosition: () => { center: LatLng; zoom: number } | null;
   /** The map's current live position, to tell whether it has moved from what's stored in the form. */
@@ -176,6 +178,8 @@ export function EditorSidebar({
       tileLayerAttributionUrl: data.tileLayerAttributionUrl.trim() || null,
       initialCenter: data.initialCenter,
       initialZoom: data.initialZoom,
+      minZoom: data.minZoom,
+      maxZoom: data.maxZoom,
     });
     // Marks these values (with tileUrlValue normalized to the resolved
     // template, in case a real tile URL was extrapolated) as the new clean

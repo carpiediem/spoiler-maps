@@ -381,4 +381,33 @@ describe('MapView', () => {
     });
     expect(polylineCount).toBe(0);
   });
+
+  it('applies the initial zoom limits to the underlying Leaflet map', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView tileUrl={null} center={center} zoom={5} minZoom={2} maxZoom={10} mapRef={mapRef} />,
+    );
+
+    expect(mapRef.current!.getMinZoom()).toBe(2);
+    expect(mapRef.current!.getMaxZoom()).toBe(10);
+  });
+
+  it('keeps the live map in sync when zoom limits change without remounting', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const { rerender } = render(
+      <MapView tileUrl={null} center={center} zoom={5} minZoom={0} maxZoom={19} mapRef={mapRef} />,
+    );
+
+    expect(mapRef.current!.getMinZoom()).toBe(0);
+    expect(mapRef.current!.getMaxZoom()).toBe(19);
+
+    act(() => {
+      rerender(
+        <MapView tileUrl={null} center={center} zoom={5} minZoom={3} maxZoom={8} mapRef={mapRef} />,
+      );
+    });
+
+    expect(mapRef.current!.getMinZoom()).toBe(3);
+    expect(mapRef.current!.getMaxZoom()).toBe(8);
+  });
 });

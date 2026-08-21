@@ -12,6 +12,9 @@ export interface Story {
   tileLayerAttributionUrl: string | null;
   initialCenter: LatLng;
   initialZoom: number;
+  /** Limits how far Leaflet's zoom control will let the map zoom out/in. */
+  minZoom: number;
+  maxZoom: number;
 }
 
 export interface Book {

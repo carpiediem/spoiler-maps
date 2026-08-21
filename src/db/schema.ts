@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 
 export interface Migration {
   version: number;
@@ -185,6 +185,16 @@ export const MIGRATIONS: Migration[] = [
       -- away from this position's own lat/lng (e.g. a journey leading up
       -- to it) — same JSON-column approach as markers.polygon.
       ALTER TABLE character_positions ADD COLUMN tail TEXT;
+    `,
+  },
+  {
+    version: 9,
+    sql: `
+      -- Limits how far Leaflet's zoom control will let the map zoom in/out.
+      -- Existing stories default to 0-19, the usable range of Leaflet's own
+      -- default (OpenStreetMap) tileset.
+      ALTER TABLE stories ADD COLUMN min_zoom INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE stories ADD COLUMN max_zoom INTEGER NOT NULL DEFAULT 19;
     `,
   },
 ];

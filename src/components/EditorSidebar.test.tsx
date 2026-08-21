@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -48,6 +49,8 @@ function makeStory(overrides: Partial<Story>): Story {
     tileLayerAttributionUrl: null,
     initialCenter: { lat: 51.5, lng: -0.1278 },
     initialZoom: 6,
+    minZoom: 0,
+    maxZoom: 19,
     ...overrides,
   };
 }
@@ -212,6 +215,8 @@ describe('EditorSidebar', () => {
       tileLayerAttributionUrl: null,
       initialCenter: DEFAULT_CENTER,
       initialZoom: DEFAULT_ZOOM,
+      minZoom: 0,
+      maxZoom: 19,
     });
   });
 
@@ -399,6 +404,276 @@ describe('EditorSidebar', () => {
     );
   });
 
+  it('saves an updated zoom range', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    fireEvent.change(screen.getByLabelText(/minimum zoom/i), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText(/maximum zoom/i), { target: { value: '15' } });
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ minZoom: 2, maxZoom: 15 }));
+  });
+
+  it('rejects a zoom range whose maximum is below its minimum', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    fireEvent.change(screen.getByLabelText(/minimum zoom/i), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText(/maximum zoom/i), { target: { value: '5' } });
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/must not be less than/i);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('auto-detects the max zoom by probing the tile URL once the field settles', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn((url: string) => {
+      const zoom = Number(String(url).split('/')[3]);
+      return Promise.resolve({ ok: zoom <= 9 } as Response);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      render(
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+        />,
+      );
+
+      fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+        target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+
+      await act(() => vi.advanceTimersByTimeAsync(600));
+
+      expect(screen.getByLabelText(/maximum zoom/i)).toHaveValue(9);
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          method: 'HEAD',
+        }),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
+  it('leaves the zoom range alone when auto-detection is inconclusive', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(() => Promise.reject(new Error('CORS-blocked')));
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      render(
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+        />,
+      );
+
+      fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+        target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+      });
+      await act(() => vi.advanceTimersByTimeAsync(600));
+
+      expect(screen.getByLabelText(/maximum zoom/i)).toHaveValue(19);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
+  it('debounces detection, only probing the URL the user settled on', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn((url: string) => {
+      const zoom = Number(String(url).split('/')[3]);
+      return Promise.resolve({ ok: zoom <= 4 } as Response);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      render(
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+        />,
+      );
+
+      fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+        target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+      });
+      await act(() => vi.advanceTimersByTimeAsync(200));
+      fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+        target: { value: 'https://tile2.example.com/{z}/{x}/{y}.png' },
+      });
+      await act(() => vi.advanceTimersByTimeAsync(600));
+
+      expect(screen.getByLabelText(/maximum zoom/i)).toHaveValue(4);
+      expect(fetchMock.mock.calls.every(([url]) => String(url).includes('tile2.'))).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
+  it('cancels an in-flight probe on unmount, without warning about a state update after unmount', async () => {
+    vi.useFakeTimers();
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn(
+      (_url: string, opts?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          opts?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          );
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const { unmount } = render(
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+        />,
+      );
+
+      fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+        target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+      });
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      unmount();
+      await act(() => vi.advanceTimersByTimeAsync(0));
+
+      expect(consoleError).not.toHaveBeenCalledWith(
+        expect.stringContaining("Can't perform a React state update"),
+        expect.anything(),
+      );
+    } finally {
+      consoleError.mockRestore();
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
   it('clears the form when switching to "New Map"', () => {
     const story = makeStory({ id: 1 });
     const { rerender } = render(
@@ -522,6 +797,8 @@ describe('EditorSidebar', () => {
       expect.objectContaining({
         initialCenter: { lat: 40.7128, lng: -74.006 },
         initialZoom: 10,
+        minZoom: 0,
+        maxZoom: 19,
       }),
     );
   });
@@ -817,6 +1094,8 @@ describe('EditorSidebar', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 0, lng: 0 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     await createBook({
       storyId: story.id,
@@ -868,6 +1147,8 @@ describe('EditorSidebar', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 0, lng: 0 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     await createCharacter({
       storyId: story.id,
@@ -1011,6 +1292,8 @@ describe('EditorSidebar', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     await createCharacter({
       storyId: story.id,
@@ -1042,6 +1325,8 @@ describe('EditorSidebar', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     const character = await createCharacter({
       storyId: story.id,

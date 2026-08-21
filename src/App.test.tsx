@@ -51,6 +51,8 @@ describe('App', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     await createStory({
       name: 'The Wheel of Time',
@@ -59,6 +61,8 @@ describe('App', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     resetDatabaseForTests();
 
@@ -114,6 +118,8 @@ describe('App', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     resetDatabaseForTests();
 
@@ -146,6 +152,8 @@ describe('App', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     const character = await createCharacter({
       storyId: story.id,
@@ -210,6 +218,8 @@ describe('App', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     const character = await createCharacter({
       storyId: story.id,
@@ -259,6 +269,8 @@ describe('App', () => {
       tileLayerAttributionUrl: null,
       initialCenter: { lat: 39.8283, lng: -98.5795 },
       initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
     });
     resetDatabaseForTests();
 

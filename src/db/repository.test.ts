@@ -65,6 +65,8 @@ const exampleStory: NewStory = {
   tileLayerAttributionUrl: null,
   initialCenter: { lat: 39.8283, lng: -98.5795 },
   initialZoom: 4,
+  minZoom: 0,
+  maxZoom: 19,
 };
 
 async function seedStory() {

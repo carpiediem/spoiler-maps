@@ -50,6 +50,8 @@ async function seedCharacter(
     tileLayerAttributionUrl: null,
     initialCenter: { lat: 0, lng: 0 },
     initialZoom: 4,
+    minZoom: 0,
+    maxZoom: 19,
   });
   return createCharacter({
     storyId: story.id,

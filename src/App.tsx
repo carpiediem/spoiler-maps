@@ -12,7 +12,12 @@ import {
 } from './db';
 import { buildTileAttribution } from './lib/attribution';
 import type { CharacterPositionPin } from './lib/characterPositionPins';
-import { DEFAULT_CENTER, DEFAULT_ZOOM } from './lib/mapDefaults';
+import {
+  DEFAULT_CENTER,
+  DEFAULT_MAX_ZOOM,
+  DEFAULT_MIN_ZOOM,
+  DEFAULT_ZOOM,
+} from './lib/mapDefaults';
 import './App.css';
 
 function App() {
@@ -65,6 +70,8 @@ function App() {
   const selectedStory = stories.find((s) => s.id === selectedStoryId) ?? null;
   const mapCenter = selectedStory?.initialCenter ?? DEFAULT_CENTER;
   const mapZoom = selectedStory?.initialZoom ?? DEFAULT_ZOOM;
+  const mapMinZoom = selectedStory?.minZoom ?? DEFAULT_MIN_ZOOM;
+  const mapMaxZoom = selectedStory?.maxZoom ?? DEFAULT_MAX_ZOOM;
   const tileAttribution = buildTileAttribution(
     selectedStory?.tileLayerAuthor ?? null,
     selectedStory?.tileLayerAttributionUrl ?? null,
@@ -159,6 +166,8 @@ function App() {
     tileLayerAttributionUrl: string | null;
     initialCenter: LatLng;
     initialZoom: number;
+    minZoom: number;
+    maxZoom: number;
   }) {
     if (selectedStoryId === null) {
       const created = await createStory(input);
@@ -187,6 +196,8 @@ function App() {
           attribution={tileAttribution}
           center={mapCenter}
           zoom={mapZoom}
+          minZoom={mapMinZoom}
+          maxZoom={mapMaxZoom}
           onPositionChange={setMapPosition}
           draftPosition={draftPosition}
           onDraftPositionChange={setDraftPosition}

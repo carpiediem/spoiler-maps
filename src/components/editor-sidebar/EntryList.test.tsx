@@ -39,6 +39,8 @@ async function seedBookId(): Promise<number> {
     tileLayerAttributionUrl: null,
     initialCenter: { lat: 0, lng: 0 },
     initialZoom: 4,
+    minZoom: 0,
+    maxZoom: 19,
   });
   const book = await createBook({
     storyId: story.id,
