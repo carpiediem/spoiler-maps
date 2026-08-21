@@ -108,6 +108,8 @@ function DraggableEditorSidebar({
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />
@@ -141,6 +143,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -178,6 +182,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -209,6 +215,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -255,6 +263,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -296,6 +306,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -333,6 +345,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -372,6 +386,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -407,6 +423,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -454,6 +472,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -493,6 +513,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -539,6 +561,8 @@ describe('EditorSidebar', () => {
           tailDraftPoints={[]}
           onStartDrawingTail={vi.fn()}
           onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
           timelineMode="book"
           timelineIndex={1}
         />,
@@ -590,6 +614,8 @@ describe('EditorSidebar', () => {
           tailDraftPoints={[]}
           onStartDrawingTail={vi.fn()}
           onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
           timelineMode="book"
           timelineIndex={1}
         />,
@@ -636,6 +662,8 @@ describe('EditorSidebar', () => {
           tailDraftPoints={[]}
           onStartDrawingTail={vi.fn()}
           onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
           timelineMode="book"
           timelineIndex={1}
         />,
@@ -692,6 +720,8 @@ describe('EditorSidebar', () => {
           tailDraftPoints={[]}
           onStartDrawingTail={vi.fn()}
           onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
           timelineMode="book"
           timelineIndex={1}
         />,
@@ -741,6 +771,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -766,6 +798,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -804,6 +838,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -813,6 +849,70 @@ describe('EditorSidebar', () => {
     await user.click(screen.getByRole('option', { name: /the wheel of time/i }));
 
     expect(onSelectStory).toHaveBeenCalledWith(2);
+  });
+
+  it('shows an Export button only once a story is selected, and calls onExportStory when clicked', async () => {
+    const onExportStory = vi.fn();
+    const user = userEvent.setup();
+    const stories = [makeStory({ id: 1 })];
+    const { rerender } = render(
+      <EditorSidebar
+        stories={stories}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onExportStory={onExportStory}
+        onImportFile={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /export as yaml/i })).not.toBeInTheDocument();
+
+    rerender(
+      <EditorSidebar
+        stories={stories}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onExportStory={onExportStory}
+        onImportFile={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /export as yaml/i }));
+    expect(onExportStory).toHaveBeenCalled();
   });
 
   it('captures the current map position and reflects it in the display and on save', async () => {
@@ -839,6 +939,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -883,6 +985,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -915,6 +1019,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -955,6 +1061,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -993,6 +1101,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -1033,6 +1143,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -1069,6 +1181,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -1103,6 +1217,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -1131,6 +1247,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -1161,6 +1279,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -1217,6 +1337,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -1275,6 +1397,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -1314,6 +1438,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -1344,6 +1470,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,
@@ -1373,6 +1501,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
         timelineMode="book"
         timelineIndex={1}
       />,

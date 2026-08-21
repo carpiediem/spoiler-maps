@@ -1,4 +1,5 @@
-import { Box, Paper } from '@mui/material';
+import DownloadIcon from '@mui/icons-material/Download';
+import { Box, IconButton, Paper, Stack, Tooltip } from '@mui/material';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import type { CharacterPosition, LatLng, Story } from '../db';
@@ -50,6 +51,10 @@ interface EditorSidebarProps {
   stories: Story[];
   selectedStoryId: number | null;
   onSelectStory: (storyId: number | null) => void;
+  /** Downloads the currently selected story as a YAML file. */
+  onExportStory: () => void;
+  /** Reads and imports a YAML export as a brand-new story; rejects with a user-facing message on failure. */
+  onImportFile: (file: File) => Promise<void>;
   onSave: (input: {
     name: string;
     tileUrlTemplate: string;
@@ -105,6 +110,8 @@ export function EditorSidebar({
   stories,
   selectedStoryId,
   onSelectStory,
+  onExportStory,
+  onImportFile,
   onSave,
   onCaptureMapPosition,
   mapPosition,
@@ -230,11 +237,23 @@ export function EditorSidebar({
         <Box
           sx={{ width: '50%', flexShrink: 0, boxSizing: 'border-box', p: 2, ...SIDEBAR_HEIGHT_SX }}
         >
-          <StorySelector
-            stories={stories}
-            selectedStoryId={selectedStoryId}
-            onSelect={onSelectStory}
-          />
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <StorySelector
+                stories={stories}
+                selectedStoryId={selectedStoryId}
+                onSelect={onSelectStory}
+                onImportFile={onImportFile}
+              />
+            </Box>
+            {selectedStoryId !== null && (
+              <Tooltip title="Export as YAML" arrow>
+                <IconButton size="small" aria-label="Export as YAML" onClick={onExportStory}>
+                  <DownloadIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
 
           <Box component="form" onSubmit={handleSubmit(onValid)} sx={{ mt: 2 }}>
             <SidebarSection

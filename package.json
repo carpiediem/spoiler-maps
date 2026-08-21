@@ -25,7 +25,8 @@
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.85.0",
     "react-leaflet": "^5.0.0",
-    "sql.js": "^1.14.2"
+    "sql.js": "^1.14.2",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

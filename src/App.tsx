@@ -13,12 +13,15 @@ import {
 } from './db';
 import { buildTileAttribution } from './lib/attribution';
 import type { CharacterPositionPin, CharacterTailOverlay } from './lib/characterPositionPins';
+import { downloadTextFile } from './lib/downloadTextFile';
 import {
   DEFAULT_CENTER,
   DEFAULT_MAX_ZOOM,
   DEFAULT_MIN_ZOOM,
   DEFAULT_ZOOM,
 } from './lib/mapDefaults';
+import { exportStoryToYaml } from './lib/storyExport';
+import { importStoryFromYaml } from './lib/storyImport';
 import './App.css';
 
 function App() {
@@ -201,6 +204,30 @@ function App() {
     setTileUrl(input.tileUrlTemplate);
   }
 
+  async function handleExportStory() {
+    if (selectedStoryId === null) return;
+    const story = stories.find((s) => s.id === selectedStoryId);
+    /* v8 ignore next -- the Export button only renders once selectedStoryId names a story already in `stories`. */
+    if (!story) return;
+
+    const yamlText = await exportStoryToYaml(selectedStoryId);
+    const slug =
+      story.name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') || 'story';
+    downloadTextFile(`${slug}.yaml`, yamlText, 'text/yaml');
+  }
+
+  async function handleImportFile(file: File) {
+    const text = await file.text();
+    const imported = await importStoryFromYaml(text);
+    setStories((previous) => [...previous, imported]);
+    setSelectedStoryId(imported.id);
+    setTileUrl(imported.tileUrlTemplate);
+  }
+
   return (
     <div className="app">
       <main aria-label="Map">
@@ -230,6 +257,8 @@ function App() {
         stories={stories}
         selectedStoryId={selectedStoryId}
         onSelectStory={handleSelectStory}
+        onExportStory={handleExportStory}
+        onImportFile={handleImportFile}
         onSave={handleSave}
         onCaptureMapPosition={getCurrentMapPosition}
         mapPosition={mapPosition}

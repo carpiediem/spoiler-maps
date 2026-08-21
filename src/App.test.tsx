@@ -350,6 +350,51 @@ describe('App', () => {
     expect(await screen.findByText('AGOT: Prologue')).toBeInTheDocument();
   });
 
+  it('imports a YAML file as a brand-new story, selecting it once done', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: /new map/i }));
+    const yamlText = [
+      'name: The Wheel of Time',
+      'initialCenter: { lat: 1, lng: 2 }',
+      'initialZoom: 4',
+      'minZoom: 0',
+      'maxZoom: 19',
+    ].join('\n');
+    const file = new File([yamlText], 'wheel-of-time.yaml', { type: 'text/yaml' });
+    await user.upload(screen.getByLabelText(/import from file/i), file);
+
+    expect(
+      await screen.findByRole('button', { name: /the wheel of time v2/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('exports the selected story, downloading it as a YAML file', async () => {
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    try {
+      await createStory({
+        name: 'A Song of Ice and Fire',
+        tileUrlTemplate: null,
+        tileLayerAuthor: null,
+        tileLayerAttributionUrl: null,
+        initialCenter: { lat: 0, lng: 0 },
+        initialZoom: 4,
+        minZoom: 0,
+        maxZoom: 19,
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      const exportButton = await screen.findByRole('button', { name: /export as yaml/i });
+      await user.click(exportButton);
+
+      await waitFor(() => expect(clickSpy).toHaveBeenCalled());
+    } finally {
+      clickSpy.mockRestore();
+    }
+  });
+
   it('contains all content within landmark regions', () => {
     render(<App />);
 

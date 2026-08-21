@@ -112,3 +112,22 @@
 .story-selector__option--new {
   font-weight: 600;
 }
+
+.story-selector__option:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.story-selector__error {
+  margin: 4px 12px 0;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #82071e;
+  background: #ffebe9;
+  border: 1px solid #ffc1bc;
+  border-radius: 6px;
+}
+
+.story-selector__file-input {
+  display: none;
+}

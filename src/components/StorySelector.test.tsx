@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Story } from '../db';
@@ -21,14 +21,28 @@ function makeStory(overrides: Partial<Story>): Story {
 
 describe('StorySelector', () => {
   it('shows "New Map" when no story is selected', () => {
-    render(<StorySelector stories={[]} selectedStoryId={null} onSelect={vi.fn()} />);
+    render(
+      <StorySelector
+        stories={[]}
+        selectedStoryId={null}
+        onSelect={vi.fn()}
+        onImportFile={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole('button', { name: /new map/i })).toBeInTheDocument();
   });
 
   it('shows the selected story name as the title', () => {
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
-    render(<StorySelector stories={stories} selectedStoryId={1} onSelect={vi.fn()} />);
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole('button', { name: /a song of ice and fire/i })).toBeInTheDocument();
   });
@@ -39,7 +53,14 @@ describe('StorySelector', () => {
       makeStory({ id: 1, name: 'A Song of Ice and Fire' }),
       makeStory({ id: 2, name: 'The Wheel of Time' }),
     ];
-    render(<StorySelector stories={stories} selectedStoryId={1} onSelect={vi.fn()} />);
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
 
@@ -61,7 +82,14 @@ describe('StorySelector', () => {
       makeStory({ id: 1, name: 'A Song of Ice and Fire' }),
       makeStory({ id: 2, name: 'The Wheel of Time' }),
     ];
-    render(<StorySelector stories={stories} selectedStoryId={1} onSelect={onSelect} />);
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={onSelect}
+        onImportFile={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
     await user.click(screen.getByRole('option', { name: /the wheel of time/i }));
@@ -74,7 +102,14 @@ describe('StorySelector', () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
-    render(<StorySelector stories={stories} selectedStoryId={1} onSelect={onSelect} />);
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={onSelect}
+        onImportFile={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
     await user.click(screen.getByRole('option', { name: /new map/i }));
@@ -88,7 +123,14 @@ describe('StorySelector', () => {
       makeStory({ id: 1, name: 'A Song of Ice and Fire' }),
       makeStory({ id: 2, name: 'The Wheel of Time' }),
     ];
-    render(<StorySelector stories={stories} selectedStoryId={1} onSelect={vi.fn()} />);
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
     await user.type(screen.getByPlaceholderText(/search stories/i), 'wheel');
@@ -102,7 +144,14 @@ describe('StorySelector', () => {
   it('shows an empty state when the search query matches nothing', async () => {
     const user = userEvent.setup();
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
-    render(<StorySelector stories={stories} selectedStoryId={1} onSelect={vi.fn()} />);
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
     await user.type(screen.getByPlaceholderText(/search stories/i), 'nonexistent');
@@ -115,7 +164,12 @@ describe('StorySelector', () => {
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
       <div>
-        <StorySelector stories={stories} selectedStoryId={1} onSelect={vi.fn()} />
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+        />
         <button type="button">Outside</button>
       </div>,
     );
@@ -130,7 +184,14 @@ describe('StorySelector', () => {
   it('closes the menu when pressing Escape', async () => {
     const user = userEvent.setup();
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
-    render(<StorySelector stories={stories} selectedStoryId={1} onSelect={vi.fn()} />);
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
     expect(screen.getByRole('listbox')).toBeInTheDocument();
@@ -142,7 +203,14 @@ describe('StorySelector', () => {
   it('toggles the menu closed when the trigger is clicked again', async () => {
     const user = userEvent.setup();
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
-    render(<StorySelector stories={stories} selectedStoryId={1} onSelect={vi.fn()} />);
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={vi.fn()}
+      />,
+    );
 
     const trigger = screen.getByRole('button', { name: /a song of ice and fire/i });
     await user.click(trigger);
@@ -150,5 +218,92 @@ describe('StorySelector', () => {
 
     await user.click(trigger);
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('clicks the hidden file input when "Import from file…" is clicked', async () => {
+    const user = userEvent.setup();
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {});
+    const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
+    await user.click(screen.getByRole('button', { name: /import from file/i }));
+
+    expect(clickSpy).toHaveBeenCalled();
+    clickSpy.mockRestore();
+  });
+
+  it('imports the selected file and closes the menu on success', async () => {
+    const user = userEvent.setup();
+    const onImportFile = vi.fn().mockResolvedValue(undefined);
+    const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={onImportFile}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
+    const file = new File(['name: Test'], 'story.yaml', { type: 'text/yaml' });
+    await user.upload(screen.getByLabelText(/import from file/i), file);
+
+    expect(onImportFile).toHaveBeenCalledWith(file);
+    await waitFor(() => expect(screen.queryByRole('listbox')).not.toBeInTheDocument());
+  });
+
+  it('shows an error message and keeps the menu open when import fails', async () => {
+    const user = userEvent.setup();
+    const onImportFile = vi.fn().mockRejectedValue(new Error('name must be a string.'));
+    const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={onImportFile}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
+    const file = new File(['bad'], 'story.yaml', { type: 'text/yaml' });
+    await user.upload(screen.getByLabelText(/import from file/i), file);
+
+    expect(await screen.findByText('name must be a string.')).toBeInTheDocument();
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+  });
+
+  it('clears a previous import error when the menu is reopened', async () => {
+    const user = userEvent.setup();
+    const onImportFile = vi.fn().mockRejectedValue(new Error('Bad file.'));
+    const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
+    render(
+      <StorySelector
+        stories={stories}
+        selectedStoryId={1}
+        onSelect={vi.fn()}
+        onImportFile={onImportFile}
+      />,
+    );
+    const trigger = screen.getByRole('button', { name: /a song of ice and fire/i });
+
+    await user.click(trigger);
+    const file = new File(['bad'], 'story.yaml', { type: 'text/yaml' });
+    await user.upload(screen.getByLabelText(/import from file/i), file);
+    expect(await screen.findByText('Bad file.')).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await user.click(trigger);
+
+    expect(screen.queryByText('Bad file.')).not.toBeInTheDocument();
   });
 });
