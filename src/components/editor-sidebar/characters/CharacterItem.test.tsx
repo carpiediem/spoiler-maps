@@ -14,6 +14,7 @@ import {
   createStory,
   listCharactersForStory,
   type Character,
+  type CharacterPosition,
 } from '../../../db';
 import { resetDatabaseForTests } from '../../../db/client';
 import { CharacterItem } from './CharacterItem';
@@ -60,10 +61,12 @@ function Wrapper({
   initialCharacter,
   onDelete,
   onAddPosition,
+  onPositionsChange,
 }: {
   initialCharacter: Character;
   onDelete?: () => void;
   onAddPosition?: (index: number) => void;
+  onPositionsChange?: (characterId: number, positions: CharacterPosition[]) => void;
 }) {
   const [character, setCharacter] = useState(initialCharacter);
   const [expanded, setExpanded] = useState(true);
@@ -75,6 +78,7 @@ function Wrapper({
       onCharacterChange={setCharacter}
       onDelete={onDelete ?? vi.fn()}
       onAddPosition={onAddPosition ?? vi.fn()}
+      onPositionsChange={onPositionsChange ?? vi.fn()}
       positionsVersion={0}
     />
   );
@@ -98,6 +102,7 @@ describe('CharacterItem', () => {
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
         onAddPosition={vi.fn()}
+        onPositionsChange={vi.fn()}
         positionsVersion={0}
       />,
     );
@@ -122,6 +127,7 @@ describe('CharacterItem', () => {
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
         onAddPosition={vi.fn()}
+        onPositionsChange={vi.fn()}
         positionsVersion={0}
       />,
     );
@@ -275,6 +281,21 @@ describe('CharacterItem', () => {
 
     expect(await screen.findByText('1. Always visible')).toBeInTheDocument();
     expect(screen.getByText('2. Always visible')).toBeInTheDocument();
+  });
+
+  it('reports its loaded positions via onPositionsChange, regardless of expanded state', async () => {
+    const character = await seedCharacter();
+    const position = await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onPositionsChange = vi.fn();
+    render(<Wrapper initialCharacter={character} onPositionsChange={onPositionsChange} />);
+
+    await waitFor(() => expect(onPositionsChange).toHaveBeenCalledWith(character.id, [position]));
   });
 
   it('does not render a positions list for a character with none', async () => {

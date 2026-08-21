@@ -3,6 +3,9 @@ import type { RefObject } from 'react';
 import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLng } from '../db';
+import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
+import type { CharacterPositionPin } from '../lib/characterPositionPins';
+import { buildPinIcon } from '../lib/pinIcon';
 import { detectTileUrlTemplateKind } from '../lib/tileUrl';
 import { QuadkeyTileLayer } from './QuadkeyTileLayer';
 
@@ -32,6 +35,8 @@ interface MapViewProps {
   /** A draggable pin shown while editing a character position's lat/lng. */
   draftPosition?: LatLng | null;
   onDraftPositionChange?: (position: LatLng) => void;
+  /** Numbered pins for the currently expanded character's saved positions. */
+  characterPositionPins?: CharacterPositionPin[] | null;
 }
 
 interface DraftPositionMarkerProps {
@@ -82,6 +87,7 @@ export function MapView({
   onPositionChange,
   draftPosition,
   onDraftPositionChange,
+  characterPositionPins,
 }: MapViewProps) {
   const activeTileUrl = tileUrl ?? DEFAULT_TILE_URL;
   const kind = tileUrl ? detectTileUrlTemplateKind(tileUrl) : 'xyz';
@@ -98,6 +104,13 @@ export function MapView({
       {draftPosition && onDraftPositionChange && (
         <DraftPositionMarker position={draftPosition} onChange={onDraftPositionChange} />
       )}
+      {characterPositionPins?.map((pin) => (
+        <Marker
+          key={pin.id}
+          position={[pin.position.lat, pin.position.lng]}
+          icon={buildPinIcon(pin.label, pin.color ?? DEFAULT_CHARACTER_COLOR)}
+        />
+      ))}
       {kind === 'quadkey' ? (
         <QuadkeyTileLayer
           key={activeTileUrl}

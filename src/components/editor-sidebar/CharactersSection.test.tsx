@@ -1,7 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createCharacter, createStory, listCharactersForStory } from '../../db';
+import {
+  createCharacter,
+  createCharacterPosition,
+  createStory,
+  listCharactersForStory,
+} from '../../db';
 import { resetDatabaseForTests } from '../../db/client';
 import { CharactersSection } from './CharactersSection';
 
@@ -37,7 +42,14 @@ async function seedStoryId(): Promise<number> {
 describe('CharactersSection', () => {
   it('shows a loading state, then "No characters yet." for a story with none', async () => {
     const storyId = await seedStoryId();
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText(/loading characters/i)).toBeInTheDocument();
     expect(await screen.findByText(/no characters yet/i)).toBeInTheDocument();
@@ -46,7 +58,14 @@ describe('CharactersSection', () => {
   it('lists existing characters', async () => {
     const storyId = await seedStoryId();
     await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+      />,
+    );
 
     expect(await screen.findByText('Jon Snow')).toBeInTheDocument();
   });
@@ -68,6 +87,7 @@ describe('CharactersSection', () => {
         onCountChange={onCountChange}
         onAddPosition={vi.fn()}
         positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -83,6 +103,7 @@ describe('CharactersSection', () => {
         onCountChange={onCountChange}
         onAddPosition={vi.fn()}
         positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -93,7 +114,14 @@ describe('CharactersSection', () => {
     const storyId = await seedStoryId();
     await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
     const user = userEvent.setup();
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+      />,
+    );
 
     await screen.findByText('Jon Snow');
     await user.click(screen.getByRole('button', { name: /add character/i }));
@@ -109,7 +137,14 @@ describe('CharactersSection', () => {
     const storyId = await seedStoryId();
     await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
     const user = userEvent.setup();
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+      />,
+    );
 
     await user.click(await screen.findByText('Jon Snow'));
     const nameField = screen.getByLabelText(/^name$/i);
@@ -130,7 +165,14 @@ describe('CharactersSection', () => {
       color: null,
     });
     const user = userEvent.setup();
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+      />,
+    );
 
     await user.click(await screen.findByText('Jon Snow'));
     const visibleNameField = screen
@@ -156,7 +198,14 @@ describe('CharactersSection', () => {
       color: null,
     });
     const user = userEvent.setup();
-    render(<CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />);
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+      />,
+    );
 
     await user.click(await screen.findByText('Jon Snow'));
     await user.click(screen.getByRole('button', { name: /delete character/i }));
@@ -171,11 +220,157 @@ describe('CharactersSection', () => {
     const storyId = await seedStoryId();
     await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
     const { unmount } = render(
-      <CharactersSection storyId={storyId} onAddPosition={vi.fn()} positionsVersion={0} />,
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+      />,
     );
 
     unmount();
 
     await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+
+  it('reports numbered pins for the expanded character once its positions have loaded', async () => {
+    const storyId = await seedStoryId();
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
+        { id: expect.any(Number), position: { lat: 1, lng: 1 }, label: '1', color: '#ff0000' },
+        { id: expect.any(Number), position: { lat: 2, lng: 2 }, label: '2', color: '#ff0000' },
+      ]),
+    );
+  });
+
+  it('clears the pins once the expanded character is collapsed again', async () => {
+    const storyId = await seedStoryId();
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([expect.any(Object)]),
+    );
+
+    await user.click(screen.getByText('Jon Snow'));
+    await waitFor(() => expect(onVisiblePositionsChange).toHaveBeenLastCalledWith(null));
+  });
+
+  it('reports the newly expanded character’s pins when switching directly between two expanded characters', async () => {
+    const storyId = await seedStoryId();
+    const jon = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    const daenerys = await createCharacter({
+      storyId,
+      name: 'Daenerys Targaryen',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    await createCharacterPosition({
+      characterId: jon.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: daenerys.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
+        { id: expect.any(Number), position: { lat: 1, lng: 1 }, label: '1', color: null },
+      ]),
+    );
+
+    // Clicking a different character's summary switches expandedCharacterId
+    // directly from Jon to Daenerys in one state update, so both
+    // CharacterItems' positions-reporting effects fire in the same commit —
+    // the result must reflect Daenerys (now expanded), not whichever
+    // CharacterItem happens to run its effect last.
+    await user.click(screen.getByText('Daenerys Targaryen'));
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
+        { id: expect.any(Number), position: { lat: 2, lng: 2 }, label: '1', color: null },
+      ]),
+    );
   });
 });

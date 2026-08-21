@@ -2,6 +2,7 @@ import { Box, Paper } from '@mui/material';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import type { LatLng, Story } from '../db';
+import type { CharacterPositionPin } from '../lib/characterPositionPins';
 import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
 import { storyToFormValues, type FormValues } from './editor-sidebar/formValues';
@@ -61,6 +62,8 @@ interface EditorSidebarProps {
   draftPosition: LatLng | null;
   onStartEditingPosition: () => void;
   onEndEditingPosition: () => void;
+  /** Called with the expanded character's numbered position pins, or null once collapsed. */
+  onVisiblePositionsChange: (pins: CharacterPositionPin[] | null) => void;
 }
 
 export function EditorSidebar({
@@ -73,6 +76,7 @@ export function EditorSidebar({
   draftPosition,
   onStartEditingPosition,
   onEndEditingPosition,
+  onVisiblePositionsChange,
 }: EditorSidebarProps) {
   const {
     control,
@@ -272,6 +276,7 @@ export function EditorSidebar({
                     onCountChange={setCharactersCount}
                     onAddPosition={handleAddPosition}
                     positionsVersion={positionsVersion}
+                    onVisiblePositionsChange={onVisiblePositionsChange}
                   />
                 </SidebarSection>
 

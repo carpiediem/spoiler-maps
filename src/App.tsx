@@ -4,6 +4,7 @@ import { EditorSidebar } from './components/EditorSidebar';
 import { MapView } from './components/MapView';
 import { createStory, listStories, updateStory, type LatLng, type Story } from './db';
 import { buildTileAttribution } from './lib/attribution';
+import type { CharacterPositionPin } from './lib/characterPositionPins';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from './lib/mapDefaults';
 import './App.css';
 
@@ -16,6 +17,9 @@ function App() {
     zoom: DEFAULT_ZOOM,
   });
   const [draftPosition, setDraftPosition] = useState<LatLng | null>(null);
+  const [characterPositionPins, setCharacterPositionPins] = useState<CharacterPositionPin[] | null>(
+    null,
+  );
   const mapRef = useRef<LeafletMap | null>(null);
 
   useEffect(() => {
@@ -112,6 +116,7 @@ function App() {
           onPositionChange={setMapPosition}
           draftPosition={draftPosition}
           onDraftPositionChange={setDraftPosition}
+          characterPositionPins={characterPositionPins}
         />
       </main>
       <EditorSidebar
@@ -124,6 +129,7 @@ function App() {
         draftPosition={draftPosition}
         onStartEditingPosition={handleStartEditingPosition}
         onEndEditingPosition={handleEndEditingPosition}
+        onVisiblePositionsChange={setCharacterPositionPins}
       />
     </div>
   );

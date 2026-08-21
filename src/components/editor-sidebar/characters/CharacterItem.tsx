@@ -20,10 +20,9 @@ import {
   type Character,
   type CharacterPosition,
 } from '../../../db';
+import { DEFAULT_CHARACTER_COLOR } from '../../../lib/characterColor';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
 import { describePositionRange, useRangeOptions } from './rangeOptions';
-
-const DEFAULT_COLOR = '#1976d2';
 
 interface CharacterItemProps {
   character: Character;
@@ -35,6 +34,8 @@ interface CharacterItemProps {
   onAddPosition: (index: number) => void;
   /** Bumped whenever a position editing session ends, to re-fetch the list below. */
   positionsVersion: number;
+  /** Called once this character's positions have (re)loaded, so the map pins can be kept in sync. */
+  onPositionsChange: (characterId: number, positions: CharacterPosition[]) => void;
 }
 
 export function CharacterItem({
@@ -45,6 +46,7 @@ export function CharacterItem({
   onDelete,
   onAddPosition,
   positionsVersion,
+  onPositionsChange,
 }: CharacterItemProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [positions, setPositions] = useState<CharacterPosition[] | null>(null);
@@ -60,6 +62,11 @@ export function CharacterItem({
       cancelled = true;
     };
   }, [character.id, positionsVersion]);
+
+  useEffect(() => {
+    if (positions === null) return;
+    onPositionsChange(character.id, positions);
+  }, [character.id, positions, onPositionsChange]);
 
   function handleFieldChange(field: 'name' | 'group' | 'icon' | 'color', value: string) {
     onCharacterChange({
@@ -117,7 +124,7 @@ export function CharacterItem({
                 width: 14,
                 height: 14,
                 borderRadius: '50%',
-                backgroundColor: character.color ?? DEFAULT_COLOR,
+                backgroundColor: character.color ?? DEFAULT_CHARACTER_COLOR,
                 border: 1,
                 borderColor: 'divider',
                 flexShrink: 0,
@@ -154,7 +161,7 @@ export function CharacterItem({
             <Box
               component="input"
               type="color"
-              value={character.color ?? DEFAULT_COLOR}
+              value={character.color ?? DEFAULT_CHARACTER_COLOR}
               onChange={(event) => handleFieldChange('color', event.target.value)}
               onBlur={handleBlur}
               aria-label="Color"

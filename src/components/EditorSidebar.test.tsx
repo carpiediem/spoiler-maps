@@ -65,6 +65,7 @@ function DraggableEditorSidebar({
         draftPosition={draftPosition}
         onStartEditingPosition={() => setDraftPosition({ lat: 39.8283, lng: -98.5795 })}
         onEndEditingPosition={() => setDraftPosition(null)}
+        onVisiblePositionsChange={vi.fn()}
       />
       <button onClick={() => setDraftPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag</button>
     </>
@@ -87,6 +88,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -113,6 +115,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -133,6 +136,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -166,6 +170,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -196,6 +201,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -222,6 +228,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -250,6 +257,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -274,6 +282,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -309,6 +318,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -323,6 +333,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -350,6 +361,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -374,6 +386,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -405,6 +418,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -426,6 +440,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -455,6 +470,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -482,6 +498,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -511,6 +528,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -536,6 +554,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -559,6 +578,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -576,6 +596,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -595,6 +616,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -638,6 +660,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -658,6 +681,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -677,6 +701,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 
@@ -695,6 +720,7 @@ describe('EditorSidebar', () => {
         draftPosition={null}
         onStartEditingPosition={vi.fn()}
         onEndEditingPosition={vi.fn()}
+        onVisiblePositionsChange={vi.fn()}
       />,
     );
 

@@ -104,4 +104,42 @@ describe('MapView', () => {
     expect(reported.lat).toBeCloseTo(42);
     expect(reported.lng).toBeCloseTo(-102);
   });
+
+  it('does not render character position pins when none are given', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(<MapView tileUrl={null} center={center} zoom={5} mapRef={mapRef} />);
+
+    let markerCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) markerCount += 1;
+    });
+    expect(markerCount).toBe(0);
+  });
+
+  it('renders a non-draggable, numbered pin for each character position', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        characterPositionPins={[
+          { id: 1, position: { lat: 41, lng: -101 }, label: '1', color: '#ff0000' },
+          { id: 2, position: { lat: 42, lng: -102 }, label: '2', color: null },
+        ]}
+      />,
+    );
+
+    const markers: LeafletMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) markers.push(layer);
+    });
+    expect(markers).toHaveLength(2);
+    for (const marker of markers) {
+      expect(marker.options.draggable).not.toBe(true);
+    }
+    expect(markers[0].getLatLng().lat).toBeCloseTo(41);
+    expect(markers[1].getLatLng().lat).toBeCloseTo(42);
+  });
 });

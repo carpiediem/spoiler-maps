@@ -1,0 +1,1 @@
+export const DEFAULT_CHARACTER_COLOR = '#1976d2';
