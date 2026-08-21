@@ -26,7 +26,14 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useEffect, useState, type DragEvent, type ReactNode, type SyntheticEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type DragEvent,
+  type ReactNode,
+  type SyntheticEvent,
+} from 'react';
 import {
   listCharacterPositionsForCharacter,
   updateCharacter,
@@ -34,6 +41,8 @@ import {
   type CharacterPosition,
 } from '../../../db';
 import { DEFAULT_CHARACTER_COLOR } from '../../../lib/characterColor';
+import { makeTimelineVisibilityChecker } from '../../../lib/timelineVisibility';
+import type { TimelineMode } from '../../MapTimelineControl';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
 import {
   summarizePositionRange,
@@ -100,6 +109,10 @@ interface CharacterItemProps {
   positionsVersion: number;
   /** Called once this character's positions have (re)loaded, so the map pins can be kept in sync. */
   onPositionsChange: (characterId: number, positions: CharacterPosition[]) => void;
+  /** The map timeline control's current mode, used to tell which positions it currently shows on the map. */
+  timelineMode: TimelineMode;
+  /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
+  timelineIndex: number;
 }
 
 export function CharacterItem({
@@ -119,12 +132,19 @@ export function CharacterItem({
   onEditPosition,
   positionsVersion,
   onPositionsChange,
+  timelineMode,
+  timelineIndex,
 }: CharacterItemProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [positions, setPositions] = useState<CharacterPosition[] | null>(null);
   const { chapterOptions, episodeOptions } = useRangeOptions(character.storyId);
   const theme = useTheme();
   const characterColor = character.color ?? DEFAULT_CHARACTER_COLOR;
+  const isPositionVisible = useMemo(
+    () =>
+      makeTimelineVisibilityChecker(timelineMode, timelineIndex, chapterOptions, episodeOptions),
+    [timelineMode, timelineIndex, chapterOptions, episodeOptions],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -331,47 +351,59 @@ export function CharacterItem({
             <Box sx={{ borderRadius: 1, overflow: 'hidden' }}>
               {!!positions?.length && (
                 <List dense disablePadding>
-                  {positions.map((position, positionIndex) => (
-                    <ListItemButton
-                      key={position.id}
-                      onClick={() => onEditPosition(position, positionIndex + 1)}
-                      sx={{ py: 0.5 }}
-                    >
-                      <ListItemAvatar sx={{ minWidth: 32 }}>
-                        <Avatar
-                          sx={{
-                            width: 22,
-                            height: 22,
-                            fontSize: '0.75rem',
-                            bgcolor: characterColor,
-                            color: theme.palette.getContrastText(characterColor),
+                  {positions.map((position, positionIndex) => {
+                    const isVisibleOnMap = isPositionVisible(position);
+                    return (
+                      <ListItemButton
+                        key={position.id}
+                        onClick={() => onEditPosition(position, positionIndex + 1)}
+                        sx={{ py: 0.5 }}
+                      >
+                        <ListItemAvatar sx={{ minWidth: 32 }}>
+                          <Avatar
+                            sx={{
+                              width: 22,
+                              height: 22,
+                              fontSize: '0.75rem',
+                              ...(isVisibleOnMap
+                                ? {
+                                    bgcolor: characterColor,
+                                    color: theme.palette.getContrastText(characterColor),
+                                  }
+                                : {
+                                    bgcolor: 'transparent',
+                                    color: characterColor,
+                                    border: 1,
+                                    borderColor: characterColor,
+                                  }),
+                            }}
+                          >
+                            {positionIndex + 1}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            position.note ||
+                            `${position.position.lat.toFixed(4)}, ${position.position.lng.toFixed(4)}`
+                          }
+                          secondary={
+                            <PositionRangeSummaryView
+                              summary={summarizePositionRange(
+                                position.chapterRange,
+                                position.episodeRange,
+                                chapterOptions,
+                                episodeOptions,
+                              )}
+                            />
+                          }
+                          slotProps={{
+                            primary: { variant: 'body2' },
+                            secondary: { component: 'span' },
                           }}
-                        >
-                          {positionIndex + 1}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          position.note ||
-                          `${position.position.lat.toFixed(4)}, ${position.position.lng.toFixed(4)}`
-                        }
-                        secondary={
-                          <PositionRangeSummaryView
-                            summary={summarizePositionRange(
-                              position.chapterRange,
-                              position.episodeRange,
-                              chapterOptions,
-                              episodeOptions,
-                            )}
-                          />
-                        }
-                        slotProps={{
-                          primary: { variant: 'body2' },
-                          secondary: { component: 'span' },
-                        }}
-                      />
-                    </ListItemButton>
-                  ))}
+                        />
+                      </ListItemButton>
+                    );
+                  })}
                 </List>
               )}
               <Button

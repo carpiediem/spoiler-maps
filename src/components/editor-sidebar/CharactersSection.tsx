@@ -12,6 +12,7 @@ import {
 import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
+import { makeTimelineVisibilityChecker } from '../../lib/timelineVisibility';
 import type { TimelineMode } from '../MapTimelineControl';
 import { useRangeOptions } from './characters/rangeOptions';
 import { CharacterItem } from './characters/CharacterItem';
@@ -96,28 +97,12 @@ export function CharactersSection({
   const { chapterOptions, episodeOptions } = useRangeOptions(storyId);
 
   useEffect(() => {
-    // Maps a chapter/episode id (whichever medium the timeline control is
-    // currently in) to its flat 1-based index, so a position's start
-    // boundary can be compared against the timeline's scrub position.
-    const activeOptionIndexById = new Map(
-      (timelineMode === 'book' ? chapterOptions : episodeOptions).map((option) => [
-        option.id,
-        option.index,
-      ]),
+    const isPositionVisible = makeTimelineVisibilityChecker(
+      timelineMode,
+      timelineIndex,
+      chapterOptions,
+      episodeOptions,
     );
-
-    // A position with no range set for the active medium, or an open start,
-    // has no lower bound — it's always shown regardless of scrub position.
-    function isPositionVisible(position: CharacterPosition): boolean {
-      const startId =
-        timelineMode === 'book'
-          ? position.chapterRange?.startChapterId
-          : position.episodeRange?.startEpisodeId;
-      if (startId === null || startId === undefined) return true;
-      const startIndex = activeOptionIndexById.get(startId);
-      if (startIndex === undefined) return true;
-      return startIndex <= timelineIndex;
-    }
 
     const pins: CharacterPositionPin[] = [];
     const tails: CharacterTailOverlay[] = [];
@@ -335,6 +320,8 @@ export function CharactersSection({
           }
           positionsVersion={positionsVersion}
           onPositionsChange={handlePositionsChange}
+          timelineMode={timelineMode}
+          timelineIndex={timelineIndex}
         />
       ))}
 
