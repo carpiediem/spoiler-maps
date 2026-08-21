@@ -124,6 +124,7 @@ describe('MapView', () => {
         characterId: 1,
         position,
         dead: false,
+        note: null,
         chapterRange: null,
         episodeRange: null,
       },

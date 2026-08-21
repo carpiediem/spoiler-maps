@@ -8,6 +8,7 @@ import {
   MenuItem,
   Select,
   Stack,
+  TextField,
   Typography,
   type SelectChangeEvent,
 } from '@mui/material';
@@ -95,6 +96,7 @@ export function PositionPanel({
     existingPosition?.episodeRange?.endEpisodeId ?? null,
   );
   const [dead, setDead] = useState(existingPosition?.dead ?? false);
+  const [note, setNote] = useState(existingPosition?.note ?? '');
 
   // The pin starts at the map's current center (or the existing position's
   // lat/lng, when editing); nothing is saved until the user actually drags
@@ -115,6 +117,7 @@ export function PositionPanel({
     if (position === null) return;
     const chapterRange = { startChapterId: chapterRangeStart, endChapterId: chapterRangeEnd };
     const episodeRange = { startEpisodeId: episodeRangeStart, endEpisodeId: episodeRangeEnd };
+    const trimmedNote = note.trim() || null;
 
     if (!hasRunEffectRef.current) {
       hasRunEffectRef.current = true;
@@ -126,6 +129,7 @@ export function PositionPanel({
         characterId,
         position,
         dead,
+        note: trimmedNote,
         chapterRange,
         episodeRange,
       });
@@ -134,11 +138,16 @@ export function PositionPanel({
 
     if (position === initialPositionRef.current) return;
 
-    createCharacterPosition({ characterId, position, dead, chapterRange, episodeRange }).then(
-      (created) => {
-        savedPositionIdRef.current = created.id;
-      },
-    );
+    createCharacterPosition({
+      characterId,
+      position,
+      dead,
+      note: trimmedNote,
+      chapterRange,
+      episodeRange,
+    }).then((created) => {
+      savedPositionIdRef.current = created.id;
+    });
   }, [
     characterId,
     position,
@@ -147,6 +156,7 @@ export function PositionPanel({
     episodeRangeStart,
     episodeRangeEnd,
     dead,
+    note,
   ]);
 
   return (
@@ -165,6 +175,15 @@ export function PositionPanel({
           ? `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`
           : 'Drag the pin on the map to set a position.'}
       </Typography>
+
+      <TextField
+        label="Note"
+        size="small"
+        fullWidth
+        multiline
+        value={note}
+        onChange={(event) => setNote(event.target.value)}
+      />
 
       {hasBooks && (
         <Stack spacing={1.5}>

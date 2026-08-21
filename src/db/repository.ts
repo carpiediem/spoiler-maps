@@ -607,6 +607,7 @@ function rowToCharacterPosition(row: Row): CharacterPosition {
     characterId: row.character_id as number,
     position: { lat: row.lat as number, lng: row.lng as number },
     dead: (row.dead as number) !== 0,
+    note: row.note as string | null,
     chapterRange: rowToChapterRange(row),
     episodeRange: rowToEpisodeRange(row),
   };
@@ -621,15 +622,16 @@ export async function createCharacterPosition(
   const id = insert(
     db,
     `INSERT INTO character_positions (
-       character_id, lat, lng, dead,
+       character_id, lat, lng, dead, note,
        chapter_range_start_chapter_id, chapter_range_end_chapter_id,
        episode_range_start_episode_id, episode_range_end_episode_id
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       input.characterId,
       input.position.lat,
       input.position.lng,
       input.dead ? 1 : 0,
+      input.note,
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
     ],
@@ -664,7 +666,7 @@ export async function updateCharacterPosition(
   assertEpisodeRangeOrder(db, input.episodeRange);
   db.run(
     `UPDATE character_positions
-     SET character_id = ?, lat = ?, lng = ?, dead = ?,
+     SET character_id = ?, lat = ?, lng = ?, dead = ?, note = ?,
          chapter_range_start_chapter_id = ?, chapter_range_end_chapter_id = ?,
          episode_range_start_episode_id = ?, episode_range_end_episode_id = ?
      WHERE id = ?;`,
@@ -673,6 +675,7 @@ export async function updateCharacterPosition(
       input.position.lat,
       input.position.lng,
       input.dead ? 1 : 0,
+      input.note,
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
       id,

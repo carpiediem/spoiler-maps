@@ -158,6 +158,7 @@ describe('App', () => {
       characterId: character.id,
       position: { lat: 51.5, lng: -0.1278 },
       dead: true,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });

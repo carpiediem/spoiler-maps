@@ -245,6 +245,7 @@ describe('CharacterItem', () => {
       characterId: character.id,
       position: { lat: 1, lng: 1 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -252,6 +253,7 @@ describe('CharacterItem', () => {
       characterId: character.id,
       position: { lat: 2, lng: 2 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -272,6 +274,7 @@ describe('CharacterItem', () => {
       characterId: character.id,
       position: { lat: 1, lng: 1 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -279,6 +282,7 @@ describe('CharacterItem', () => {
       characterId: character.id,
       position: { lat: 2, lng: 2 },
       dead: false,
+      note: null,
       chapterRange: { startChapterId: null, endChapterId: null },
       episodeRange: null,
     });
@@ -287,6 +291,24 @@ describe('CharacterItem', () => {
     expect(await screen.findAllByText('Always visible')).toHaveLength(2);
     expect(screen.getByText('1')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('1.0000, 1.0000')).toBeInTheDocument();
+    expect(screen.getByText('2.0000, 2.0000')).toBeInTheDocument();
+  });
+
+  it('shows a position’s note instead of its lat/lng when one is set', async () => {
+    const character = await seedCharacter();
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: 'Hiding at the Wall',
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(<Wrapper initialCharacter={character} />);
+
+    expect(await screen.findByText('Hiding at the Wall')).toBeInTheDocument();
+    expect(screen.queryByText('1.0000, 1.0000')).not.toBeInTheDocument();
   });
 
   it('calls onEditPosition with the position and its 1-based index when a list item is clicked', async () => {
@@ -295,6 +317,7 @@ describe('CharacterItem', () => {
       characterId: character.id,
       position: { lat: 1, lng: 1 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -313,6 +336,7 @@ describe('CharacterItem', () => {
       characterId: character.id,
       position: { lat: 1, lng: 1 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });

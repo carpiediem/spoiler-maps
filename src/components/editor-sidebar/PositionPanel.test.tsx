@@ -342,6 +342,26 @@ describe('PositionPanel', () => {
     expect(deadCheckbox).toBeChecked();
   });
 
+  it('types into the Note field', async () => {
+    const storyId = await seedStoryId();
+    const user = userEvent.setup();
+    render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+        existingPosition={null}
+      />,
+    );
+
+    const noteField = screen.getByLabelText(/^note$/i);
+    await user.type(noteField, 'Hiding at the Wall');
+
+    expect(noteField).toHaveValue('Hiding at the Wall');
+  });
+
   it('does not update state after unmounting while books/seasons are still loading', async () => {
     const storyId = await seedStoryId();
     const { unmount } = render(
@@ -383,6 +403,50 @@ describe('PositionPanel', () => {
     const [saved] = await listCharacterPositionsForCharacter(characterId);
     expect(saved.position).toEqual({ lat: 51.5, lng: -0.1278 });
     expect(saved.dead).toBe(false);
+    expect(saved.note).toBeNull();
+  });
+
+  it('saves a typed note, trimmed, as part of the created position', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const user = userEvent.setup();
+    render(<DraggableWrapper storyId={storyId} characterId={characterId} />);
+
+    await user.type(screen.getByLabelText(/^note$/i), '  Hiding at the Wall  ');
+    await user.click(screen.getByRole('button', { name: /simulate drag 1/i }));
+
+    await waitFor(async () => {
+      const [saved] = await listCharacterPositionsForCharacter(characterId);
+      expect(saved.note).toBe('Hiding at the Wall');
+    });
+  });
+
+  it('clears a blank note back to null', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      note: 'Hiding at the Wall',
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+      />,
+    );
+
+    const noteField = screen.getByLabelText(/^note$/i);
+    expect(noteField).toHaveValue('Hiding at the Wall');
+    await user.clear(noteField);
+
+    await waitFor(async () => {
+      const [updated] = await listCharacterPositionsForCharacter(characterId);
+      expect(updated.note).toBeNull();
+    });
   });
 
   it('updates the same position row on further marker moves and field changes', async () => {
@@ -420,6 +484,7 @@ describe('PositionPanel', () => {
       characterId,
       position: INITIAL_POSITION,
       dead: true,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -460,6 +525,7 @@ describe('PositionPanel', () => {
       characterId,
       position: INITIAL_POSITION,
       dead: false,
+      note: null,
       chapterRange: { startChapterId: chapter.id, endChapterId: null },
       episodeRange: { startEpisodeId: episode.id, endEpisodeId: null },
     });
@@ -484,6 +550,7 @@ describe('PositionPanel', () => {
       characterId,
       position: INITIAL_POSITION,
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -508,6 +575,7 @@ describe('PositionPanel', () => {
       characterId,
       position: INITIAL_POSITION,
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });

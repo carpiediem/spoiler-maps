@@ -346,6 +346,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -360,6 +361,7 @@ describe('character positions', () => {
     await updateCharacterPosition(position.id, { ...position, dead: true });
     expect((await listCharacterPositionsForCharacter(character.id))[0]).toMatchObject({
       dead: true,
+      note: null,
     });
 
     await deleteCharacterPosition(position.id);
@@ -372,6 +374,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: true,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -385,6 +388,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
     });
@@ -398,6 +402,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id },
       episodeRange: null,
     });
@@ -445,6 +450,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
       chapterRange: { startChapterId: book1Chapter10.id, endChapterId: book2Chapter5.id },
       episodeRange: null,
     });
@@ -460,6 +466,7 @@ describe('character positions', () => {
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
         dead: false,
+        note: null,
         chapterRange: { startChapterId: chapter2.id, endChapterId: chapter1.id },
         episodeRange: null,
       }),
@@ -474,6 +481,7 @@ describe('character positions', () => {
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
         dead: false,
+        note: null,
         chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id + 1000 },
         episodeRange: null,
       }),
@@ -486,6 +494,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
       chapterRange: { startChapterId: chapter1.id, endChapterId: null },
       episodeRange: null,
     });
@@ -499,6 +508,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
       chapterRange: { startChapterId: null, endChapterId: null },
       episodeRange: null,
     });
@@ -540,6 +550,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: { startEpisodeId: episode1.id, endEpisodeId: episode2.id },
     });
@@ -553,6 +564,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: { startEpisodeId: episode1.id, endEpisodeId: null },
     });
@@ -568,6 +580,7 @@ describe('character positions', () => {
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
         dead: false,
+        note: null,
         chapterRange: null,
         episodeRange: { startEpisodeId: episode2.id, endEpisodeId: episode1.id },
       }),
@@ -582,6 +595,7 @@ describe('character positions', () => {
         characterId: character.id,
         position: { lat: 54.5, lng: -1.5 },
         dead: false,
+        note: null,
         chapterRange: null,
         episodeRange: { startEpisodeId: episode1.id, endEpisodeId: episode1.id + 1000 },
       }),
@@ -594,6 +608,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
     });
@@ -614,6 +629,7 @@ describe('character positions', () => {
       characterId: character.id,
       position: { lat: 54.5, lng: -1.5 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });

@@ -255,6 +255,7 @@ describe('CharactersSection', () => {
       characterId: character.id,
       position: { lat: 1, lng: 1 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -262,6 +263,7 @@ describe('CharactersSection', () => {
       characterId: character.id,
       position: { lat: 2, lng: 2 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -310,6 +312,7 @@ describe('CharactersSection', () => {
       characterId: character.id,
       position: { lat: 1, lng: 1 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -354,6 +357,7 @@ describe('CharactersSection', () => {
       characterId: jon.id,
       position: { lat: 1, lng: 1 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -361,6 +365,7 @@ describe('CharactersSection', () => {
       characterId: daenerys.id,
       position: { lat: 2, lng: 2 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -419,6 +424,7 @@ describe('CharactersSection', () => {
       characterId: character.id,
       position: { lat: 1, lng: 1 },
       dead: false,
+      note: null,
       chapterRange: null,
       episodeRange: null,
     });

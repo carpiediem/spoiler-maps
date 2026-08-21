@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export interface Migration {
   version: number;
@@ -170,6 +170,12 @@ export const MIGRATIONS: Migration[] = [
     version: 6,
     sql: `
       ALTER TABLE chapters ADD COLUMN url TEXT;
+    `,
+  },
+  {
+    version: 7,
+    sql: `
+      ALTER TABLE character_positions ADD COLUMN note TEXT;
     `,
   },
 ];

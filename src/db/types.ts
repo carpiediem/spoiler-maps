@@ -117,6 +117,7 @@ export interface CharacterPosition {
   position: LatLng;
   /** Whether the character has died as of this position. */
   dead: boolean;
+  note: string | null;
   chapterRange: ChapterRange | null;
   episodeRange: EpisodeRange | null;
 }

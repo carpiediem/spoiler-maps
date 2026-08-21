@@ -181,6 +181,14 @@ export function CharacterItem({
                 borderColor: 'divider',
                 borderRadius: 1,
                 cursor: 'pointer',
+                // The browser's own <input type="color"> chrome renders a
+                // heavier bezel around the swatch that the border above
+                // can't override; drop it so only our border shows.
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                '&::-webkit-color-swatch-wrapper': { p: 0 },
+                '&::-webkit-color-swatch': { border: 'none', borderRadius: 'inherit' },
+                '&::-moz-color-swatch': { border: 'none', borderRadius: 'inherit' },
               }}
             />
           </Stack>
@@ -226,7 +234,10 @@ export function CharacterItem({
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
-                      primary={`${position.position.lat.toFixed(4)}, ${position.position.lng.toFixed(4)}`}
+                      primary={
+                        position.note ||
+                        `${position.position.lat.toFixed(4)}, ${position.position.lng.toFixed(4)}`
+                      }
                       secondary={describePositionRange(
                         position.chapterRange,
                         position.episodeRange,
