@@ -1,6 +1,6 @@
 import AddIcon from '@mui/icons-material/Add';
 import { Button, Stack, Typography } from '@mui/material';
-import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { useCallback, useState } from 'react';
 import {
   createTvSeason,
   deleteTvSeason,
@@ -11,6 +11,7 @@ import {
 } from '../../db';
 import { sortOrderAfter } from '../../db/ordering';
 import { SeasonItem } from './television/SeasonItem';
+import { useExpandableEntityList } from './useExpandableEntityList';
 
 interface TelevisionSectionProps {
   storyId: number;
@@ -24,55 +25,41 @@ export function TelevisionSection({
   initialExpandedIndex,
   onCountChange,
 }: TelevisionSectionProps) {
-  const [seasons, setSeasons] = useState<TvSeason[] | null>(null);
   const [episodesBySeasonId, setEpisodesBySeasonId] = useState<Record<number, Episode[]>>({});
-  const [expandedSeasonId, setExpandedSeasonId] = useState<number | null>(null);
-  const appliedInitialIndexRef = useRef(false);
 
-  useEffect(() => {
-    if (seasons !== null) onCountChange?.(seasons.length);
-  }, [seasons, onCountChange]);
+  const load = useCallback(async (storyId: number, isCancelled: () => boolean) => {
+    const loadedSeasons = await listTvSeasonsForStory(storyId);
+    if (isCancelled()) return loadedSeasons;
+    const episodeLists = await Promise.all(
+      loadedSeasons.map((season) => listEpisodesForSeason(season.id)),
+    );
+    /* v8 ignore next -- exercising this specific unmount window (after listTvSeasonsForStory resolves but before the episode Promise.all does) is too timing-dependent to test reliably; the outer isCancelled() check above covers the same defensive purpose. */
+    if (isCancelled()) return loadedSeasons;
 
-  useEffect(() => {
-    let cancelled = false;
-
-    function resetForNewStory() {
-      setSeasons(null);
-      setExpandedSeasonId(null);
-      appliedInitialIndexRef.current = false;
-    }
-    resetForNewStory();
-
-    listTvSeasonsForStory(storyId).then(async (loadedSeasons) => {
-      if (cancelled) return;
-      const episodeLists = await Promise.all(
-        loadedSeasons.map((season) => listEpisodesForSeason(season.id)),
-      );
-      /* v8 ignore next -- exercising this specific unmount window (after listTvSeasonsForStory resolves but before the episode Promise.all does) is too timing-dependent to test reliably; the outer cancelled check above covers the same defensive purpose. */
-      if (cancelled) return;
-
-      setSeasons(loadedSeasons);
-      const episodeMap: Record<number, Episode[]> = {};
-      loadedSeasons.forEach((season, index) => {
-        episodeMap[season.id] = episodeLists[index];
-      });
-      setEpisodesBySeasonId(episodeMap);
+    const episodeMap: Record<number, Episode[]> = {};
+    loadedSeasons.forEach((season, index) => {
+      episodeMap[season.id] = episodeLists[index];
     });
+    setEpisodesBySeasonId(episodeMap);
+    return loadedSeasons;
+  }, []);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [storyId]);
+  const onReset = useCallback(() => setEpisodesBySeasonId({}), []);
 
-  useEffect(() => {
-    function applyInitialExpandedIndex() {
-      if (seasons === null || appliedInitialIndexRef.current) return;
-      appliedInitialIndexRef.current = true;
-      const targetSeason = initialExpandedIndex ? seasons[initialExpandedIndex - 1] : undefined;
-      if (targetSeason) setExpandedSeasonId(targetSeason.id);
-    }
-    applyInitialExpandedIndex();
-  }, [seasons, initialExpandedIndex]);
+  const {
+    entities: seasons,
+    expandedId: expandedSeasonId,
+    toggle,
+    addEntity,
+    updateEntity,
+    removeEntity,
+  } = useExpandableEntityList<TvSeason>({
+    storyId,
+    initialExpandedIndex,
+    onCountChange,
+    load,
+    onReset,
+  });
 
   // Only reachable once seasons have loaded: the Loading/Add Season UI below
   // only renders handleAddSeason's/handleSeasonChange's callers (the Add
@@ -80,15 +67,8 @@ export function TelevisionSection({
   async function handleAddSeason() {
     const sortOrder = sortOrderAfter(seasons!.map((season) => season.sortOrder));
     const season = await createTvSeason({ storyId, url: null, sortOrder });
-    setSeasons((previous) => [...previous!, season]);
+    addEntity(season);
     setEpisodesBySeasonId((previous) => ({ ...previous, [season.id]: [] }));
-    setExpandedSeasonId(season.id);
-  }
-
-  function handleSeasonChange(updated: TvSeason) {
-    setSeasons((previous) =>
-      previous!.map((season) => (season.id === updated.id ? updated : season)),
-    );
   }
 
   function handleEpisodesChange(seasonId: number, episodes: Episode[]) {
@@ -100,19 +80,12 @@ export function TelevisionSection({
   // AccordionDetails.
   async function handleDeleteSeason(seasonId: number) {
     await deleteTvSeason(seasonId);
-    setSeasons((previous) => previous!.filter((season) => season.id !== seasonId));
+    removeEntity(seasonId);
     setEpisodesBySeasonId((previous) => {
       const next = { ...previous };
       delete next[seasonId];
       return next;
     });
-    setExpandedSeasonId(null);
-  }
-
-  function handleToggle(seasonId: number) {
-    return (_event: SyntheticEvent, isExpanded: boolean) => {
-      setExpandedSeasonId(isExpanded ? seasonId : null);
-    };
   }
 
   if (seasons === null) {
@@ -138,8 +111,8 @@ export function TelevisionSection({
           index={index}
           episodes={episodesBySeasonId[season.id]}
           expanded={expandedSeasonId === season.id}
-          onToggle={handleToggle(season.id)}
-          onSeasonChange={handleSeasonChange}
+          onToggle={toggle(season.id)}
+          onSeasonChange={updateEntity}
           onEpisodesChange={(episodes) => handleEpisodesChange(season.id, episodes)}
           onDelete={() => handleDeleteSeason(season.id)}
         />
