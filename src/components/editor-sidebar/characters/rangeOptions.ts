@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   listBooksForStory,
   listChaptersForBook,
@@ -17,6 +17,8 @@ export interface FlatOption {
   /** The overall 1-based index shown in a terse range summary, e.g. the "3" in "3. AGOT: Bran". */
   index: number;
   label: string;
+  /** The chapter's or episode's own URL, if any. */
+  url: string | null;
 }
 
 /** "A Game of Thrones" -> "AGOT" — keeps chapter option labels compact. */
@@ -49,6 +51,7 @@ export function flattenChapterOptions(
         id: chapter.id,
         index: overallIndex,
         label: `${overallIndex}. ${bookLabel}: ${chapter.name || 'Untitled Chapter'}`,
+        url: chapter.url,
       };
     });
   });
@@ -75,6 +78,7 @@ export function flattenEpisodeOptions(
         id: episode.id,
         index: overallIndex,
         label: `${overallIndex}. ${code}: ${episode.name || 'Untitled Episode'}`,
+        url: episode.url,
       };
     }),
   );
@@ -178,13 +182,15 @@ interface RangeOptions {
  * form (to pick a range) and each character's position list (to label an
  * already-picked range).
  */
-export function useRangeOptions(storyId: number): RangeOptions {
+export function useRangeOptions(storyId: number | null): RangeOptions {
   const [books, setBooks] = useState<Book[] | null>(null);
   const [chaptersByBookId, setChaptersByBookId] = useState<Record<number, Chapter[]>>({});
   const [seasons, setSeasons] = useState<TvSeason[] | null>(null);
   const [episodesBySeasonId, setEpisodesBySeasonId] = useState<Record<number, Episode[]>>({});
 
   useEffect(() => {
+    if (storyId === null) return;
+
     let cancelled = false;
 
     listBooksForStory(storyId).then(async (loadedBooks) => {
@@ -208,6 +214,8 @@ export function useRangeOptions(storyId: number): RangeOptions {
   }, [storyId]);
 
   useEffect(() => {
+    if (storyId === null) return;
+
     let cancelled = false;
 
     listTvSeasonsForStory(storyId).then(async (loadedSeasons) => {
@@ -230,9 +238,22 @@ export function useRangeOptions(storyId: number): RangeOptions {
     };
   }, [storyId]);
 
+  // Memoized so consumers that use these in effect/memo dependency arrays
+  // (e.g. to recompute map pins) don't see a new array on every render —
+  // only when the underlying books/chapters or seasons/episodes actually
+  // change.
+  const chapterOptions = useMemo(
+    () => (books ? flattenChapterOptions(books, chaptersByBookId) : []),
+    [books, chaptersByBookId],
+  );
+  const episodeOptions = useMemo(
+    () => (seasons ? flattenEpisodeOptions(seasons, episodesBySeasonId) : []),
+    [seasons, episodesBySeasonId],
+  );
+
   return {
-    chapterOptions: books ? flattenChapterOptions(books, chaptersByBookId) : [],
-    episodeOptions: seasons ? flattenEpisodeOptions(seasons, episodesBySeasonId) : [],
+    chapterOptions,
+    episodeOptions,
     hasBooks: !!books?.length,
     hasSeasons: !!seasons?.length,
   };

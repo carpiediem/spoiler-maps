@@ -12,6 +12,8 @@ import {
 import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
+import type { TimelineMode } from '../MapTimelineControl';
+import { useRangeOptions } from './characters/rangeOptions';
 import { CharacterItem } from './characters/CharacterItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
 
@@ -35,6 +37,10 @@ interface CharactersSectionProps {
   onVisiblePositionsChange: (pins: CharacterPositionPin[] | null) => void;
   /** Called with the tails to draw for every character toggled visible (independent of which is expanded). */
   onVisibleTailsChange: (tails: CharacterTailOverlay[]) => void;
+  /** The map timeline control's current mode, used to filter which positions show as map pins. */
+  timelineMode: TimelineMode;
+  /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
+  timelineIndex: number;
 }
 
 export function CharactersSection({
@@ -46,6 +52,8 @@ export function CharactersSection({
   positionsVersion,
   onVisiblePositionsChange,
   onVisibleTailsChange,
+  timelineMode,
+  timelineIndex,
 }: CharactersSectionProps) {
   // A character stays visible on the map (last position + tails) once
   // toggled on, independent of — and in addition to — whichever character's
@@ -81,7 +89,31 @@ export function CharactersSection({
     onReset,
   });
 
+  const { chapterOptions, episodeOptions } = useRangeOptions(storyId);
+
   useEffect(() => {
+    // Maps a chapter/episode id (whichever medium the timeline control is
+    // currently in) to its flat 1-based index, so a position's start
+    // boundary can be compared against the timeline's scrub position.
+    const activeOptionIndexById = new Map(
+      (timelineMode === 'book' ? chapterOptions : episodeOptions).map((option) => [
+        option.id,
+        option.index,
+      ]),
+    );
+
+    // A position with no range set for the active medium, or an open start,
+    // has no lower bound — it's always shown regardless of scrub position.
+    function isPositionVisible(position: CharacterPosition): boolean {
+      const range = timelineMode === 'book' ? position.chapterRange : position.episodeRange;
+      if (!range) return true;
+      const startId = timelineMode === 'book' ? range.startChapterId : range.startEpisodeId;
+      if (startId === null) return true;
+      const startIndex = activeOptionIndexById.get(startId);
+      if (startIndex === undefined) return true;
+      return startIndex <= timelineIndex;
+    }
+
     const pins: CharacterPositionPin[] = [];
     const tails: CharacterTailOverlay[] = [];
 
@@ -90,6 +122,8 @@ export function CharactersSection({
       const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
       const color = character?.color ?? null;
       positions?.forEach((position, positionIndex) => {
+        if (!isPositionVisible(position)) return;
+
         pins.push({
           characterId: expandedCharacterId,
           characterPosition: position,
@@ -122,8 +156,15 @@ export function CharactersSection({
       /* v8 ignore next -- character can only be undefined here if visibleCharacterIds still names a just-deleted character, but handleDeleteCharacter clears both in the same batched update. */
       const color = character?.color ?? null;
 
+      const lastVisiblePositionIndex = positions.reduce(
+        (lastIndex, position, positionIndex) =>
+          isPositionVisible(position) ? positionIndex : lastIndex,
+        -1,
+      );
+
       positions.forEach((position, positionIndex) => {
-        const isLast = positionIndex === positions.length - 1;
+        if (!isPositionVisible(position)) return;
+        const isLast = positionIndex === lastVisiblePositionIndex;
         pins.push({
           characterId,
           characterPosition: position,
@@ -147,6 +188,10 @@ export function CharactersSection({
     visibleCharacterIds,
     positionsByCharacterId,
     characters,
+    timelineMode,
+    timelineIndex,
+    chapterOptions,
+    episodeOptions,
     onVisiblePositionsChange,
     onVisibleTailsChange,
   ]);
