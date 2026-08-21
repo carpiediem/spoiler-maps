@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -348,6 +354,110 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByText('AGOT: Prologue')).toBeInTheDocument();
+  });
+
+  it('imports a YAML file as a brand-new story, selecting it once done', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: /new map/i }));
+    const yamlText = [
+      'name: The Wheel of Time',
+      'initialCenter: { lat: 1, lng: 2 }',
+      'initialZoom: 4',
+      'minZoom: 0',
+      'maxZoom: 19',
+    ].join('\n');
+    const file = new File([yamlText], 'wheel-of-time.yaml', { type: 'text/yaml' });
+    await user.upload(screen.getByLabelText(/import from file/i), file);
+
+    expect(
+      await screen.findByRole('button', { name: /the wheel of time v2/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('exports the selected story, downloading it as a YAML file', async () => {
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    try {
+      await createStory({
+        name: 'A Song of Ice and Fire',
+        tileUrlTemplate: null,
+        tileLayerAuthor: null,
+        tileLayerAttributionUrl: null,
+        initialCenter: { lat: 0, lng: 0 },
+        initialZoom: 4,
+        minZoom: 0,
+        maxZoom: 19,
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      const exportButton = await screen.findByRole('button', { name: /export as yaml/i });
+      await user.click(exportButton);
+
+      await waitFor(() => expect(clickSpy).toHaveBeenCalled());
+    } finally {
+      clickSpy.mockRestore();
+    }
+  });
+
+  it('falls back to "story.yaml" when the story name has no sluggable characters', async () => {
+    let downloadedFilename: string | undefined;
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloadedFilename = this.download;
+    });
+    try {
+      await createStory({
+        name: '!!!',
+        tileUrlTemplate: null,
+        tileLayerAuthor: null,
+        tileLayerAttributionUrl: null,
+        initialCenter: { lat: 0, lng: 0 },
+        initialZoom: 4,
+        minZoom: 0,
+        maxZoom: 19,
+      });
+      const user = userEvent.setup();
+      render(<App />);
+
+      const exportButton = await screen.findByRole('button', { name: /export as yaml/i });
+      await user.click(exportButton);
+
+      await waitFor(() => expect(clickSpy).toHaveBeenCalled());
+      expect(downloadedFilename).toBe('story.yaml');
+    } finally {
+      clickSpy.mockRestore();
+    }
+  });
+
+  it('deletes the selected story once confirmed, returning to a fresh "New Map"', async () => {
+    await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByDisplayValue('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /delete story/i }));
+    await user.click(screen.getByRole('button', { name: /^delete$/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    await waitFor(() => expect(screen.getByLabelText(/map name/i)).toHaveValue(''));
+    expect(screen.getByRole('button', { name: /new map/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /new map/i }));
+    expect(
+      screen.queryByRole('option', { name: /a song of ice and fire/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('contains all content within landmark regions', () => {

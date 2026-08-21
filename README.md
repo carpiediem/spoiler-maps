@@ -7,6 +7,8 @@
 
 This app will help people build maps that summarize their favorite books or movies. All the map content will be associated with a particular point in the story and will not appear (in the viewer tool) until the user tells the map how much of the book they've read. This avoids spoilers for individual people.
 
+A story can be exported to (and imported from) a human-editable YAML file — see [docs/yaml-export-format.md](docs/yaml-export-format.md) for the schema.
+
 ## Inspiration
 
 Ten years ago, I adapted an existing map of The Song of Ice and Fire book series into [an interactive map](https://carpiediem.github.io/game-of-thrones-map/) that included controls to avoid spoiling the plot. As the Game of Thrones TV show gained popularity, my map got [quite a bit](https://lifehacker.com/get-your-game-of-thrones-fix-with-this-interactive-spo-1782986360/) of attention. I did my best to update the map to match subsequent series of the show, but the original code was quite brittle and each change meant editing lots of JSON data by hand. Since then, I've found myself wanting to make similar maps for other stories, so I finally got around to building a tool that would make it easier.

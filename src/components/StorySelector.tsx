@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import type { Story } from '../db';
 import './StorySelector.css';
 
@@ -8,12 +8,22 @@ interface StorySelectorProps {
   stories: Story[];
   selectedStoryId: number | null;
   onSelect: (storyId: number | null) => void;
+  /** Reads and imports a YAML export as a brand-new story; rejects with a user-facing message on failure. */
+  onImportFile: (file: File) => Promise<void>;
 }
 
-export function StorySelector({ stories, selectedStoryId, onSelect }: StorySelectorProps) {
+export function StorySelector({
+  stories,
+  selectedStoryId,
+  onSelect,
+  onImportFile,
+}: StorySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedStory = stories.find((story) => story.id === selectedStoryId) ?? null;
   const title = selectedStory ? selectedStory.name : 'New Map';
@@ -45,11 +55,34 @@ export function StorySelector({ stories, selectedStoryId, onSelect }: StorySelec
   function close() {
     setIsOpen(false);
     setQuery('');
+    setImportError(null);
   }
 
   function handleSelect(value: string) {
     onSelect(value === NEW_MAP_OPTION ? null : Number(value));
     close();
+  }
+
+  function handleImportClick() {
+    setImportError(null);
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setIsImporting(true);
+    setImportError(null);
+    try {
+      await onImportFile(file);
+      close();
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsImporting(false);
+    }
   }
 
   return (
@@ -112,6 +145,26 @@ export function StorySelector({ stories, selectedStoryId, onSelect }: StorySelec
             </span>
             New Map
           </button>
+          <button
+            type="button"
+            className="story-selector__option"
+            onClick={handleImportClick}
+            disabled={isImporting}
+          >
+            <span className="story-selector__check" aria-hidden="true">
+              ⇪
+            </span>
+            {isImporting ? 'Importing…' : 'Import from file…'}
+          </button>
+          {importError && <div className="story-selector__error">{importError}</div>}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".yaml,.yml,text/yaml"
+            className="story-selector__file-input"
+            onChange={handleFileChange}
+            aria-label="Import from file"
+          />
         </div>
       )}
     </div>

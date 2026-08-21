@@ -1,4 +1,5 @@
-import { Box, Paper } from '@mui/material';
+import DownloadIcon from '@mui/icons-material/Download';
+import { Box, Button, IconButton, Paper, Stack, Tooltip } from '@mui/material';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import type { CharacterPosition, LatLng, Story } from '../db';
@@ -6,6 +7,7 @@ import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characte
 import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
 import type { TimelineMode } from './MapTimelineControl';
+import { DeleteConfirmDialog } from './editor-sidebar/DeleteConfirmDialog';
 import { storyToFormValues, type FormValues } from './editor-sidebar/formValues';
 import { MapSection } from './editor-sidebar/MapSection';
 import { MarkersSection } from './editor-sidebar/MarkersSection';
@@ -50,6 +52,12 @@ interface EditorSidebarProps {
   stories: Story[];
   selectedStoryId: number | null;
   onSelectStory: (storyId: number | null) => void;
+  /** Downloads the currently selected story as a YAML file. */
+  onExportStory: () => void;
+  /** Reads and imports a YAML export as a brand-new story; rejects with a user-facing message on failure. */
+  onImportFile: (file: File) => Promise<void>;
+  /** Permanently deletes the currently selected story. */
+  onDeleteStory: () => void;
   onSave: (input: {
     name: string;
     tileUrlTemplate: string;
@@ -105,6 +113,9 @@ export function EditorSidebar({
   stories,
   selectedStoryId,
   onSelectStory,
+  onExportStory,
+  onImportFile,
+  onDeleteStory,
   onSave,
   onCaptureMapPosition,
   mapPosition,
@@ -145,6 +156,7 @@ export function EditorSidebar({
   const [televisionCount, setTelevisionCount] = useState<number>();
   const [charactersCount, setCharactersCount] = useState<number>();
   const [markersCount, setMarkersCount] = useState<number>();
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
@@ -205,6 +217,8 @@ export function EditorSidebar({
     };
   }
 
+  const selectedStory = stories.find((story) => story.id === selectedStoryId) ?? null;
+
   return (
     <Paper
       component="aside"
@@ -230,11 +244,23 @@ export function EditorSidebar({
         <Box
           sx={{ width: '50%', flexShrink: 0, boxSizing: 'border-box', p: 2, ...SIDEBAR_HEIGHT_SX }}
         >
-          <StorySelector
-            stories={stories}
-            selectedStoryId={selectedStoryId}
-            onSelect={onSelectStory}
-          />
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <StorySelector
+                stories={stories}
+                selectedStoryId={selectedStoryId}
+                onSelect={onSelectStory}
+                onImportFile={onImportFile}
+              />
+            </Box>
+            {selectedStoryId !== null && (
+              <Tooltip title="Export as YAML" arrow>
+                <IconButton size="small" aria-label="Export as YAML" onClick={onExportStory}>
+                  <DownloadIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
 
           <Box component="form" onSubmit={handleSubmit(onValid)} sx={{ mt: 2 }}>
             <SidebarSection
@@ -314,9 +340,30 @@ export function EditorSidebar({
                 >
                   <MarkersSection storyId={selectedStoryId} onCountChange={setMarkersCount} />
                 </SidebarSection>
+
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={() => setIsDeleteConfirmOpen(true)}
+                  sx={{ mt: 2 }}
+                  fullWidth
+                >
+                  Delete Story
+                </Button>
               </>
             )}
           </Box>
+
+          <DeleteConfirmDialog
+            open={isDeleteConfirmOpen}
+            onClose={() => setIsDeleteConfirmOpen(false)}
+            onConfirm={() => {
+              setIsDeleteConfirmOpen(false);
+              onDeleteStory();
+            }}
+            title={`Delete “${selectedStory?.name || 'Untitled Map'}”?`}
+            description="This will permanently delete the story, along with all of its books, television seasons, characters, and markers. This can’t be undone."
+          />
         </Box>
 
         <Box
