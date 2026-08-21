@@ -138,6 +138,57 @@ describe('CharactersSection', () => {
     expect(await listCharactersForStory(storyId)).toHaveLength(2);
   });
 
+  it('auto-expands the character at the 1-based initialExpandedIndex', async () => {
+    const storyId = await seedStoryId();
+    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Daenerys Targaryen',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    render(
+      <CharactersSection
+        storyId={storyId}
+        initialExpandedIndex={2}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Jon Snow');
+    await waitFor(() => {
+      const visibleNameField = screen
+        .getAllByLabelText(/^name$/i)
+        .find(
+          (field) =>
+            window.getComputedStyle(field.closest('.MuiCollapse-root')!).visibility !== 'hidden',
+        );
+      expect(visibleNameField).toHaveValue('Daenerys Targaryen');
+    });
+  });
+
+  it('ignores an out-of-range initialExpandedIndex', async () => {
+    const storyId = await seedStoryId();
+    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    render(
+      <CharactersSection
+        storyId={storyId}
+        initialExpandedIndex={5}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Jon Snow');
+    expect(screen.getByLabelText(/^name$/i)).not.toBeVisible();
+  });
+
   it('collapses a character when its accordion is closed again', async () => {
     const storyId = await seedStoryId();
     await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
@@ -256,6 +307,7 @@ describe('CharactersSection', () => {
       position: { lat: 1, lng: 1 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -264,6 +316,7 @@ describe('CharactersSection', () => {
       position: { lat: 2, lng: 2 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -313,6 +366,7 @@ describe('CharactersSection', () => {
       position: { lat: 1, lng: 1 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -358,6 +412,7 @@ describe('CharactersSection', () => {
       position: { lat: 1, lng: 1 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -366,6 +421,7 @@ describe('CharactersSection', () => {
       position: { lat: 2, lng: 2 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -425,6 +481,7 @@ describe('CharactersSection', () => {
       position: { lat: 1, lng: 1 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -443,6 +500,6 @@ describe('CharactersSection', () => {
     await user.click(await screen.findByText('Jon Snow'));
     await user.click(await screen.findByText('Always visible'));
 
-    expect(onEditPosition).toHaveBeenCalledWith(character.id, 1, position);
+    expect(onEditPosition).toHaveBeenCalledWith(character.id, 1, position, null);
   });
 });

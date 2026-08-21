@@ -1,6 +1,13 @@
 import { divIcon, type Map as LeafletMap, type Marker as LeafletMarker } from 'leaflet';
 import type { RefObject } from 'react';
-import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet';
+import {
+  CircleMarker,
+  MapContainer,
+  Marker,
+  Polyline,
+  TileLayer,
+  useMapEvents,
+} from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLng } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
@@ -41,6 +48,12 @@ interface MapViewProps {
   editingPositionId?: number | null;
   /** Called when a non-editing character position pin is clicked, to open it for editing. */
   onCharacterPositionPinClick?: (pin: CharacterPositionPin) => void;
+  /** Points clicked so far while drawing a tail; null when not in drawing mode. */
+  tailDraftPoints?: LatLng[] | null;
+  /** Called with the clicked lat/lng while drawing a tail. */
+  onTailPointClick?: (point: LatLng) => void;
+  /** The color of the character whose tail is being drawn. */
+  tailColor?: string | null;
 }
 
 interface DraftPositionMarkerProps {
@@ -62,6 +75,22 @@ function DraftPositionMarker({ position, onChange }: DraftPositionMarkerProps) {
       }}
     />
   );
+}
+
+interface TailDrawingCatcherProps {
+  onPointClick: (point: LatLng) => void;
+}
+
+// A map-wide click listener, mounted only while drawing a tail: each click
+// on the map (not already consumed by a marker's own click handler) appends
+// a point to the in-progress tail.
+function TailDrawingCatcher({ onPointClick }: TailDrawingCatcherProps) {
+  useMapEvents({
+    click: (event) => {
+      onPointClick({ lat: event.latlng.lat, lng: event.latlng.lng });
+    },
+  });
+  return null;
 }
 
 interface MapPositionTrackerProps {
@@ -94,6 +123,9 @@ export function MapView({
   characterPositionPins,
   editingPositionId,
   onCharacterPositionPinClick,
+  tailDraftPoints,
+  onTailPointClick,
+  tailColor,
 }: MapViewProps) {
   const activeTileUrl = tileUrl ?? DEFAULT_TILE_URL;
   const kind = tileUrl ? detectTileUrlTemplateKind(tileUrl) : 'xyz';
@@ -107,8 +139,31 @@ export function MapView({
       style={{ position: 'absolute', inset: 0 }}
     >
       {onPositionChange && <MapPositionTracker onPositionChange={onPositionChange} />}
+      {tailDraftPoints && onTailPointClick && (
+        <TailDrawingCatcher onPointClick={onTailPointClick} />
+      )}
       {draftPosition && onDraftPositionChange && editingPositionId == null && (
         <DraftPositionMarker position={draftPosition} onChange={onDraftPositionChange} />
+      )}
+      {tailDraftPoints && draftPosition && (
+        <>
+          <Polyline
+            positions={[draftPosition, ...tailDraftPoints].map((point) => [point.lat, point.lng])}
+            pathOptions={{ color: tailColor ?? DEFAULT_CHARACTER_COLOR }}
+          />
+          {tailDraftPoints.map((point, index) => (
+            <CircleMarker
+              key={index}
+              center={[point.lat, point.lng]}
+              radius={4}
+              pathOptions={{
+                color: tailColor ?? DEFAULT_CHARACTER_COLOR,
+                fillColor: tailColor ?? DEFAULT_CHARACTER_COLOR,
+                fillOpacity: 1,
+              }}
+            />
+          ))}
+        </>
       )}
       {characterPositionPins?.map((pin) =>
         pin.characterPosition.id === editingPositionId && draftPosition && onDraftPositionChange ? (

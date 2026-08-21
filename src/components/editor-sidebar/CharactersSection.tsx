@@ -1,6 +1,6 @@
 import AddIcon from '@mui/icons-material/Add';
 import { Button, Stack, Typography } from '@mui/material';
-import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import {
   createCharacter,
   deleteCharacter,
@@ -13,11 +13,18 @@ import { CharacterItem } from './characters/CharacterItem';
 
 interface CharactersSectionProps {
   storyId: number;
+  /** 1-based index of the character to auto-expand, e.g. from a #characters-1 URL hash. */
+  initialExpandedIndex?: number | null;
   onCountChange?: (count: number) => void;
-  /** Called with (characterId, 1-based new position index) when "+ Position" is clicked. */
-  onAddPosition: (characterId: number, index: number) => void;
-  /** Called with (characterId, 1-based index, position) when an existing position is clicked. */
-  onEditPosition: (characterId: number, index: number, position: CharacterPosition) => void;
+  /** Called with (characterId, 1-based new position index, character color) when "+ Position" is clicked. */
+  onAddPosition: (characterId: number, index: number, color: string | null) => void;
+  /** Called with (characterId, 1-based index, position, character color) when an existing position is clicked. */
+  onEditPosition: (
+    characterId: number,
+    index: number,
+    position: CharacterPosition,
+    color: string | null,
+  ) => void;
   /** Bumped whenever a position editing session ends, so each CharacterItem re-fetches its list. */
   positionsVersion: number;
   /** Called with the expanded character's numbered position pins, or null once collapsed. */
@@ -26,6 +33,7 @@ interface CharactersSectionProps {
 
 export function CharactersSection({
   storyId,
+  initialExpandedIndex,
   onCountChange,
   onAddPosition,
   onEditPosition,
@@ -34,6 +42,7 @@ export function CharactersSection({
 }: CharactersSectionProps) {
   const [characters, setCharacters] = useState<Character[] | null>(null);
   const [expandedCharacterId, setExpandedCharacterId] = useState<number | null>(null);
+  const appliedInitialIndexRef = useRef(false);
   // Keyed by character id, so map pins can be recomputed here — the single
   // place that already knows which character is expanded — instead of each
   // CharacterItem racing to report its own visibility.
@@ -52,6 +61,7 @@ export function CharactersSection({
       setCharacters(null);
       setExpandedCharacterId(null);
       setPositionsByCharacterId({});
+      appliedInitialIndexRef.current = false;
     }
     resetForNewStory();
 
@@ -64,6 +74,18 @@ export function CharactersSection({
       cancelled = true;
     };
   }, [storyId]);
+
+  useEffect(() => {
+    function applyInitialExpandedIndex() {
+      if (characters === null || appliedInitialIndexRef.current) return;
+      appliedInitialIndexRef.current = true;
+      const targetCharacter = initialExpandedIndex
+        ? characters[initialExpandedIndex - 1]
+        : undefined;
+      if (targetCharacter) setExpandedCharacterId(targetCharacter.id);
+    }
+    applyInitialExpandedIndex();
+  }, [characters, initialExpandedIndex]);
 
   useEffect(() => {
     if (expandedCharacterId === null) {
@@ -161,8 +183,10 @@ export function CharactersSection({
           onToggle={handleToggle(character.id)}
           onCharacterChange={handleCharacterChange}
           onDelete={() => handleDeleteCharacter(character.id)}
-          onAddPosition={(index) => onAddPosition(character.id, index)}
-          onEditPosition={(position, index) => onEditPosition(character.id, index, position)}
+          onAddPosition={(index) => onAddPosition(character.id, index, character.color)}
+          onEditPosition={(position, index) =>
+            onEditPosition(character.id, index, position, character.color)
+          }
           positionsVersion={positionsVersion}
           onPositionsChange={handlePositionsChange}
         />

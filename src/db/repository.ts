@@ -601,6 +601,15 @@ export async function deleteCharacter(id: number): Promise<void> {
   await persist();
 }
 
+function tailToColumn(tail: LatLng[] | null): string | null {
+  return tail ? JSON.stringify(tail) : null;
+}
+
+function rowToTail(row: Row): LatLng[] | null {
+  const column = row.tail as string | null;
+  return column ? (JSON.parse(column) as LatLng[]) : null;
+}
+
 function rowToCharacterPosition(row: Row): CharacterPosition {
   return {
     id: row.id as number,
@@ -608,6 +617,7 @@ function rowToCharacterPosition(row: Row): CharacterPosition {
     position: { lat: row.lat as number, lng: row.lng as number },
     dead: (row.dead as number) !== 0,
     note: row.note as string | null,
+    tail: rowToTail(row),
     chapterRange: rowToChapterRange(row),
     episodeRange: rowToEpisodeRange(row),
   };
@@ -622,16 +632,17 @@ export async function createCharacterPosition(
   const id = insert(
     db,
     `INSERT INTO character_positions (
-       character_id, lat, lng, dead, note,
+       character_id, lat, lng, dead, note, tail,
        chapter_range_start_chapter_id, chapter_range_end_chapter_id,
        episode_range_start_episode_id, episode_range_end_episode_id
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       input.characterId,
       input.position.lat,
       input.position.lng,
       input.dead ? 1 : 0,
       input.note,
+      tailToColumn(input.tail),
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
     ],
@@ -666,7 +677,7 @@ export async function updateCharacterPosition(
   assertEpisodeRangeOrder(db, input.episodeRange);
   db.run(
     `UPDATE character_positions
-     SET character_id = ?, lat = ?, lng = ?, dead = ?, note = ?,
+     SET character_id = ?, lat = ?, lng = ?, dead = ?, note = ?, tail = ?,
          chapter_range_start_chapter_id = ?, chapter_range_end_chapter_id = ?,
          episode_range_start_episode_id = ?, episode_range_end_episode_id = ?
      WHERE id = ?;`,
@@ -676,6 +687,7 @@ export async function updateCharacterPosition(
       input.position.lng,
       input.dead ? 1 : 0,
       input.note,
+      tailToColumn(input.tail),
       ...chapterRangeColumns(input.chapterRange),
       ...episodeRangeColumns(input.episodeRange),
       id,

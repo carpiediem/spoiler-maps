@@ -1,5 +1,7 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import RouteIcon from '@mui/icons-material/Route';
 import {
+  Button,
   Checkbox,
   FormControl,
   FormControlLabel,
@@ -9,6 +11,7 @@ import {
   Select,
   Stack,
   TextField,
+  Tooltip,
   Typography,
   type SelectChangeEvent,
 } from '@mui/material';
@@ -71,6 +74,13 @@ interface PositionPanelProps {
   /** The CharacterPosition being edited, or null when creating a new one. */
   existingPosition: CharacterPosition | null;
   onBack: () => void;
+  /** Whether the map is currently in tail-drawing mode. */
+  isDrawingTail: boolean;
+  /** Points clicked so far while drawing a tail. */
+  tailDraftPoints: LatLng[];
+  onStartDrawingTail: () => void;
+  /** Called when Save or Cancel is clicked, to leave drawing mode either way. */
+  onFinishDrawingTail: () => void;
 }
 
 export function PositionPanel({
@@ -80,6 +90,10 @@ export function PositionPanel({
   position,
   existingPosition,
   onBack,
+  isDrawingTail,
+  tailDraftPoints,
+  onStartDrawingTail,
+  onFinishDrawingTail,
 }: PositionPanelProps) {
   const { chapterOptions, episodeOptions, hasBooks, hasSeasons } = useRangeOptions(storyId);
 
@@ -97,6 +111,7 @@ export function PositionPanel({
   );
   const [dead, setDead] = useState(existingPosition?.dead ?? false);
   const [note, setNote] = useState(existingPosition?.note ?? '');
+  const [tail, setTail] = useState<LatLng[] | null>(existingPosition?.tail ?? null);
 
   // The pin starts at the map's current center (or the existing position's
   // lat/lng, when editing); nothing is saved until the user actually drags
@@ -130,6 +145,7 @@ export function PositionPanel({
         position,
         dead,
         note: trimmedNote,
+        tail,
         chapterRange,
         episodeRange,
       });
@@ -143,6 +159,7 @@ export function PositionPanel({
       position,
       dead,
       note: trimmedNote,
+      tail,
       chapterRange,
       episodeRange,
     }).then((created) => {
@@ -157,6 +174,7 @@ export function PositionPanel({
     episodeRangeEnd,
     dead,
     note,
+    tail,
   ]);
 
   return (
@@ -170,11 +188,47 @@ export function PositionPanel({
         </Typography>
       </Stack>
 
-      <Typography variant="body2" color="text.secondary">
-        {position
-          ? `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`
-          : 'Drag the pin on the map to set a position.'}
-      </Typography>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          {position
+            ? `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`
+            : 'Drag the pin on the map to set a position.'}
+        </Typography>
+
+        {isDrawingTail ? (
+          <Stack direction="row" spacing={1}>
+            <Button
+              size="small"
+              onClick={() => {
+                setTail(tailDraftPoints);
+                onFinishDrawingTail();
+              }}
+            >
+              Save
+            </Button>
+            <Button size="small" onClick={onFinishDrawingTail}>
+              Cancel
+            </Button>
+          </Stack>
+        ) : (
+          <Tooltip title="Add a tail">
+            <span>
+              <IconButton
+                size="small"
+                aria-label="Add a tail"
+                onClick={onStartDrawingTail}
+                disabled={position === null}
+              >
+                <RouteIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
+      </Stack>
 
       <TextField
         label="Note"

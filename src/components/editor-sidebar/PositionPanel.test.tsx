@@ -64,10 +64,18 @@ function DraggableWrapper({
   storyId,
   characterId,
   existingPosition = null,
+  isDrawingTail = false,
+  tailDraftPoints = [],
+  onStartDrawingTail,
+  onFinishDrawingTail,
 }: {
   storyId: number;
   characterId: number;
   existingPosition?: CharacterPosition | null;
+  isDrawingTail?: boolean;
+  tailDraftPoints?: LatLng[];
+  onStartDrawingTail?: () => void;
+  onFinishDrawingTail?: () => void;
 }) {
   const [position, setPosition] = useState<LatLng | null>(
     existingPosition?.position ?? INITIAL_POSITION,
@@ -81,6 +89,10 @@ function DraggableWrapper({
         position={position}
         onBack={vi.fn()}
         existingPosition={existingPosition}
+        isDrawingTail={isDrawingTail}
+        tailDraftPoints={tailDraftPoints}
+        onStartDrawingTail={onStartDrawingTail ?? vi.fn()}
+        onFinishDrawingTail={onFinishDrawingTail ?? vi.fn()}
       />
       <button onClick={() => setPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag 1</button>
       <button onClick={() => setPosition({ lat: 40.7128, lng: -74.006 })}>Simulate drag 2</button>
@@ -100,6 +112,10 @@ describe('PositionPanel', () => {
         index={3}
         position={null}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
         onBack={onBack}
       />,
     );
@@ -120,6 +136,10 @@ describe('PositionPanel', () => {
         position={null}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -136,6 +156,10 @@ describe('PositionPanel', () => {
         position={{ lat: 51.5, lng: -0.1278 }}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -152,6 +176,10 @@ describe('PositionPanel', () => {
         position={null}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -187,6 +215,10 @@ describe('PositionPanel', () => {
         position={null}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -223,6 +255,10 @@ describe('PositionPanel', () => {
         position={null}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -255,6 +291,10 @@ describe('PositionPanel', () => {
         position={null}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -278,6 +318,10 @@ describe('PositionPanel', () => {
         position={null}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -307,6 +351,10 @@ describe('PositionPanel', () => {
         position={null}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -332,6 +380,10 @@ describe('PositionPanel', () => {
         position={null}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -353,6 +405,10 @@ describe('PositionPanel', () => {
         position={null}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -360,6 +416,113 @@ describe('PositionPanel', () => {
     await user.type(noteField, 'Hiding at the Wall');
 
     expect(noteField).toHaveValue('Hiding at the Wall');
+  });
+
+  it('shows the "Add a tail" button with its tooltip, disabled until a position is set', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const user = userEvent.setup();
+    const onStartDrawingTail = vi.fn();
+    const { rerender } = render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={characterId}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={onStartDrawingTail}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    const tailButton = screen.getByRole('button', { name: /add a tail/i });
+    expect(tailButton).toBeDisabled();
+
+    // Hover the Tooltip's wrapping <span>, not the disabled button itself:
+    // a disabled element gets pointer-events: none, which blocks hover.
+    await user.hover(tailButton.parentElement!);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Add a tail');
+
+    rerender(
+      <PositionPanel
+        storyId={storyId}
+        characterId={characterId}
+        index={1}
+        position={{ lat: 51.5, lng: -0.1278 }}
+        onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={onStartDrawingTail}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    const enabledTailButton = screen.getByRole('button', { name: /add a tail/i });
+    expect(enabledTailButton).toBeEnabled();
+    await user.click(enabledTailButton);
+    expect(onStartDrawingTail).toHaveBeenCalledTimes(1);
+
+    await waitFor(async () => {
+      expect(await listCharacterPositionsForCharacter(characterId)).toHaveLength(1);
+    });
+  });
+
+  it('shows Save/Cancel instead of the tail button while drawing, and Save persists the drawn points', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const onFinishDrawingTail = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        isDrawingTail
+        tailDraftPoints={[
+          { lat: 51.5, lng: -0.1278 },
+          { lat: 52, lng: -1 },
+        ]}
+        onFinishDrawingTail={onFinishDrawingTail}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /add a tail/i })).not.toBeInTheDocument();
+    // The marker itself must actually move before any position row exists
+    // to attach a tail to.
+    await user.click(screen.getByRole('button', { name: /simulate drag 1/i }));
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(onFinishDrawingTail).toHaveBeenCalledTimes(1);
+    await waitFor(async () => {
+      const [saved] = await listCharacterPositionsForCharacter(characterId);
+      expect(saved.tail).toEqual([
+        { lat: 51.5, lng: -0.1278 },
+        { lat: 52, lng: -1 },
+      ]);
+    });
+  });
+
+  it('discards the drawn points when Cancel is clicked', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const onFinishDrawingTail = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        isDrawingTail
+        tailDraftPoints={[{ lat: 51.5, lng: -0.1278 }]}
+        onFinishDrawingTail={onFinishDrawingTail}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+    expect(onFinishDrawingTail).toHaveBeenCalledTimes(1);
+    // Nothing has moved yet, so no position row exists at all — proving
+    // Cancel didn't trigger a save.
+    expect(await listCharacterPositionsForCharacter(characterId)).toEqual([]);
   });
 
   it('does not update state after unmounting while books/seasons are still loading', async () => {
@@ -372,6 +535,10 @@ describe('PositionPanel', () => {
         position={null}
         onBack={vi.fn()}
         existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -427,6 +594,7 @@ describe('PositionPanel', () => {
       position: INITIAL_POSITION,
       dead: false,
       note: 'Hiding at the Wall',
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -485,6 +653,7 @@ describe('PositionPanel', () => {
       position: INITIAL_POSITION,
       dead: true,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -526,6 +695,7 @@ describe('PositionPanel', () => {
       position: INITIAL_POSITION,
       dead: false,
       note: null,
+      tail: null,
       chapterRange: { startChapterId: chapter.id, endChapterId: null },
       episodeRange: { startEpisodeId: episode.id, endEpisodeId: null },
     });
@@ -551,6 +721,7 @@ describe('PositionPanel', () => {
       position: INITIAL_POSITION,
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -576,6 +747,7 @@ describe('PositionPanel', () => {
       position: INITIAL_POSITION,
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });

@@ -100,6 +100,10 @@ function DraggableEditorSidebar({
         onBackFromPosition={handleBackFromPosition}
         positionsVersion={positionsVersion}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />
       <button onClick={() => setDraftPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag</button>
     </>
@@ -126,6 +130,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -156,6 +164,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -180,6 +192,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -217,6 +233,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -251,6 +271,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -281,6 +305,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -313,6 +341,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -341,6 +373,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -380,6 +416,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -398,6 +438,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -429,6 +473,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -457,6 +505,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -492,6 +544,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -517,6 +573,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -550,6 +610,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -581,6 +645,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -614,6 +682,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -643,6 +715,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -670,6 +746,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -691,6 +771,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -714,6 +798,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -761,11 +849,74 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
     expect(await screen.findByDisplayValue('A Clash of Kings')).toBeVisible();
     expect(screen.getByDisplayValue('A Game of Thrones')).not.toBeVisible();
+  });
+
+  it('expands the Nth character from a #characters-N URL hash', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+    });
+    await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    await createCharacter({
+      storyId: story.id,
+      name: 'Daenerys Targaryen',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    window.location.hash = '#characters-2';
+
+    render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={story.id}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Jon Snow');
+    await waitFor(() => {
+      const visibleNameField = screen
+        .getAllByLabelText(/^name$/i)
+        .find(
+          (field) =>
+            window.getComputedStyle(field.closest('.MuiCollapse-root')!).visibility !== 'hidden',
+        );
+      expect(visibleNameField).toHaveValue('Daenerys Targaryen');
+    });
   });
 
   it('ignores a #books hash for a brand new, unsaved map', () => {
@@ -785,6 +936,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -808,6 +963,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -830,6 +989,10 @@ describe('EditorSidebar', () => {
         onBackFromPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
       />,
     );
 
@@ -892,6 +1055,7 @@ describe('EditorSidebar', () => {
       position: { lat: 51.5, lng: -0.1278 },
       dead: true,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });

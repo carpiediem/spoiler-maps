@@ -246,6 +246,7 @@ describe('CharacterItem', () => {
       position: { lat: 1, lng: 1 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -254,6 +255,7 @@ describe('CharacterItem', () => {
       position: { lat: 2, lng: 2 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -275,6 +277,7 @@ describe('CharacterItem', () => {
       position: { lat: 1, lng: 1 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -283,6 +286,7 @@ describe('CharacterItem', () => {
       position: { lat: 2, lng: 2 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: { startChapterId: null, endChapterId: null },
       episodeRange: null,
     });
@@ -302,6 +306,7 @@ describe('CharacterItem', () => {
       position: { lat: 1, lng: 1 },
       dead: false,
       note: 'Hiding at the Wall',
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -318,6 +323,7 @@ describe('CharacterItem', () => {
       position: { lat: 1, lng: 1 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -337,6 +343,7 @@ describe('CharacterItem', () => {
       position: { lat: 1, lng: 1 },
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });

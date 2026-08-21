@@ -22,14 +22,14 @@ const HASH_PATTERN = /^#(map|books|television|characters|markers)(?:-(\d+))?$/;
 
 interface HashTarget {
   section: SectionId;
-  /** 1-based index of the book/season named by a #books-N or #television-N fragment. */
+  /** 1-based index of the book/season/character named by a #books-N, #television-N, or #characters-N fragment. */
   itemIndex: number | null;
 }
 
 // Reads a #section or #section-N fragment (e.g. #books, #books-1,
-// #television-2). A section other than Map only exists once a story has
-// been saved, so the fragment is ignored (rather than left pending) while
-// selectedStoryId is still null.
+// #television-2, #characters-1). A section other than Map only exists once
+// a story has been saved, so the fragment is ignored (rather than left
+// pending) while selectedStoryId is still null.
 function parseHash(hash: string, selectedStoryId: number | null): HashTarget | null {
   const match = hash.match(HASH_PATTERN);
   if (!match) return null;
@@ -39,7 +39,9 @@ function parseHash(hash: string, selectedStoryId: number | null): HashTarget | n
   return {
     section: section as SectionId,
     itemIndex:
-      (section === 'books' || section === 'television') && indexStr ? Number(indexStr) : null,
+      (section === 'books' || section === 'television' || section === 'characters') && indexStr
+        ? Number(indexStr)
+        : null,
   };
 }
 
@@ -66,16 +68,28 @@ interface EditorSidebarProps {
     index: number;
     existing: CharacterPosition | null;
   } | null;
-  /** Called with (characterId, 1-based new position index) when "+ Position" is clicked. */
-  onAddPosition: (characterId: number, index: number) => void;
-  /** Called with (characterId, 1-based index, position) when an existing position is clicked. */
-  onEditPosition: (characterId: number, index: number, position: CharacterPosition) => void;
+  /** Called with (characterId, 1-based new position index, character color) when "+ Position" is clicked. */
+  onAddPosition: (characterId: number, index: number, color: string | null) => void;
+  /** Called with (characterId, 1-based index, position, character color) when an existing position is clicked. */
+  onEditPosition: (
+    characterId: number,
+    index: number,
+    position: CharacterPosition,
+    color: string | null,
+  ) => void;
   /** Called when the Position panel's back arrow is clicked. */
   onBackFromPosition: () => void;
   /** Bumped whenever a position editing session ends, so each CharacterItem re-fetches its list. */
   positionsVersion: number;
   /** Called with the expanded character's numbered position pins, or null once collapsed. */
   onVisiblePositionsChange: (pins: CharacterPositionPin[] | null) => void;
+  /** Whether the map is currently in tail-drawing mode. */
+  isDrawingTail: boolean;
+  /** Points clicked so far while drawing a tail. */
+  tailDraftPoints: LatLng[];
+  onStartDrawingTail: () => void;
+  /** Called when Save or Cancel is clicked, to leave drawing mode either way. */
+  onFinishDrawingTail: () => void;
 }
 
 export function EditorSidebar({
@@ -92,6 +106,10 @@ export function EditorSidebar({
   onBackFromPosition,
   positionsVersion,
   onVisiblePositionsChange,
+  isDrawingTail,
+  tailDraftPoints,
+  onStartDrawingTail,
+  onFinishDrawingTail,
 }: EditorSidebarProps) {
   const {
     control,
@@ -260,6 +278,7 @@ export function EditorSidebar({
                 >
                   <CharactersSection
                     storyId={selectedStoryId}
+                    initialExpandedIndex={expandedSection === 'characters' ? hashItemIndex : null}
                     onCountChange={setCharactersCount}
                     onAddPosition={onAddPosition}
                     onEditPosition={onEditPosition}
@@ -293,6 +312,10 @@ export function EditorSidebar({
               position={draftPosition}
               existingPosition={activePosition.existing}
               onBack={onBackFromPosition}
+              isDrawingTail={isDrawingTail}
+              tailDraftPoints={tailDraftPoints}
+              onStartDrawingTail={onStartDrawingTail}
+              onFinishDrawingTail={onFinishDrawingTail}
             />
           )}
         </Box>

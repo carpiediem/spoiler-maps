@@ -35,10 +35,14 @@ function App() {
     characterId: number;
     index: number;
     existing: CharacterPosition | null;
+    color: string | null;
   } | null>(null);
   // Bumped whenever a position editing session ends, so each CharacterItem
   // re-fetches its list.
   const [positionsVersion, setPositionsVersion] = useState(0);
+  // null when not drawing a tail; an (possibly empty) array of points
+  // clicked so far while drawing one.
+  const [tailDraftPoints, setTailDraftPoints] = useState<LatLng[] | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
 
   useEffect(() => {
@@ -74,6 +78,7 @@ function App() {
     setMapPosition({ center: mapCenter, zoom: mapZoom });
     setActivePosition(null);
     setDraftPosition(null);
+    setTailDraftPoints(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStoryId]);
 
@@ -91,8 +96,8 @@ function App() {
     return { center: { lat: center.lat, lng: center.lng }, zoom: map.getZoom() };
   }
 
-  function handleAddPosition(characterId: number, index: number) {
-    setActivePosition({ characterId, index, existing: null });
+  function handleAddPosition(characterId: number, index: number, color: string | null) {
+    setActivePosition({ characterId, index, existing: null, color });
     setDraftPosition(mapPosition.center);
   }
 
@@ -108,23 +113,43 @@ function App() {
     map.flyTo(position, map.getZoom());
   }
 
-  function handleEditPosition(characterId: number, index: number, existing: CharacterPosition) {
-    setActivePosition({ characterId, index, existing });
+  function handleEditPosition(
+    characterId: number,
+    index: number,
+    existing: CharacterPosition,
+    color: string | null,
+  ) {
+    setActivePosition({ characterId, index, existing, color });
     setDraftPosition(existing.position);
     recenterMapIfPositionNotVisible(existing.position);
   }
 
   function handlePinClick(pin: CharacterPositionPin) {
-    handleEditPosition(pin.characterId, Number(pin.label), pin.characterPosition);
+    handleEditPosition(pin.characterId, Number(pin.label), pin.characterPosition, pin.color);
   }
 
   function handleBackFromPosition() {
     setActivePosition(null);
     setDraftPosition(null);
+    setTailDraftPoints(null);
     // Picked up by CharacterItem's positions-fetch effect, so the sidebar
     // list reflects whatever was just created/updated while its accordion
     // stayed mounted (and silently stale) behind the Position panel.
     setPositionsVersion((previous) => previous + 1);
+  }
+
+  function handleStartDrawingTail() {
+    setTailDraftPoints([]);
+  }
+
+  // Only reachable while drawing: MapView's click-catching listener is only
+  // mounted while tailDraftPoints is non-null.
+  function handleTailPointClick(point: LatLng) {
+    setTailDraftPoints((previous) => [...previous!, point]);
+  }
+
+  function handleFinishDrawingTail() {
+    setTailDraftPoints(null);
   }
 
   async function handleSave(input: {
@@ -168,6 +193,9 @@ function App() {
           characterPositionPins={characterPositionPins}
           editingPositionId={activePosition?.existing?.id ?? null}
           onCharacterPositionPinClick={handlePinClick}
+          tailDraftPoints={tailDraftPoints}
+          onTailPointClick={handleTailPointClick}
+          tailColor={activePosition?.color ?? null}
         />
       </main>
       <EditorSidebar
@@ -184,6 +212,10 @@ function App() {
         onBackFromPosition={handleBackFromPosition}
         positionsVersion={positionsVersion}
         onVisiblePositionsChange={setCharacterPositionPins}
+        isDrawingTail={tailDraftPoints !== null}
+        tailDraftPoints={tailDraftPoints ?? []}
+        onStartDrawingTail={handleStartDrawingTail}
+        onFinishDrawingTail={handleFinishDrawingTail}
       />
     </div>
   );

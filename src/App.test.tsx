@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -159,6 +159,7 @@ describe('App', () => {
       position: { lat: 51.5, lng: -0.1278 },
       dead: true,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -224,6 +225,7 @@ describe('App', () => {
       position: story.initialCenter,
       dead: false,
       note: null,
+      tail: null,
       chapterRange: null,
       episodeRange: null,
     });
@@ -247,6 +249,48 @@ describe('App', () => {
     expect(
       screen.queryByRole('button', { name: /use current map position/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it('draws a tail by clicking the map, then saves it onto the position', async () => {
+    await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+    });
+    resetDatabaseForTests();
+
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^characters$/i }));
+    await user.click(screen.getByRole('button', { name: /add character/i }));
+    await screen.findByLabelText(/^name$/i);
+    await user.click(screen.getByRole('button', { name: /^position$/i }));
+
+    await screen.findByText('Position 1');
+    const tailButton = screen.getByRole('button', { name: /add a tail/i });
+    expect(tailButton).toBeEnabled();
+    await user.click(tailButton);
+
+    // While drawing, the tail button is replaced by Save/Cancel, and
+    // clicking the map appends a point instead of doing nothing.
+    expect(screen.queryByRole('button', { name: /add a tail/i })).not.toBeInTheDocument();
+    const mapContainer = container.querySelector('.leaflet-container')!;
+    fireEvent.click(mapContainer, { clientX: 120, clientY: 80 });
+    fireEvent.click(mapContainer, { clientX: 160, clientY: 100 });
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('.leaflet-interactive')).not.toHaveLength(0);
+    });
+
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    // Drawing mode ends and the tail button reappears.
+    expect(await screen.findByRole('button', { name: /add a tail/i })).toBeInTheDocument();
   });
 
   it('does not update state after unmounting while stories are still loading', async () => {

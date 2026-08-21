@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 
 export interface Migration {
   version: number;
@@ -176,6 +176,15 @@ export const MIGRATIONS: Migration[] = [
     version: 7,
     sql: `
       ALTER TABLE character_positions ADD COLUMN note TEXT;
+    `,
+  },
+  {
+    version: 8,
+    sql: `
+      -- tail is a JSON-encoded array of {lat, lng} points tracing a path
+      -- away from this position's own lat/lng (e.g. a journey leading up
+      -- to it) — same JSON-column approach as markers.polygon.
+      ALTER TABLE character_positions ADD COLUMN tail TEXT;
     `,
   },
 ];

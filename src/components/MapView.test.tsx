@@ -1,4 +1,9 @@
-import { Marker as LeafletMarker, type Map as LeafletMap } from 'leaflet';
+import {
+  CircleMarker as LeafletCircleMarker,
+  Marker as LeafletMarker,
+  Polyline as LeafletPolyline,
+  type Map as LeafletMap,
+} from 'leaflet';
 import { act, render } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -125,6 +130,7 @@ describe('MapView', () => {
         position,
         dead: false,
         note: null,
+        tail: null,
         chapterRange: null,
         episodeRange: null,
       },
@@ -248,5 +254,97 @@ describe('MapView', () => {
       if (layer instanceof LeafletMarker) markerCount += 1;
     });
     expect(markerCount).toBe(1);
+  });
+
+  it('calls onTailPointClick with the clicked lat/lng while drawing a tail', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onTailPointClick = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        tailDraftPoints={[]}
+        onTailPointClick={onTailPointClick}
+      />,
+    );
+
+    act(() => {
+      mapRef.current!.fire('click', { latlng: { lat: 41, lng: -101 } });
+    });
+
+    expect(onTailPointClick).toHaveBeenCalledWith({ lat: 41, lng: -101 });
+  });
+
+  it('does not listen for map clicks when not drawing a tail', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onTailPointClick = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        tailDraftPoints={null}
+        onTailPointClick={onTailPointClick}
+      />,
+    );
+
+    act(() => {
+      mapRef.current!.fire('click', { latlng: { lat: 41, lng: -101 } });
+    });
+
+    expect(onTailPointClick).not.toHaveBeenCalled();
+  });
+
+  it('renders the in-progress tail as a colored polyline with a dot per point', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        draftPosition={{ lat: 40, lng: -100 }}
+        tailDraftPoints={[
+          { lat: 41, lng: -101 },
+          { lat: 42, lng: -102 },
+        ]}
+        tailColor="#00ff00"
+      />,
+    );
+
+    let polyline: LeafletPolyline | undefined;
+    const circleMarkers: LeafletCircleMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolyline) polyline = layer;
+      if (layer instanceof LeafletCircleMarker) circleMarkers.push(layer);
+    });
+
+    expect(polyline).toBeDefined();
+    expect((polyline!.options as { color?: string }).color).toBe('#00ff00');
+    expect(polyline!.getLatLngs()).toHaveLength(3);
+    expect(circleMarkers).toHaveLength(2);
+    expect((circleMarkers[0]!.options as { color?: string }).color).toBe('#00ff00');
+  });
+
+  it('does not render a tail when there is no draft position yet', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        tailDraftPoints={[{ lat: 41, lng: -101 }]}
+      />,
+    );
+
+    let polylineCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolyline) polylineCount += 1;
+    });
+    expect(polylineCount).toBe(0);
   });
 });

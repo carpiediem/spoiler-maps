@@ -118,6 +118,8 @@ export interface CharacterPosition {
   /** Whether the character has died as of this position. */
   dead: boolean;
   note: string | null;
+  /** A path leading away from this position's own lat/lng, e.g. a journey. */
+  tail: LatLng[] | null;
   chapterRange: ChapterRange | null;
   episodeRange: EpisodeRange | null;
 }
