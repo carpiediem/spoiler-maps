@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -393,6 +399,34 @@ describe('App', () => {
     } finally {
       clickSpy.mockRestore();
     }
+  });
+
+  it('deletes the selected story once confirmed, returning to a fresh "New Map"', async () => {
+    await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByDisplayValue('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /delete story/i }));
+    await user.click(screen.getByRole('button', { name: /^delete$/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    await waitFor(() => expect(screen.getByLabelText(/map name/i)).toHaveValue(''));
+    expect(screen.getByRole('button', { name: /new map/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /new map/i }));
+    expect(
+      screen.queryByRole('option', { name: /a song of ice and fire/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('contains all content within landmark regions', () => {

@@ -5,6 +5,7 @@ import { MapTimelineControl, type TimelineMode } from './components/MapTimelineC
 import { MapView } from './components/MapView';
 import {
   createStory,
+  deleteStory,
   listStories,
   updateStory,
   type CharacterPosition,
@@ -228,6 +229,14 @@ function App() {
     setTileUrl(imported.tileUrlTemplate);
   }
 
+  async function handleDeleteStory() {
+    /* v8 ignore next -- the Delete Story button only renders once selectedStoryId names a story already in `stories`. */
+    if (selectedStoryId === null) return;
+    await deleteStory(selectedStoryId);
+    setStories((previous) => previous.filter((s) => s.id !== selectedStoryId));
+    handleSelectStory(null);
+  }
+
   return (
     <div className="app">
       <main aria-label="Map">
@@ -259,6 +268,7 @@ function App() {
         onSelectStory={handleSelectStory}
         onExportStory={handleExportStory}
         onImportFile={handleImportFile}
+        onDeleteStory={handleDeleteStory}
         onSave={handleSave}
         onCaptureMapPosition={getCurrentMapPosition}
         mapPosition={mapPosition}

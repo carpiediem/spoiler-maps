@@ -94,6 +94,7 @@ function DraggableEditorSidebar({
         selectedStoryId={selectedStoryId}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={{ center: { lat: 39.8283, lng: -98.5795 }, zoom: 4 }}
         draftPosition={draftPosition}
@@ -129,6 +130,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={onSave}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -168,6 +170,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -201,6 +204,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={onSave}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -249,6 +253,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={onSave}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -292,6 +297,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={onSave}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -331,6 +337,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={onSave}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -372,6 +379,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -409,6 +417,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={onSave}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -458,6 +467,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={onSave}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -499,6 +509,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={onSave}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -547,6 +558,7 @@ describe('EditorSidebar', () => {
           selectedStoryId={null}
           onSelectStory={vi.fn()}
           onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
           onCaptureMapPosition={() => null}
           mapPosition={null}
           draftPosition={null}
@@ -600,6 +612,7 @@ describe('EditorSidebar', () => {
           selectedStoryId={null}
           onSelectStory={vi.fn()}
           onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
           onCaptureMapPosition={() => null}
           mapPosition={null}
           draftPosition={null}
@@ -648,6 +661,7 @@ describe('EditorSidebar', () => {
           selectedStoryId={null}
           onSelectStory={vi.fn()}
           onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
           onCaptureMapPosition={() => null}
           mapPosition={null}
           draftPosition={null}
@@ -706,6 +720,7 @@ describe('EditorSidebar', () => {
           selectedStoryId={null}
           onSelectStory={vi.fn()}
           onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
           onCaptureMapPosition={() => null}
           mapPosition={null}
           draftPosition={null}
@@ -757,6 +772,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -784,6 +800,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -824,6 +841,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={onSelectStory}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -863,6 +881,7 @@ describe('EditorSidebar', () => {
         onExportStory={onExportStory}
         onImportFile={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -892,6 +911,7 @@ describe('EditorSidebar', () => {
         onExportStory={onExportStory}
         onImportFile={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -915,6 +935,88 @@ describe('EditorSidebar', () => {
     expect(onExportStory).toHaveBeenCalled();
   });
 
+  it('shows a Delete Story button only once a story is selected', () => {
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /delete story/i })).not.toBeInTheDocument();
+  });
+
+  it('asks for confirmation before deleting, and only calls onDeleteStory once confirmed', async () => {
+    const onDeleteStory = vi.fn();
+    const user = userEvent.setup();
+    const story = makeStory({ id: 1, name: 'A Song of Ice and Fire' });
+    render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onDeleteStory={onDeleteStory}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+        onExportStory={vi.fn()}
+        onImportFile={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /delete story/i }));
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent(/delete “A Song of Ice and Fire”\?/i);
+    expect(onDeleteStory).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+    expect(onDeleteStory).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: /delete story/i }));
+    await screen.findByRole('dialog');
+    await user.click(screen.getByRole('button', { name: /^delete$/i }));
+
+    expect(onDeleteStory).toHaveBeenCalled();
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+  });
+
   it('captures the current map position and reflects it in the display and on save', async () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
@@ -925,6 +1027,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={onSave}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => ({ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 })}
         mapPosition={{ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 }}
         draftPosition={null}
@@ -971,6 +1074,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={{ center: { lat: 10, lng: 10 }, zoom: 3 }}
         draftPosition={null}
@@ -1005,6 +1109,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1047,6 +1152,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1087,6 +1193,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1129,6 +1236,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1167,6 +1275,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1203,6 +1312,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1233,6 +1343,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={2}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1265,6 +1376,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1323,6 +1435,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={story.id}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1383,6 +1496,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={story.id}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1424,6 +1538,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={null}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1456,6 +1571,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
@@ -1487,6 +1603,7 @@ describe('EditorSidebar', () => {
         selectedStoryId={1}
         onSelectStory={vi.fn()}
         onSave={vi.fn()}
+        onDeleteStory={vi.fn()}
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
