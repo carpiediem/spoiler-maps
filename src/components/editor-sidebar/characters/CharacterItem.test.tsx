@@ -60,6 +60,7 @@ async function seedCharacter(
     icon: null,
     color: null,
     ...overrides,
+    sortOrder: 0,
   });
 }
 
@@ -86,6 +87,11 @@ function Wrapper({
       onToggle={(_event, isExpanded) => setExpanded(isExpanded)}
       visible={visible}
       onToggleVisible={() => setVisible((previous) => !previous)}
+      isDragging={false}
+      onDragStart={vi.fn()}
+      onDragEnd={vi.fn()}
+      onDragOver={vi.fn()}
+      onDrop={vi.fn()}
       onCharacterChange={setCharacter}
       onDelete={onDelete ?? vi.fn()}
       onAddPosition={onAddPosition ?? vi.fn()}
@@ -105,6 +111,7 @@ describe('CharacterItem', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 1,
     };
     render(
       <CharacterItem
@@ -113,6 +120,11 @@ describe('CharacterItem', () => {
         onToggle={vi.fn()}
         visible={false}
         onToggleVisible={vi.fn()}
+        isDragging={false}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        onDragOver={vi.fn()}
+        onDrop={vi.fn()}
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
         onAddPosition={vi.fn()}
@@ -125,14 +137,15 @@ describe('CharacterItem', () => {
     expect(screen.getByText('Jon Snow')).toBeInTheDocument();
   });
 
-  it('falls back to "Unnamed Character" in the summary', () => {
+  it('dims the row while it is the one being dragged', () => {
     const character: Character = {
       id: 1,
       storyId: 1,
-      name: '',
+      name: 'Jon Snow',
       group: null,
       icon: null,
       color: null,
+      sortOrder: 1,
     };
     render(
       <CharacterItem
@@ -141,6 +154,46 @@ describe('CharacterItem', () => {
         onToggle={vi.fn()}
         visible={false}
         onToggleVisible={vi.fn()}
+        isDragging={true}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        onDragOver={vi.fn()}
+        onDrop={vi.fn()}
+        onCharacterChange={vi.fn()}
+        onDelete={vi.fn()}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onPositionsChange={vi.fn()}
+        positionsVersion={0}
+      />,
+    );
+
+    const summary = screen.getByRole('button', { name: 'Jon Snow' });
+    expect(summary.parentElement).toHaveStyle({ opacity: '0.5' });
+  });
+
+  it('falls back to "Unnamed Character" in the summary', () => {
+    const character: Character = {
+      id: 1,
+      storyId: 1,
+      name: '',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 2,
+    };
+    render(
+      <CharacterItem
+        character={character}
+        expanded={false}
+        onToggle={vi.fn()}
+        visible={false}
+        onToggleVisible={vi.fn()}
+        isDragging={false}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        onDragOver={vi.fn()}
+        onDrop={vi.fn()}
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
         onAddPosition={vi.fn()}

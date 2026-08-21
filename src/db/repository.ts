@@ -571,6 +571,7 @@ function rowToCharacter(row: Row): Character {
     group: row.group as string | null,
     icon: row.icon as string | null,
     color: row.color as string | null,
+    sortOrder: row.sort_order as number,
   };
 }
 
@@ -578,8 +579,8 @@ export async function createCharacter(input: NewCharacter): Promise<Character> {
   const db = await getDatabase();
   const id = insert(
     db,
-    'INSERT INTO characters (story_id, name, "group", icon, color) VALUES (?, ?, ?, ?, ?);',
-    [input.storyId, input.name, input.group, input.icon, input.color],
+    'INSERT INTO characters (story_id, name, "group", icon, color, sort_order) VALUES (?, ?, ?, ?, ?, ?);',
+    [input.storyId, input.name, input.group, input.icon, input.color, input.sortOrder],
   );
   await persist();
   return { id, ...input };
@@ -587,16 +588,19 @@ export async function createCharacter(input: NewCharacter): Promise<Character> {
 
 export async function listCharactersForStory(storyId: number): Promise<Character[]> {
   const db = await getDatabase();
-  return selectAll(db, 'SELECT * FROM characters WHERE story_id = ? ORDER BY id;', rowToCharacter, [
-    storyId,
-  ]);
+  return selectAll(
+    db,
+    'SELECT * FROM characters WHERE story_id = ? ORDER BY sort_order;',
+    rowToCharacter,
+    [storyId],
+  );
 }
 
 export async function updateCharacter(id: number, input: NewCharacter): Promise<void> {
   const db = await getDatabase();
   db.run(
-    'UPDATE characters SET story_id = ?, name = ?, "group" = ?, icon = ?, color = ? WHERE id = ?;',
-    [input.storyId, input.name, input.group, input.icon, input.color, id],
+    'UPDATE characters SET story_id = ?, name = ?, "group" = ?, icon = ?, color = ?, sort_order = ? WHERE id = ?;',
+    [input.storyId, input.name, input.group, input.icon, input.color, input.sortOrder, id],
   );
   await persist();
 }

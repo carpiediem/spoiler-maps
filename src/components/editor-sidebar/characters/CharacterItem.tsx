@@ -26,7 +26,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useEffect, useState, type ReactNode, type SyntheticEvent } from 'react';
+import { useEffect, useState, type DragEvent, type ReactNode, type SyntheticEvent } from 'react';
 import {
   listCharacterPositionsForCharacter,
   updateCharacter,
@@ -84,6 +84,12 @@ interface CharacterItemProps {
   /** Whether this character's last position + tails should show on the map even while collapsed. */
   visible: boolean;
   onToggleVisible: () => void;
+  /** Whether this character is the one currently being dragged, for a visual cue. */
+  isDragging: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDragOver: (event: DragEvent<HTMLElement>) => void;
+  onDrop: (event: DragEvent<HTMLElement>) => void;
   onCharacterChange: (character: Character) => void;
   onDelete: () => void;
   /** Called with the 1-based index the new position would have when "+ Position" is clicked. */
@@ -102,6 +108,11 @@ export function CharacterItem({
   onToggle,
   visible,
   onToggleVisible,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
   onCharacterChange,
   onDelete,
   onAddPosition,
@@ -145,6 +156,7 @@ export function CharacterItem({
       group: character.group,
       icon: character.icon,
       color: character.color,
+      sortOrder: character.sortOrder,
     });
   }
 
@@ -161,9 +173,18 @@ export function CharacterItem({
         borderRadius: 1,
       }}
     >
-      <Box sx={{ position: 'relative' }}>
+      <Box sx={{ position: 'relative', opacity: isDragging ? 0.5 : 1 }}>
+        {/* A native title, not an MUI Tooltip: Tooltip clones an aria-label
+            onto its child, which would replace this button's accessible
+            name (otherwise just "Jon Snow") with "Drag to reorder". */}
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}
+          draggable
+          title="Drag to reorder"
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
           sx={{ backgroundColor: 'rgba(0, 0, 0, .03)', px: 1, minHeight: 40 }}
         >
           <Stack
@@ -254,8 +275,8 @@ export function CharacterItem({
             sx={{
               '& .MuiInputBase-input': {
                 mx: 1,
-                p: 0.5,
-                pt: 1,
+                px: 0.5,
+                py: 1,
                 height: 24,
                 cursor: 'pointer',
                 // The browser's own <input type="color"> chrome renders a

@@ -1,13 +1,22 @@
 import AddIcon from '@mui/icons-material/Add';
 import { Button, Stack, Typography } from '@mui/material';
-import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+  type SyntheticEvent,
+} from 'react';
 import {
   createCharacter,
   deleteCharacter,
   listCharactersForStory,
+  updateCharacter,
   type Character,
   type CharacterPosition,
 } from '../../db';
+import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
 import { CharacterItem } from './characters/CharacterItem';
@@ -50,6 +59,7 @@ export function CharactersSection({
   // toggled on, independent of — and in addition to — whichever character's
   // accordion happens to be expanded.
   const [visibleCharacterIds, setVisibleCharacterIds] = useState<Set<number>>(new Set());
+  const [draggedCharacterId, setDraggedCharacterId] = useState<number | null>(null);
   const appliedInitialIndexRef = useRef(false);
   // Keyed by character id, so map pins can be recomputed here — the single
   // place that already knows which character is expanded — instead of each
@@ -177,6 +187,7 @@ export function CharactersSection({
       group: null,
       icon: null,
       color: null,
+      sortOrder: sortOrderAfter(characters!.map((existing) => existing.sortOrder)),
     });
     setCharacters((previous) => [...previous!, character]);
     setExpandedCharacterId(character.id);
@@ -225,6 +236,42 @@ export function CharactersSection({
     });
   }
 
+  function handleDragOver(event: DragEvent<HTMLElement>) {
+    // Required for this element to become a valid drop target at all.
+    event.preventDefault();
+  }
+
+  // Reorders by moving the dragged character to just before the one it was
+  // dropped on, computing its new sort order from its new neighbors rather
+  // than renumbering the whole list.
+  function handleDrop(targetCharacterId: number) {
+    return async (event: DragEvent<HTMLElement>) => {
+      event.preventDefault();
+      const current = characters!;
+      const draggedId = draggedCharacterId;
+      setDraggedCharacterId(null);
+      if (draggedId === null || draggedId === targetCharacterId) return;
+
+      const dragged = current.find((character) => character.id === draggedId);
+      /* v8 ignore next -- dragged can only be missing if the character it names was deleted mid-drag, which ends the drag (via onDragEnd) before a drop can land. */
+      if (!dragged) return;
+
+      const withoutDragged = current.filter((character) => character.id !== draggedId);
+      const targetIndex = withoutDragged.findIndex(
+        (character) => character.id === targetCharacterId,
+      );
+      const before = withoutDragged[targetIndex - 1]?.sortOrder ?? null;
+      /* v8 ignore next -- targetIndex only ever comes from a character actually rendered (and thus present in withoutDragged), so this fallback is unreachable in practice. */
+      const after = withoutDragged[targetIndex]?.sortOrder ?? null;
+      const updated = { ...dragged, sortOrder: sortOrderBetween(before, after) };
+
+      const reordered = [...withoutDragged];
+      reordered.splice(targetIndex, 0, updated);
+      setCharacters(reordered);
+      await updateCharacter(updated.id, updated);
+    };
+  }
+
   if (characters === null) {
     return (
       <Typography variant="body2" color="text.secondary">
@@ -249,6 +296,11 @@ export function CharactersSection({
           onToggle={handleToggle(character.id)}
           visible={visibleCharacterIds.has(character.id)}
           onToggleVisible={() => handleToggleVisible(character.id)}
+          isDragging={draggedCharacterId === character.id}
+          onDragStart={() => setDraggedCharacterId(character.id)}
+          onDragEnd={() => setDraggedCharacterId(null)}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop(character.id)}
           onCharacterChange={handleCharacterChange}
           onDelete={() => handleDeleteCharacter(character.id)}
           onAddPosition={(index) => onAddPosition(character.id, index, character.color)}

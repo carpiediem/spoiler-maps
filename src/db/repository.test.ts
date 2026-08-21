@@ -298,6 +298,7 @@ describe('characters', () => {
       group: 'Stark',
       icon: null,
       color: null,
+      sortOrder: 0,
     });
 
     expect(await listCharactersForStory(story.id)).toEqual([character]);
@@ -319,6 +320,7 @@ describe('character positions', () => {
       group: 'Stark',
       icon: null,
       color: null,
+      sortOrder: 1,
     });
     const book = await createBook({
       storyId: story.id,
@@ -448,6 +450,7 @@ describe('character positions', () => {
       group: 'Stark',
       icon: null,
       color: null,
+      sortOrder: 2,
     });
     const book1 = await createBook({
       storyId: story.id,
@@ -562,6 +565,7 @@ describe('character positions', () => {
       group: 'Stark',
       icon: null,
       color: null,
+      sortOrder: 3,
     });
     const season = await createTvSeason({ storyId: story.id, url: null, sortOrder: 0 });
     const episode1 = await createEpisode({

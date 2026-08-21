@@ -56,6 +56,7 @@ async function seedCharacter(): Promise<{ storyId: number; characterId: number }
     group: null,
     icon: null,
     color: null,
+    sortOrder: 0,
   });
   return { storyId, characterId: character.id };
 }

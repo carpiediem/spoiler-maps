@@ -1185,6 +1185,7 @@ describe('EditorSidebar', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 0,
     });
     await createCharacter({
       storyId: story.id,
@@ -1192,6 +1193,7 @@ describe('EditorSidebar', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 1,
     });
     window.location.hash = '#characters-2';
 
@@ -1334,6 +1336,7 @@ describe('EditorSidebar', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 2,
     });
     const user = userEvent.setup();
     render(<DraggableEditorSidebar stories={[story]} selectedStoryId={story.id} />);
@@ -1367,6 +1370,7 @@ describe('EditorSidebar', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 3,
     });
     await createCharacterPosition({
       characterId: character.id,

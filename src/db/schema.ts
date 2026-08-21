@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 
 export interface Migration {
   version: number;
@@ -195,6 +195,17 @@ export const MIGRATIONS: Migration[] = [
       -- default (OpenStreetMap) tileset.
       ALTER TABLE stories ADD COLUMN min_zoom INTEGER NOT NULL DEFAULT 0;
       ALTER TABLE stories ADD COLUMN max_zoom INTEGER NOT NULL DEFAULT 19;
+    `,
+  },
+  {
+    version: 10,
+    sql: `
+      -- Lets characters be drag-and-drop reordered in the sidebar list; see
+      -- the fractional-indexing comment on the books table above. Existing
+      -- characters get their id as their initial sort_order, preserving the
+      -- ORDER BY id ordering they were always listed under.
+      ALTER TABLE characters ADD COLUMN sort_order REAL NOT NULL DEFAULT 0;
+      UPDATE characters SET sort_order = id;
     `,
   },
 ];

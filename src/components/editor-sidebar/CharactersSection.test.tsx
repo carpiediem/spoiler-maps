@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -61,7 +61,14 @@ describe('CharactersSection', () => {
 
   it('lists existing characters', async () => {
     const storyId = await seedStoryId();
-    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+    });
     render(
       <CharactersSection
         storyId={storyId}
@@ -78,13 +85,21 @@ describe('CharactersSection', () => {
 
   it('reports the character count for the story once loaded', async () => {
     const storyId = await seedStoryId();
-    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 1,
+    });
     await createCharacter({
       storyId,
       name: 'Daenerys Targaryen',
       group: null,
       icon: null,
       color: null,
+      sortOrder: 2,
     });
     const onCountChange = vi.fn();
     render(
@@ -122,7 +137,14 @@ describe('CharactersSection', () => {
 
   it('adds a new character, expanded, and persists it', async () => {
     const storyId = await seedStoryId();
-    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 3,
+    });
     const user = userEvent.setup();
     render(
       <CharactersSection
@@ -147,13 +169,21 @@ describe('CharactersSection', () => {
 
   it('auto-expands the character at the 1-based initialExpandedIndex', async () => {
     const storyId = await seedStoryId();
-    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 4,
+    });
     await createCharacter({
       storyId,
       name: 'Daenerys Targaryen',
       group: null,
       icon: null,
       color: null,
+      sortOrder: 5,
     });
     render(
       <CharactersSection
@@ -181,7 +211,14 @@ describe('CharactersSection', () => {
 
   it('ignores an out-of-range initialExpandedIndex', async () => {
     const storyId = await seedStoryId();
-    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 6,
+    });
     render(
       <CharactersSection
         storyId={storyId}
@@ -200,7 +237,14 @@ describe('CharactersSection', () => {
 
   it('collapses a character when its accordion is closed again', async () => {
     const storyId = await seedStoryId();
-    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 7,
+    });
     const user = userEvent.setup();
     render(
       <CharactersSection
@@ -223,13 +267,21 @@ describe('CharactersSection', () => {
 
   it('editing one character does not affect a sibling character', async () => {
     const storyId = await seedStoryId();
-    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 8,
+    });
     await createCharacter({
       storyId,
       name: 'Daenerys Targaryen',
       group: null,
       icon: null,
       color: null,
+      sortOrder: 9,
     });
     const user = userEvent.setup();
     render(
@@ -258,13 +310,21 @@ describe('CharactersSection', () => {
 
   it('deletes a character from the database and the list, collapsing back to nothing expanded', async () => {
     const storyId = await seedStoryId();
-    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 10,
+    });
     await createCharacter({
       storyId,
       name: 'Daenerys Targaryen',
       group: null,
       icon: null,
       color: null,
+      sortOrder: 11,
     });
     const user = userEvent.setup();
     render(
@@ -287,9 +347,233 @@ describe('CharactersSection', () => {
     expect(await listCharactersForStory(storyId)).toHaveLength(1);
   });
 
+  it('reorders characters via drag and drop, persisting the new sort order', async () => {
+    const storyId = await seedStoryId();
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+    });
+    await createCharacter({
+      storyId,
+      name: 'Daenerys Targaryen',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 1,
+    });
+    await createCharacter({
+      storyId,
+      name: 'Tyrion Lannister',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 2,
+    });
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Jon Snow');
+    const jonRow = screen.getByRole('button', { name: 'Jon Snow' });
+    const tyrionRow = screen.getByRole('button', { name: 'Tyrion Lannister' });
+
+    fireEvent.dragStart(jonRow);
+    fireEvent.dragOver(tyrionRow);
+    fireEvent.drop(tyrionRow);
+
+    await waitFor(async () => {
+      const persisted = await listCharactersForStory(storyId);
+      expect(persisted.map((character) => character.name)).toEqual([
+        'Daenerys Targaryen',
+        'Jon Snow',
+        'Tyrion Lannister',
+      ]);
+    });
+  });
+
+  it('un-dims the dragged row once the drag ends without a drop (e.g. cancelled)', async () => {
+    const storyId = await seedStoryId();
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+    });
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Jon Snow');
+    const jonRow = screen.getByRole('button', { name: 'Jon Snow' });
+
+    fireEvent.dragStart(jonRow);
+    expect(jonRow.parentElement).toHaveStyle({ opacity: '0.5' });
+
+    fireEvent.dragEnd(jonRow);
+    expect(jonRow.parentElement).toHaveStyle({ opacity: '1' });
+  });
+
+  it('reorders to the very start of the list when dropped on the first character', async () => {
+    const storyId = await seedStoryId();
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+    });
+    await createCharacter({
+      storyId,
+      name: 'Daenerys Targaryen',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 1,
+    });
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Jon Snow');
+    const jonRow = screen.getByRole('button', { name: 'Jon Snow' });
+    const daenerysRow = screen.getByRole('button', { name: 'Daenerys Targaryen' });
+
+    fireEvent.dragStart(daenerysRow);
+    fireEvent.dragOver(jonRow);
+    fireEvent.drop(jonRow);
+
+    await waitFor(async () => {
+      const persisted = await listCharactersForStory(storyId);
+      expect(persisted.map((character) => character.name)).toEqual([
+        'Daenerys Targaryen',
+        'Jon Snow',
+      ]);
+    });
+  });
+
+  it('does nothing when a character is dropped on itself', async () => {
+    const storyId = await seedStoryId();
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+    });
+    await createCharacter({
+      storyId,
+      name: 'Daenerys Targaryen',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 1,
+    });
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Jon Snow');
+    const jonRow = screen.getByRole('button', { name: 'Jon Snow' });
+
+    fireEvent.dragStart(jonRow);
+    fireEvent.dragOver(jonRow);
+    fireEvent.drop(jonRow);
+
+    const persisted = await listCharactersForStory(storyId);
+    expect(persisted.map((character) => character.name)).toEqual([
+      'Jon Snow',
+      'Daenerys Targaryen',
+    ]);
+  });
+
+  it('does nothing when a drop lands without a drag having started', async () => {
+    const storyId = await seedStoryId();
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+    });
+    await createCharacter({
+      storyId,
+      name: 'Daenerys Targaryen',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 1,
+    });
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Jon Snow');
+    const daenerysRow = screen.getByRole('button', { name: 'Daenerys Targaryen' });
+
+    fireEvent.dragOver(daenerysRow);
+    fireEvent.drop(daenerysRow);
+
+    const persisted = await listCharactersForStory(storyId);
+    expect(persisted.map((character) => character.name)).toEqual([
+      'Jon Snow',
+      'Daenerys Targaryen',
+    ]);
+  });
+
   it('does not update state after unmounting while characters are still loading', async () => {
     const storyId = await seedStoryId();
-    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 12,
+    });
     const { unmount } = render(
       <CharactersSection
         storyId={storyId}
@@ -314,6 +598,7 @@ describe('CharactersSection', () => {
       group: null,
       icon: null,
       color: '#ff0000',
+      sortOrder: 13,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -376,6 +661,7 @@ describe('CharactersSection', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 14,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -416,6 +702,7 @@ describe('CharactersSection', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 15,
     });
     const daenerys = await createCharacter({
       storyId,
@@ -423,6 +710,7 @@ describe('CharactersSection', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 16,
     });
     await createCharacterPosition({
       characterId: jon.id,
@@ -495,6 +783,7 @@ describe('CharactersSection', () => {
       group: null,
       icon: null,
       color: '#ff0000',
+      sortOrder: 17,
     });
     const firstPosition = await createCharacterPosition({
       characterId: jon.id,
@@ -568,6 +857,7 @@ describe('CharactersSection', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 18,
     });
     await createCharacterPosition({
       characterId: jon.id,
@@ -603,7 +893,14 @@ describe('CharactersSection', () => {
 
   it('clears a deleted character out of the visible set, without leaving it toggled on for a later character', async () => {
     const storyId = await seedStoryId();
-    await createCharacter({ storyId, name: 'Jon Snow', group: null, icon: null, color: null });
+    await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 19,
+    });
     const onVisiblePositionsChange = vi.fn();
     const user = userEvent.setup();
     render(
@@ -634,6 +931,7 @@ describe('CharactersSection', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 20,
     });
     const position = await createCharacterPosition({
       characterId: character.id,

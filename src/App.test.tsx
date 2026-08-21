@@ -161,6 +161,7 @@ describe('App', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 0,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -227,6 +228,7 @@ describe('App', () => {
       group: null,
       icon: null,
       color: null,
+      sortOrder: 1,
     });
     // The story's own initial center is, by definition, within its initial
     // view.

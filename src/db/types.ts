@@ -106,6 +106,8 @@ export interface Character {
   icon: string | null;
   /** CSS color (e.g. a hex string), used for the character's icon and/or positions. */
   color: string | null;
+  /** Fractional index, zero-based; see ordering.ts. Not a display number. */
+  sortOrder: number;
 }
 
 /**
