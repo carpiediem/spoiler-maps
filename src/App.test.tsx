@@ -403,11 +403,11 @@ describe('App', () => {
 
   it('falls back to "story.yaml" when the story name has no sluggable characters', async () => {
     let downloadedFilename: string | undefined;
-    const clickSpy = vi
-      .spyOn(HTMLAnchorElement.prototype, 'click')
-      .mockImplementation(function (this: HTMLAnchorElement) {
-        downloadedFilename = this.download;
-      });
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloadedFilename = this.download;
+    });
     try {
       await createStory({
         name: '!!!',
