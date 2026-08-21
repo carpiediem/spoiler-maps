@@ -1,6 +1,8 @@
 import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import PersonalVideoIcon from '@mui/icons-material/PersonalVideo';
 import {
   Accordion,
   AccordionDetails,
@@ -18,9 +20,10 @@ import {
   ListItemText,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useState, type SyntheticEvent } from 'react';
+import { useEffect, useState, type ReactNode, type SyntheticEvent } from 'react';
 import {
   listCharacterPositionsForCharacter,
   updateCharacter,
@@ -29,7 +32,47 @@ import {
 } from '../../../db';
 import { DEFAULT_CHARACTER_COLOR } from '../../../lib/characterColor';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
-import { describePositionRange, useRangeOptions } from './rangeOptions';
+import {
+  summarizePositionRange,
+  useRangeOptions,
+  type PositionRangeSummary,
+  type RangeSummaryPart,
+} from './rangeOptions';
+
+function RangeSummaryPartView({ icon, part }: { icon: ReactNode; part: RangeSummaryPart }) {
+  return (
+    <Tooltip title={part.fullLabel}>
+      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+        {icon}
+        <span>{part.shortLabel}</span>
+      </Box>
+    </Tooltip>
+  );
+}
+
+function PositionRangeSummaryView({ summary }: { summary: PositionRangeSummary }) {
+  if (!summary.chapters && !summary.episodes) return 'Always visible';
+
+  return (
+    <Box
+      component="span"
+      sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}
+    >
+      {summary.chapters && (
+        <RangeSummaryPartView
+          icon={<MenuBookIcon sx={{ fontSize: 14 }} />}
+          part={summary.chapters}
+        />
+      )}
+      {summary.episodes && (
+        <RangeSummaryPartView
+          icon={<PersonalVideoIcon sx={{ fontSize: 14 }} />}
+          part={summary.episodes}
+        />
+      )}
+    </Box>
+  );
+}
 
 interface CharacterItemProps {
   character: Character;
@@ -247,13 +290,20 @@ export function CharacterItem({
                           position.note ||
                           `${position.position.lat.toFixed(4)}, ${position.position.lng.toFixed(4)}`
                         }
-                        secondary={describePositionRange(
-                          position.chapterRange,
-                          position.episodeRange,
-                          chapterOptions,
-                          episodeOptions,
-                        )}
-                        slotProps={{ primary: { variant: 'body2' } }}
+                        secondary={
+                          <PositionRangeSummaryView
+                            summary={summarizePositionRange(
+                              position.chapterRange,
+                              position.episodeRange,
+                              chapterOptions,
+                              episodeOptions,
+                            )}
+                          />
+                        }
+                        slotProps={{
+                          primary: { variant: 'body2' },
+                          secondary: { component: 'span' },
+                        }}
                       />
                     </ListItemButton>
                   ))}

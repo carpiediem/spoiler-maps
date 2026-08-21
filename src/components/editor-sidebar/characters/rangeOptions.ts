@@ -14,6 +14,8 @@ import {
 
 export interface FlatOption {
   id: number;
+  /** The overall 1-based index shown in a terse range summary, e.g. the "3" in "3. AGOT: Bran". */
+  index: number;
   label: string;
 }
 
@@ -45,6 +47,7 @@ export function flattenChapterOptions(
       overallIndex += 1;
       return {
         id: chapter.id,
+        index: overallIndex,
         label: `${overallIndex}. ${bookLabel}: ${chapter.name || 'Untitled Chapter'}`,
       };
     });
@@ -64,50 +67,96 @@ export function flattenEpisodeOptions(
       overallIndex += 1;
       return {
         id: episode.id,
+        index: overallIndex,
         label: `${overallIndex}. Season ${seasonIndex + 1}: ${episode.name || 'Untitled Episode'}`,
       };
     }),
   );
 }
 
-function boundaryLabel(
-  id: number | null,
-  openLabel: string,
-  optionsById: Map<number, string>,
-): string {
-  if (id === null) return openLabel;
-  return optionsById.get(id) ?? `#${id}`;
+/** A terse rendering of one chapter/episode range, plus the full text for a tooltip. */
+export interface RangeSummaryPart {
+  /** e.g. "3", "1 → 12", "→ 12", "1 →". */
+  shortLabel: string;
+  /** e.g. "3. AGOT: Bran", "1. AGOT: Prologue → 12. ACOK: Prologue", "beginning → 12. ACOK: Prologue". */
+  fullLabel: string;
+}
+
+function boundaryLabels(
+  id: number,
+  optionsById: Map<number, FlatOption>,
+): { short: string; full: string } {
+  const option = optionsById.get(id);
+  return option
+    ? { short: String(option.index), full: option.label }
+    : { short: `#${id}`, full: `#${id}` };
 }
 
 /**
- * Describes a position's chapter/episode range for display, e.g.
- * "Chapters Start → 3. AGOT: Bran · Episodes 1. Season 1: Winter Is
- * Coming → End". Falls back to "Always visible" when both ranges are
- * unset (the position has no chapter/episode restriction at all).
+ * Summarizes one boundary pair (a chapter range or an episode range) for
+ * terse display, e.g. icon + "1 → 12" with the full chapter/episode titles
+ * held back for a tooltip. Collapses to a single value when both
+ * boundaries name the same chapter/episode, and to null — hiding this
+ * range entirely — when both are open (start and end both unset).
  */
-export function describePositionRange(
+function summarizeBoundaryRange(
+  startId: number | null,
+  endId: number | null,
+  options: FlatOption[],
+): RangeSummaryPart | null {
+  if (startId === null && endId === null) return null;
+
+  const optionsById = new Map(options.map((option) => [option.id, option]));
+
+  if (startId !== null && startId === endId) {
+    const { short, full } = boundaryLabels(startId, optionsById);
+    return { shortLabel: short, fullLabel: full };
+  }
+
+  const start = startId === null ? null : boundaryLabels(startId, optionsById);
+  const end = endId === null ? null : boundaryLabels(endId, optionsById);
+  // "beginning"/"end" are left out of the short label — the arrow already
+  // implies an open side, and the full word is still there in the tooltip.
+  return {
+    shortLabel: `${start?.short ?? ''} → ${end?.short ?? ''}`.trim(),
+    fullLabel: `${start?.full ?? 'beginning'} → ${end?.full ?? 'end'}`,
+  };
+}
+
+/** A position's chapter and/or episode range, each summarized for terse display. */
+export interface PositionRangeSummary {
+  chapters: RangeSummaryPart | null;
+  episodes: RangeSummaryPart | null;
+}
+
+/**
+ * Summarizes a position's chapter/episode range for display: terse index
+ * text (e.g. "1 → 12") per medium, with the full chapter/episode titles
+ * available separately for a tooltip. Either medium is null when its range
+ * is unset or fully open (no restriction to show).
+ */
+export function summarizePositionRange(
   chapterRange: ChapterRange | null,
   episodeRange: EpisodeRange | null,
   chapterOptions: FlatOption[],
   episodeOptions: FlatOption[],
-): string {
-  const parts: string[] = [];
-
-  if (chapterRange) {
-    const optionsById = new Map(chapterOptions.map((option) => [option.id, option.label]));
-    const start = boundaryLabel(chapterRange.startChapterId, 'Start', optionsById);
-    const end = boundaryLabel(chapterRange.endChapterId, 'End', optionsById);
-    parts.push(`Chapters ${start} → ${end}`);
-  }
-
-  if (episodeRange) {
-    const optionsById = new Map(episodeOptions.map((option) => [option.id, option.label]));
-    const start = boundaryLabel(episodeRange.startEpisodeId, 'Start', optionsById);
-    const end = boundaryLabel(episodeRange.endEpisodeId, 'End', optionsById);
-    parts.push(`Episodes ${start} → ${end}`);
-  }
-
-  return parts.length > 0 ? parts.join(' · ') : 'Always visible';
+): PositionRangeSummary {
+  return {
+    chapters: chapterRange
+      ? summarizeBoundaryRange(
+          chapterRange.startChapterId,
+          chapterRange.endChapterId,
+          chapterOptions,
+        )
+      : null,
+    episodes: episodeRange
+      ? summarizeBoundaryRange(
+          episodeRange.startEpisodeId,
+          episodeRange.endEpisodeId,
+          episodeOptions,
+        )
+      : null,
+  };
 }
 
 interface RangeOptions {

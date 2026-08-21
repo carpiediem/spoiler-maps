@@ -9,9 +9,13 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  createBook,
+  createChapter,
   createCharacter,
   createCharacterPosition,
+  createEpisode,
   createStory,
+  createTvSeason,
   listCharactersForStory,
   type Character,
   type CharacterPosition,
@@ -297,6 +301,58 @@ describe('CharacterItem', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('1.0000, 1.0000')).toBeInTheDocument();
     expect(screen.getByText('2.0000, 2.0000')).toBeInTheDocument();
+  });
+
+  it('shows a terse chapter/episode range summary, with the full titles in a tooltip', async () => {
+    const character = await seedCharacter();
+    const book = await createBook({
+      storyId: character.storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter1 = await createChapter({
+      bookId: book.id,
+      name: 'Prologue',
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Bran',
+      url: null,
+      sortOrder: 1,
+    });
+    const season = await createTvSeason({ storyId: character.storyId, url: null, sortOrder: 0 });
+    const episode = await createEpisode({
+      seasonId: season.id,
+      name: 'Winter Is Coming',
+      url: null,
+      sortOrder: 0,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
+      episodeRange: { startEpisodeId: episode.id, endEpisodeId: episode.id },
+    });
+    const user = userEvent.setup();
+    render(<Wrapper initialCharacter={character} />);
+
+    expect(await screen.findByText('1 → 2')).toBeInTheDocument();
+    expect(screen.getByTestId('MenuBookIcon')).toBeInTheDocument();
+    const episodeIcon = screen.getByTestId('PersonalVideoIcon');
+    expect(episodeIcon).toBeInTheDocument();
+    expect(episodeIcon.parentElement).toHaveTextContent('1');
+
+    await user.hover(screen.getByText('1 → 2'));
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      '1. AGOT: Prologue → 2. AGOT: Bran',
+    );
   });
 
   it('shows a position’s note instead of its lat/lng when one is set', async () => {
