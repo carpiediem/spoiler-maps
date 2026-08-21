@@ -113,14 +113,24 @@ export function CharactersSection({
     if (expandedCharacterId !== null) {
       const positions = positionsByCharacterId[expandedCharacterId];
       const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
+      const color = character?.color ?? null;
       positions?.forEach((position, positionIndex) => {
         pins.push({
           characterId: expandedCharacterId,
           characterPosition: position,
           label: String(positionIndex + 1),
           positionIndex: positionIndex + 1,
-          color: character?.color ?? null,
+          color,
         });
+
+        if (position.tail && position.tail.length > 0) {
+          tails.push({
+            characterId: expandedCharacterId,
+            points: position.tail,
+            color,
+            opacity: 1,
+          });
+        }
       });
     }
 
@@ -150,7 +160,7 @@ export function CharactersSection({
         });
 
         if (position.tail && position.tail.length > 0) {
-          tails.push({ characterId, points: position.tail, color });
+          tails.push({ characterId, points: position.tail, color, opacity: 0.5 });
         }
       });
     });

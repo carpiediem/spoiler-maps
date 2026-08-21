@@ -13,9 +13,11 @@ export interface CharacterPositionPin {
   style?: 'pin' | 'dot';
 }
 
-/** One position's saved tail, to be drawn as a polyline even while its character's accordion is collapsed. */
+/** One position's saved tail, to be drawn as a polyline. */
 export interface CharacterTailOverlay {
   characterId: number;
   points: LatLng[];
   color: string | null;
+  /** Full opacity for an expanded character's own tails; dimmed for a visible-but-collapsed character's. */
+  opacity: number;
 }

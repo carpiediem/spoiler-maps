@@ -215,6 +215,7 @@ export function MapView({
           pathOptions={{
             color: tail.color ?? DEFAULT_CHARACTER_COLOR,
             weight: CHARACTER_TAIL_WEIGHT,
+            opacity: tail.opacity,
           }}
         />
       ))}

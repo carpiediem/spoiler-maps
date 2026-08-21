@@ -458,11 +458,13 @@ describe('MapView', () => {
               { lat: 42, lng: -102 },
             ],
             color: '#00ff00',
+            opacity: 1,
           },
           {
             characterId: 1,
             points: [{ lat: 43, lng: -103 }],
             color: null,
+            opacity: 0.5,
           },
         ]}
       />,
@@ -475,7 +477,9 @@ describe('MapView', () => {
 
     expect(polylines).toHaveLength(2);
     expect((polylines[0].options as { color?: string }).color).toBe('#00ff00');
+    expect((polylines[0].options as { opacity?: number }).opacity).toBe(1);
     expect((polylines[1].options as { color?: string }).color).toBe(DEFAULT_CHARACTER_COLOR);
+    expect((polylines[1].options as { opacity?: number }).opacity).toBe(0.5);
   });
 
   it('applies the initial zoom limits to the underlying Leaflet map', () => {

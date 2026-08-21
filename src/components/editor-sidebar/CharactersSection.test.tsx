@@ -653,6 +653,67 @@ describe('CharactersSection', () => {
     );
   });
 
+  it('reports every tail at full opacity for the expanded character', async () => {
+    const storyId = await seedStoryId();
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+      sortOrder: 0,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: [{ lat: 0.5, lng: 0.5 }],
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      note: null,
+      tail: [{ lat: 1.5, lng: 1.5 }],
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisibleTailsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={onVisibleTailsChange}
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+
+    await waitFor(() =>
+      expect(onVisibleTailsChange).toHaveBeenLastCalledWith([
+        {
+          characterId: character.id,
+          points: [{ lat: 0.5, lng: 0.5 }],
+          color: '#ff0000',
+          opacity: 1,
+        },
+        {
+          characterId: character.id,
+          points: [{ lat: 1.5, lng: 1.5 }],
+          color: '#ff0000',
+          opacity: 1,
+        },
+      ]),
+    );
+  });
+
   it('clears the pins once the expanded character is collapsed again', async () => {
     const storyId = await seedStoryId();
     const character = await createCharacter({
@@ -840,7 +901,7 @@ describe('CharactersSection', () => {
       ]),
     );
     expect(onVisibleTailsChange).toHaveBeenLastCalledWith([
-      { characterId: jon.id, points: [{ lat: 0.5, lng: 0.5 }], color: '#ff0000' },
+      { characterId: jon.id, points: [{ lat: 0.5, lng: 0.5 }], color: '#ff0000', opacity: 0.5 },
     ]);
 
     await user.click(screen.getByRole('button', { name: /hide on map/i }));
