@@ -162,36 +162,31 @@ export function CharacterItem({
             onChange={(event) => handleFieldChange('group', event.target.value)}
             onBlur={handleBlur}
           />
-          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-            <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
-              Color
-            </Typography>
-            <Box
-              component="input"
-              type="color"
-              value={character.color ?? DEFAULT_CHARACTER_COLOR}
-              onChange={(event) => handleFieldChange('color', event.target.value)}
-              onBlur={handleBlur}
-              aria-label="Color"
-              sx={{
-                width: 36,
-                height: 36,
-                p: 0,
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 1,
+          <TextField
+            label="Color"
+            type="color"
+            size="small"
+            value={character.color ?? DEFAULT_CHARACTER_COLOR}
+            onChange={(event) => handleFieldChange('color', event.target.value)}
+            onBlur={handleBlur}
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={{
+              width: 72,
+              '& .MuiInputBase-input': {
+                p: 0.5,
+                height: 24,
                 cursor: 'pointer',
                 // The browser's own <input type="color"> chrome renders a
-                // heavier bezel around the swatch that the border above
-                // can't override; drop it so only our border shows.
+                // heavier bezel around the swatch that the outline can't
+                // override; drop it so only the TextField's border shows.
                 appearance: 'none',
                 WebkitAppearance: 'none',
                 '&::-webkit-color-swatch-wrapper': { p: 0 },
-                '&::-webkit-color-swatch': { border: 'none', borderRadius: 'inherit' },
-                '&::-moz-color-swatch': { border: 'none', borderRadius: 'inherit' },
-              }}
-            />
-          </Stack>
+                '&::-webkit-color-swatch': { border: 'none', borderRadius: 1 },
+                '&::-moz-color-swatch': { border: 'none', borderRadius: 1 },
+              },
+            }}
+          />
           <TextField
             label="Icon URL"
             size="small"
