@@ -16,6 +16,7 @@ export interface CharacterPositionPin {
 /** One position's saved tail, to be drawn as a polyline. */
 export interface CharacterTailOverlay {
   characterId: number;
+  /** Always starts with the CharacterPosition's own lat/lng, so the tail connects to its marker. */
   points: LatLng[];
   color: string | null;
   /** Full opacity for an expanded character's own tails; dimmed for a visible-but-collapsed character's. */

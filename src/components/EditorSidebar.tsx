@@ -301,6 +301,7 @@ export function EditorSidebar({
                     onVisibleTailsChange={onVisibleTailsChange}
                     timelineMode={timelineMode}
                     timelineIndex={timelineIndex}
+                    sectionExpanded={expandedSection === 'characters'}
                   />
                 </SidebarSection>
 

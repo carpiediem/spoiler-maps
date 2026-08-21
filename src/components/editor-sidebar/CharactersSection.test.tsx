@@ -52,6 +52,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -77,6 +80,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -111,6 +117,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -129,6 +138,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -154,6 +166,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -194,6 +209,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -228,6 +246,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -254,6 +275,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -292,6 +316,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -335,6 +362,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -381,6 +411,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -420,6 +453,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -459,6 +495,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -505,6 +544,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -548,6 +590,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -582,6 +627,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -628,6 +676,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -691,6 +742,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={onVisibleTailsChange}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -700,13 +754,19 @@ describe('CharactersSection', () => {
       expect(onVisibleTailsChange).toHaveBeenLastCalledWith([
         {
           characterId: character.id,
-          points: [{ lat: 0.5, lng: 0.5 }],
+          points: [
+            { lat: 1, lng: 1 },
+            { lat: 0.5, lng: 0.5 },
+          ],
           color: '#ff0000',
           opacity: 1,
         },
         {
           characterId: character.id,
-          points: [{ lat: 1.5, lng: 1.5 }],
+          points: [
+            { lat: 2, lng: 2 },
+            { lat: 1.5, lng: 1.5 },
+          ],
           color: '#ff0000',
           opacity: 1,
         },
@@ -743,6 +803,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -753,6 +816,81 @@ describe('CharactersSection', () => {
 
     await user.click(screen.getByText('Jon Snow'));
     await waitFor(() => expect(onVisiblePositionsChange).toHaveBeenLastCalledWith(null));
+  });
+
+  it('collapses the expanded character when the Characters section itself collapses', async () => {
+    const storyId = await seedStoryId();
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 14,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([expect.any(Object)]),
+    );
+
+    rerender(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded={false}
+      />,
+    );
+
+    await waitFor(() => expect(onVisiblePositionsChange).toHaveBeenLastCalledWith(null));
+
+    // Re-expanding the section shouldn't bring the character back expanded.
+    rerender(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
+      />,
+    );
+
+    const accordionButton = screen.getByRole('button', { name: /Jon Snow/i });
+    expect(accordionButton).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('reports the newly expanded character’s pins when switching directly between two expanded characters', async () => {
@@ -801,6 +939,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -875,6 +1016,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={onVisibleTailsChange}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -901,7 +1045,15 @@ describe('CharactersSection', () => {
       ]),
     );
     expect(onVisibleTailsChange).toHaveBeenLastCalledWith([
-      { characterId: jon.id, points: [{ lat: 0.5, lng: 0.5 }], color: '#ff0000', opacity: 0.5 },
+      {
+        characterId: jon.id,
+        points: [
+          { lat: 1, lng: 1 },
+          { lat: 0.5, lng: 0.5 },
+        ],
+        color: '#ff0000',
+        opacity: 0.5,
+      },
     ]);
 
     await user.click(screen.getByRole('button', { name: /hide on map/i }));
@@ -939,6 +1091,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -972,6 +1127,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -1013,6 +1171,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 

@@ -15,6 +15,11 @@ interface UseExpandableEntityListOptions<T extends { id: number }> {
   load: (storyId: number, isCancelled: () => boolean) => Promise<T[]>;
   /** Runs synchronously when a story change resets the list, e.g. to clear other per-story state. */
   onReset?: () => void;
+  /**
+   * Whether the list's own parent accordion (e.g. "Characters") is expanded.
+   * Collapsing it also collapses whichever entity was expanded inside it.
+   */
+  sectionExpanded?: boolean;
 }
 
 /**
@@ -30,6 +35,7 @@ export function useExpandableEntityList<T extends { id: number }>({
   onCountChange,
   load,
   onReset,
+  sectionExpanded,
 }: UseExpandableEntityListOptions<T>) {
   const [entities, setEntities] = useState<T[] | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -73,6 +79,10 @@ export function useExpandableEntityList<T extends { id: number }>({
     }
     applyInitialExpandedIndex();
   }, [entities, initialExpandedIndex]);
+
+  useEffect(() => {
+    if (sectionExpanded === false) setExpandedId(null);
+  }, [sectionExpanded]);
 
   function toggle(id: number) {
     return (_event: SyntheticEvent, isExpanded: boolean) => {

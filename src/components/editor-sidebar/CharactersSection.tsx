@@ -41,6 +41,8 @@ interface CharactersSectionProps {
   timelineMode: TimelineMode;
   /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
   timelineIndex: number;
+  /** Whether the Characters accordion itself is expanded; collapsing it also collapses whichever character was expanded inside it. */
+  sectionExpanded: boolean;
 }
 
 export function CharactersSection({
@@ -54,6 +56,7 @@ export function CharactersSection({
   onVisibleTailsChange,
   timelineMode,
   timelineIndex,
+  sectionExpanded,
 }: CharactersSectionProps) {
   // A character stays visible on the map (last position + tails) once
   // toggled on, independent of — and in addition to — whichever character's
@@ -87,6 +90,7 @@ export function CharactersSection({
     onCountChange,
     load,
     onReset,
+    sectionExpanded,
   });
 
   const { chapterOptions, episodeOptions } = useRangeOptions(storyId);
@@ -105,10 +109,11 @@ export function CharactersSection({
     // A position with no range set for the active medium, or an open start,
     // has no lower bound — it's always shown regardless of scrub position.
     function isPositionVisible(position: CharacterPosition): boolean {
-      const range = timelineMode === 'book' ? position.chapterRange : position.episodeRange;
-      if (!range) return true;
-      const startId = timelineMode === 'book' ? range.startChapterId : range.startEpisodeId;
-      if (startId === null) return true;
+      const startId =
+        timelineMode === 'book'
+          ? position.chapterRange?.startChapterId
+          : position.episodeRange?.startEpisodeId;
+      if (startId === null || startId === undefined) return true;
       const startIndex = activeOptionIndexById.get(startId);
       if (startIndex === undefined) return true;
       return startIndex <= timelineIndex;
@@ -135,7 +140,7 @@ export function CharactersSection({
         if (position.tail && position.tail.length > 0) {
           tails.push({
             characterId: expandedCharacterId,
-            points: position.tail,
+            points: [position.position, ...position.tail],
             color,
             opacity: 1,
           });
@@ -176,7 +181,12 @@ export function CharactersSection({
         });
 
         if (position.tail && position.tail.length > 0) {
-          tails.push({ characterId, points: position.tail, color, opacity: 0.5 });
+          tails.push({
+            characterId,
+            points: [position.position, ...position.tail],
+            color,
+            opacity: 0.5,
+          });
         }
       });
     });

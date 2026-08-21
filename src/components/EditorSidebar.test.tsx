@@ -108,6 +108,8 @@ function DraggableEditorSidebar({
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />
       <button onClick={() => setDraftPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag</button>
     </>
@@ -139,6 +141,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -174,6 +178,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -203,6 +209,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -247,6 +255,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -286,6 +296,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -321,6 +333,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -358,6 +372,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -391,6 +407,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -436,6 +454,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -473,6 +493,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -517,6 +539,8 @@ describe('EditorSidebar', () => {
           tailDraftPoints={[]}
           onStartDrawingTail={vi.fn()}
           onFinishDrawingTail={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
         />,
       );
 
@@ -566,6 +590,8 @@ describe('EditorSidebar', () => {
           tailDraftPoints={[]}
           onStartDrawingTail={vi.fn()}
           onFinishDrawingTail={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
         />,
       );
 
@@ -610,6 +636,8 @@ describe('EditorSidebar', () => {
           tailDraftPoints={[]}
           onStartDrawingTail={vi.fn()}
           onFinishDrawingTail={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
         />,
       );
 
@@ -664,6 +692,8 @@ describe('EditorSidebar', () => {
           tailDraftPoints={[]}
           onStartDrawingTail={vi.fn()}
           onFinishDrawingTail={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
         />,
       );
 
@@ -711,6 +741,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -734,6 +766,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -770,6 +804,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -803,6 +839,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -845,6 +883,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -875,6 +915,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -913,6 +955,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -949,6 +993,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -987,6 +1033,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -1021,6 +1069,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -1053,6 +1103,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -1079,6 +1131,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -1107,6 +1161,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -1161,6 +1217,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -1217,6 +1275,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -1254,6 +1314,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -1282,6 +1344,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -1309,6 +1373,8 @@ describe('EditorSidebar', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 

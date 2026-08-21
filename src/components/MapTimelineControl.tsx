@@ -70,6 +70,7 @@ export function MapTimelineControl({ storyId, onChange }: MapTimelineControlProp
     setIndex(index + delta);
   }
 
+  const unitLabel = mode === 'book' ? 'Chapter' : 'Episode';
   const currentOption = activeOptions[index - 1] ?? null;
   // FlatOption.label leads with its own overall index (e.g. "12. AGOT:
   // Bran") for range summaries elsewhere; this control shows that index via
@@ -125,19 +126,22 @@ export function MapTimelineControl({ storyId, onChange }: MapTimelineControlProp
           value={index}
           onChange={(_event, value) => setIndex(value as number)}
           disabled={activeOptions.length === 0}
-          aria-label={mode === 'book' ? 'Chapter' : 'Episode'}
+          aria-label={unitLabel}
           sx={{ mx: 1, width: 'auto' }}
         />
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <IconButton
-            size="small"
-            onClick={() => step(-1)}
-            disabled={index <= 1}
-            aria-label="Previous"
-          >
-            <ChevronLeftIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title={`Previous ${unitLabel}`}>
+            <IconButton
+              size="small"
+              onClick={() => step(-1)}
+              disabled={index <= 1}
+              aria-label={`Previous ${unitLabel}`}
+            >
+              <ChevronLeftIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
           <Typography variant="caption" noWrap sx={{ flex: 1, textAlign: 'center' }}>
             {currentOption ? (
               currentOption.url ? (
@@ -151,14 +155,17 @@ export function MapTimelineControl({ storyId, onChange }: MapTimelineControlProp
               '—'
             )}
           </Typography>
-          <IconButton
-            size="small"
-            onClick={() => step(1)}
-            disabled={index >= activeOptions.length}
-            aria-label="Next"
-          >
-            <ChevronRightIcon fontSize="small" />
-          </IconButton>
+
+          <Tooltip title={index < activeOptions.length && `Next ${unitLabel}`}>
+            <IconButton
+              size="small"
+              onClick={() => step(1)}
+              disabled={index >= activeOptions.length}
+              aria-label={`Next ${unitLabel}`}
+            >
+              <ChevronRightIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
     </Paper>
