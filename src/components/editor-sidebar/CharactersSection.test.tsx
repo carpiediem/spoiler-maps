@@ -1054,7 +1054,7 @@ describe('CharactersSection', () => {
           { lat: 0.5, lng: 0.5 },
         ],
         color: '#ff0000',
-        opacity: 0.5,
+        opacity: 0.75,
       },
     ]);
 

@@ -170,7 +170,7 @@ export function CharactersSection({
             characterId,
             points: [position.position, ...position.tail],
             color,
-            opacity: 0.5,
+            opacity: 0.75,
           });
         }
       });
