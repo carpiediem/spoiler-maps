@@ -263,6 +263,8 @@ describe('App', () => {
     ).not.toBeInTheDocument();
   });
 
+  // Runs several real user interactions and a waitFor in sequence; slower CI
+  // runners can exceed the default 5000ms test timeout.
   it('draws a tail by clicking the map, then saves it onto the position', async () => {
     await createStory({
       name: 'A Song of Ice and Fire',
@@ -305,7 +307,7 @@ describe('App', () => {
 
     // Drawing mode ends and the tail button reappears.
     expect(await screen.findByRole('button', { name: /add a tail/i })).toBeInTheDocument();
-  });
+  }, 10000);
 
   it('does not update state after unmounting while stories are still loading', async () => {
     const { unmount } = render(<App />);
