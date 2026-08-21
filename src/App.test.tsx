@@ -184,6 +184,14 @@ describe('App', () => {
     expect(screen.getAllByText('51.5000, -0.1278')).toHaveLength(2);
     expect(screen.getByRole('checkbox', { name: /dead/i })).toBeChecked();
 
+    // The position (London) is far outside the story's initial view (the
+    // continental US at zoom 4), so opening it recentered the map — shown
+    // by the pushpin button, which only appears once the map has moved
+    // from the story's saved position.
+    expect(
+      await screen.findByRole('button', { name: /use current map position/i }),
+    ).toBeInTheDocument();
+
     // Only the pin being edited is draggable; clicking Back removes it
     // entirely along with the rest of the map markers.
     expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
@@ -191,6 +199,54 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /back to sidebar/i }));
 
     expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+  });
+
+  it('does not move the map when the position being edited is already in view', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+    });
+    const character = await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    // The story's own initial center is, by definition, within its initial
+    // view.
+    await createCharacterPosition({
+      characterId: character.id,
+      position: story.initialCenter,
+      dead: false,
+      note: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    resetDatabaseForTests();
+
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^characters/i }));
+    await user.click(await screen.findByText('Jon Snow'));
+
+    let marker: Element | null = null;
+    await vi.waitFor(() => {
+      marker = container.querySelector('.leaflet-marker-icon');
+      expect(marker).not.toBeNull();
+    });
+    fireEvent.click(marker!);
+
+    expect(await screen.findByText('Position 1')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /use current map position/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('does not update state after unmounting while stories are still loading', async () => {

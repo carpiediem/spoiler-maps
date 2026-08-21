@@ -96,9 +96,22 @@ function App() {
     setDraftPosition(mapPosition.center);
   }
 
+  // Called once, right as the panel opens: a marker being edited belongs on
+  // screen, but shouldn't otherwise fight the user by recentering on every
+  // subsequent drag or field change.
+  function recenterMapIfPositionNotVisible(position: LatLng) {
+    const map = mapRef.current;
+    /* v8 ignore next -- mapRef is set synchronously when MapView mounts, before any user interaction that could call this. */
+    if (!map) return;
+    /* v8 ignore next -- jsdom gives the map container zero real size, so getBounds() is always a degenerate (zero-area) box that never truly contains a point; only reachable with real layout, verified manually in a real browser. */
+    if (map.getBounds().contains(position)) return;
+    map.flyTo(position, map.getZoom());
+  }
+
   function handleEditPosition(characterId: number, index: number, existing: CharacterPosition) {
     setActivePosition({ characterId, index, existing });
     setDraftPosition(existing.position);
+    recenterMapIfPositionNotVisible(existing.position);
   }
 
   function handlePinClick(pin: CharacterPositionPin) {

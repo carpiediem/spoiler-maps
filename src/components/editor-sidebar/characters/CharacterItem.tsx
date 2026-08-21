@@ -170,10 +170,11 @@ export function CharacterItem({
             onChange={(event) => handleFieldChange('color', event.target.value)}
             onBlur={handleBlur}
             slotProps={{ inputLabel: { shrink: true } }}
+            fullWidth
             sx={{
-              width: 72,
               '& .MuiInputBase-input': {
                 p: 0.5,
+                pt: 1,
                 height: 24,
                 cursor: 'pointer',
                 // The browser's own <input type="color"> chrome renders a
