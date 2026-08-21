@@ -178,7 +178,9 @@ describe('App', () => {
     fireEvent.click(marker!);
 
     expect(await screen.findByText('Position 1')).toBeInTheDocument();
-    expect(screen.getByText('51.5000, -0.1278')).toBeInTheDocument();
+    // Matches both the panel's own lat/lng caption and the (now offscreen)
+    // list item's primary text for the same position.
+    expect(screen.getAllByText('51.5000, -0.1278')).toHaveLength(2);
     expect(screen.getByRole('checkbox', { name: /dead/i })).toBeChecked();
 
     // Only the pin being edited is draggable; clicking Back removes it

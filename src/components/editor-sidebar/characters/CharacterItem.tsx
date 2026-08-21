@@ -211,43 +211,47 @@ export function CharacterItem({
               },
             }}
           />
-          {!!positions?.length && (
-            <List dense disablePadding>
-              {positions.map((position, positionIndex) => (
-                <ListItemButton
-                  key={position.id}
-                  onClick={() => onEditPosition(position, positionIndex + 1)}
-                  sx={{ borderRadius: 1, py: 0.5 }}
-                >
-                  <ListItemAvatar sx={{ minWidth: 32 }}>
-                    <Avatar sx={{ width: 22, height: 22, fontSize: '0.75rem' }}>
-                      {positionIndex + 1}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={describePositionRange(
-                      position.chapterRange,
-                      position.episodeRange,
-                      chapterOptions,
-                      episodeOptions,
-                    )}
-                    slotProps={{ primary: { variant: 'body2', color: 'text.secondary' } }}
-                  />
-                </ListItemButton>
-              ))}
-            </List>
-          )}
-          <Button
-            size="small"
-            startIcon={<AddIcon fontSize="small" />}
-            // Only reachable once positions have loaded: disabled below
-            // while it's still null.
-            onClick={() => onAddPosition(positions!.length + 1)}
-            disabled={positions === null}
-            fullWidth
-          >
-            Position
-          </Button>
+          <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+            {!!positions?.length && (
+              <List dense disablePadding>
+                {positions.map((position, positionIndex) => (
+                  <ListItemButton
+                    key={position.id}
+                    onClick={() => onEditPosition(position, positionIndex + 1)}
+                    sx={{ py: 0.5 }}
+                  >
+                    <ListItemAvatar sx={{ minWidth: 32 }}>
+                      <Avatar sx={{ width: 22, height: 22, fontSize: '0.75rem' }}>
+                        {positionIndex + 1}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={`${position.position.lat.toFixed(4)}, ${position.position.lng.toFixed(4)}`}
+                      secondary={describePositionRange(
+                        position.chapterRange,
+                        position.episodeRange,
+                        chapterOptions,
+                        episodeOptions,
+                      )}
+                      slotProps={{ primary: { variant: 'body2' } }}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+            )}
+            <Button
+              size="small"
+              startIcon={<AddIcon fontSize="small" />}
+              // Only reachable once positions have loaded: disabled below
+              // while it's still null.
+              onClick={() => onAddPosition(positions!.length + 1)}
+              disabled={positions === null}
+              fullWidth
+              sx={{ borderRadius: 0 }}
+            >
+              Position
+            </Button>
+          </Box>
           <Button size="small" color="error" onClick={() => setIsDeleteConfirmOpen(true)} fullWidth>
             Delete Character
           </Button>
