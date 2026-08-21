@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { resetDatabaseForTests } from './db/client';
-import { createStory } from './db';
+import { createCharacter, createCharacterPosition, createStory } from './db';
 
 async function deleteStoredDatabase(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
@@ -136,6 +136,58 @@ describe('App', () => {
 
     expect(screen.queryByText('Position 1')).not.toBeInTheDocument();
     expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+  });
+
+  it('opens the Position panel, prefilled, when a map pin is clicked', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+    });
+    const character = await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 51.5, lng: -0.1278 },
+      dead: true,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    resetDatabaseForTests();
+
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^characters/i }));
+    await user.click(await screen.findByText('Jon Snow'));
+
+    let marker: Element | null = null;
+    await vi.waitFor(() => {
+      marker = container.querySelector('.leaflet-marker-icon');
+      expect(marker).not.toBeNull();
+    });
+    fireEvent.click(marker!);
+
+    expect(await screen.findByText('Position 1')).toBeInTheDocument();
+    expect(screen.getByText('51.5000, -0.1278')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /dead/i })).toBeChecked();
+
+    // Only the pin being edited is draggable; clicking Back removes it
+    // entirely along with the rest of the map markers.
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: /back to sidebar/i }));
+
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
   });
 
   it('does not update state after unmounting while stories are still loading', async () => {

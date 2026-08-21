@@ -2,7 +2,14 @@ import type { Map as LeafletMap } from 'leaflet';
 import { useEffect, useRef, useState } from 'react';
 import { EditorSidebar } from './components/EditorSidebar';
 import { MapView } from './components/MapView';
-import { createStory, listStories, updateStory, type LatLng, type Story } from './db';
+import {
+  createStory,
+  listStories,
+  updateStory,
+  type CharacterPosition,
+  type LatLng,
+  type Story,
+} from './db';
 import { buildTileAttribution } from './lib/attribution';
 import type { CharacterPositionPin } from './lib/characterPositionPins';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from './lib/mapDefaults';
@@ -20,6 +27,18 @@ function App() {
   const [characterPositionPins, setCharacterPositionPins] = useState<CharacterPositionPin[] | null>(
     null,
   );
+  // When set, the sidebar slides its main content out to the left and
+  // slides a Position form in from the right, in place of the accordion
+  // list. Owned here (rather than by EditorSidebar) so a click on a map
+  // pin — a sibling of EditorSidebar — can open it too.
+  const [activePosition, setActivePosition] = useState<{
+    characterId: number;
+    index: number;
+    existing: CharacterPosition | null;
+  } | null>(null);
+  // Bumped whenever a position editing session ends, so each CharacterItem
+  // re-fetches its list.
+  const [positionsVersion, setPositionsVersion] = useState(0);
   const mapRef = useRef<LeafletMap | null>(null);
 
   useEffect(() => {
@@ -53,6 +72,8 @@ function App() {
   // judge "has the map moved" against the previous story's position.
   useEffect(() => {
     setMapPosition({ center: mapCenter, zoom: mapZoom });
+    setActivePosition(null);
+    setDraftPosition(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStoryId]);
 
@@ -70,12 +91,27 @@ function App() {
     return { center: { lat: center.lat, lng: center.lng }, zoom: map.getZoom() };
   }
 
-  function handleStartEditingPosition() {
+  function handleAddPosition(characterId: number, index: number) {
+    setActivePosition({ characterId, index, existing: null });
     setDraftPosition(mapPosition.center);
   }
 
-  function handleEndEditingPosition() {
+  function handleEditPosition(characterId: number, index: number, existing: CharacterPosition) {
+    setActivePosition({ characterId, index, existing });
+    setDraftPosition(existing.position);
+  }
+
+  function handlePinClick(pin: CharacterPositionPin) {
+    handleEditPosition(pin.characterId, Number(pin.label), pin.characterPosition);
+  }
+
+  function handleBackFromPosition() {
+    setActivePosition(null);
     setDraftPosition(null);
+    // Picked up by CharacterItem's positions-fetch effect, so the sidebar
+    // list reflects whatever was just created/updated while its accordion
+    // stayed mounted (and silently stale) behind the Position panel.
+    setPositionsVersion((previous) => previous + 1);
   }
 
   async function handleSave(input: {
@@ -117,6 +153,8 @@ function App() {
           draftPosition={draftPosition}
           onDraftPositionChange={setDraftPosition}
           characterPositionPins={characterPositionPins}
+          editingPositionId={activePosition?.existing?.id ?? null}
+          onCharacterPositionPinClick={handlePinClick}
         />
       </main>
       <EditorSidebar
@@ -127,8 +165,11 @@ function App() {
         onCaptureMapPosition={getCurrentMapPosition}
         mapPosition={mapPosition}
         draftPosition={draftPosition}
-        onStartEditingPosition={handleStartEditingPosition}
-        onEndEditingPosition={handleEndEditingPosition}
+        activePosition={activePosition}
+        onAddPosition={handleAddPosition}
+        onEditPosition={handleEditPosition}
+        onBackFromPosition={handleBackFromPosition}
+        positionsVersion={positionsVersion}
         onVisiblePositionsChange={setCharacterPositionPins}
       />
     </div>

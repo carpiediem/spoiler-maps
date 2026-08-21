@@ -46,6 +46,7 @@ describe('CharactersSection', () => {
       <CharactersSection
         storyId={storyId}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
@@ -62,6 +63,7 @@ describe('CharactersSection', () => {
       <CharactersSection
         storyId={storyId}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
@@ -86,6 +88,7 @@ describe('CharactersSection', () => {
         storyId={storyId}
         onCountChange={onCountChange}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
@@ -102,6 +105,7 @@ describe('CharactersSection', () => {
         storyId={storyId}
         onCountChange={onCountChange}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
@@ -118,6 +122,7 @@ describe('CharactersSection', () => {
       <CharactersSection
         storyId={storyId}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
@@ -141,6 +146,7 @@ describe('CharactersSection', () => {
       <CharactersSection
         storyId={storyId}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
@@ -169,6 +175,7 @@ describe('CharactersSection', () => {
       <CharactersSection
         storyId={storyId}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
@@ -202,6 +209,7 @@ describe('CharactersSection', () => {
       <CharactersSection
         storyId={storyId}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
@@ -223,6 +231,7 @@ describe('CharactersSection', () => {
       <CharactersSection
         storyId={storyId}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
@@ -262,6 +271,7 @@ describe('CharactersSection', () => {
       <CharactersSection
         storyId={storyId}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
       />,
@@ -271,8 +281,18 @@ describe('CharactersSection', () => {
 
     await waitFor(() =>
       expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
-        { id: expect.any(Number), position: { lat: 1, lng: 1 }, label: '1', color: '#ff0000' },
-        { id: expect.any(Number), position: { lat: 2, lng: 2 }, label: '2', color: '#ff0000' },
+        {
+          characterId: character.id,
+          characterPosition: expect.objectContaining({ position: { lat: 1, lng: 1 } }),
+          label: '1',
+          color: '#ff0000',
+        },
+        {
+          characterId: character.id,
+          characterPosition: expect.objectContaining({ position: { lat: 2, lng: 2 } }),
+          label: '2',
+          color: '#ff0000',
+        },
       ]),
     );
   });
@@ -299,6 +319,7 @@ describe('CharactersSection', () => {
       <CharactersSection
         storyId={storyId}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
       />,
@@ -349,6 +370,7 @@ describe('CharactersSection', () => {
       <CharactersSection
         storyId={storyId}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
       />,
@@ -357,7 +379,12 @@ describe('CharactersSection', () => {
     await user.click(await screen.findByText('Jon Snow'));
     await waitFor(() =>
       expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
-        { id: expect.any(Number), position: { lat: 1, lng: 1 }, label: '1', color: null },
+        {
+          characterId: jon.id,
+          characterPosition: expect.objectContaining({ position: { lat: 1, lng: 1 } }),
+          label: '1',
+          color: null,
+        },
       ]),
     );
 
@@ -369,8 +396,47 @@ describe('CharactersSection', () => {
     await user.click(screen.getByText('Daenerys Targaryen'));
     await waitFor(() =>
       expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
-        { id: expect.any(Number), position: { lat: 2, lng: 2 }, label: '1', color: null },
+        {
+          characterId: daenerys.id,
+          characterPosition: expect.objectContaining({ position: { lat: 2, lng: 2 } }),
+          label: '1',
+          color: null,
+        },
       ]),
     );
+  });
+
+  it('calls onEditPosition with (characterId, index, position) when a list item is clicked', async () => {
+    const storyId = await seedStoryId();
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    const position = await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onEditPosition = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={onEditPosition}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+    await user.click(await screen.findByText('Always visible'));
+
+    expect(onEditPosition).toHaveBeenCalledWith(character.id, 1, position);
   });
 });

@@ -37,6 +37,10 @@ interface MapViewProps {
   onDraftPositionChange?: (position: LatLng) => void;
   /** Numbered pins for the currently expanded character's saved positions. */
   characterPositionPins?: CharacterPositionPin[] | null;
+  /** The id of the existing CharacterPosition currently open in the editor, if any. */
+  editingPositionId?: number | null;
+  /** Called when a non-editing character position pin is clicked, to open it for editing. */
+  onCharacterPositionPinClick?: (pin: CharacterPositionPin) => void;
 }
 
 interface DraftPositionMarkerProps {
@@ -88,6 +92,8 @@ export function MapView({
   draftPosition,
   onDraftPositionChange,
   characterPositionPins,
+  editingPositionId,
+  onCharacterPositionPinClick,
 }: MapViewProps) {
   const activeTileUrl = tileUrl ?? DEFAULT_TILE_URL;
   const kind = tileUrl ? detectTileUrlTemplateKind(tileUrl) : 'xyz';
@@ -101,16 +107,34 @@ export function MapView({
       style={{ position: 'absolute', inset: 0 }}
     >
       {onPositionChange && <MapPositionTracker onPositionChange={onPositionChange} />}
-      {draftPosition && onDraftPositionChange && (
+      {draftPosition && onDraftPositionChange && editingPositionId == null && (
         <DraftPositionMarker position={draftPosition} onChange={onDraftPositionChange} />
       )}
-      {characterPositionPins?.map((pin) => (
-        <Marker
-          key={pin.id}
-          position={[pin.position.lat, pin.position.lng]}
-          icon={buildPinIcon(pin.label, pin.color ?? DEFAULT_CHARACTER_COLOR)}
-        />
-      ))}
+      {characterPositionPins?.map((pin) =>
+        pin.characterPosition.id === editingPositionId && draftPosition && onDraftPositionChange ? (
+          <Marker
+            key={pin.characterPosition.id}
+            position={[draftPosition.lat, draftPosition.lng]}
+            icon={buildPinIcon(pin.label, pin.color ?? DEFAULT_CHARACTER_COLOR)}
+            draggable
+            eventHandlers={{
+              dragend: (event) => {
+                const latLng = (event.target as LeafletMarker).getLatLng();
+                onDraftPositionChange({ lat: latLng.lat, lng: latLng.lng });
+              },
+            }}
+          />
+        ) : (
+          <Marker
+            key={pin.characterPosition.id}
+            position={[pin.characterPosition.position.lat, pin.characterPosition.position.lng]}
+            icon={buildPinIcon(pin.label, pin.color ?? DEFAULT_CHARACTER_COLOR)}
+            eventHandlers={{
+              click: () => onCharacterPositionPinClick?.(pin),
+            }}
+          />
+        ),
+      )}
       {kind === 'quadkey' ? (
         <QuadkeyTileLayer
           key={activeTileUrl}

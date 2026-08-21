@@ -5,11 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createBook,
   createCharacter,
+  createCharacterPosition,
   createChapter,
   createEpisode,
   createStory,
   createTvSeason,
   listCharacterPositionsForCharacter,
+  type CharacterPosition,
   type LatLng,
 } from '../../db';
 import { resetDatabaseForTests } from '../../db/client';
@@ -58,8 +60,18 @@ async function seedCharacter(): Promise<{ storyId: number; characterId: number }
 
 const INITIAL_POSITION: LatLng = { lat: 39.8283, lng: -98.5795 };
 
-function DraggableWrapper({ storyId, characterId }: { storyId: number; characterId: number }) {
-  const [position, setPosition] = useState<LatLng | null>(INITIAL_POSITION);
+function DraggableWrapper({
+  storyId,
+  characterId,
+  existingPosition = null,
+}: {
+  storyId: number;
+  characterId: number;
+  existingPosition?: CharacterPosition | null;
+}) {
+  const [position, setPosition] = useState<LatLng | null>(
+    existingPosition?.position ?? INITIAL_POSITION,
+  );
   return (
     <>
       <PositionPanel
@@ -68,6 +80,7 @@ function DraggableWrapper({ storyId, characterId }: { storyId: number; character
         index={1}
         position={position}
         onBack={vi.fn()}
+        existingPosition={existingPosition}
       />
       <button onClick={() => setPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag 1</button>
       <button onClick={() => setPosition({ lat: 40.7128, lng: -74.006 })}>Simulate drag 2</button>
@@ -81,7 +94,14 @@ describe('PositionPanel', () => {
     const onBack = vi.fn();
     const user = userEvent.setup();
     render(
-      <PositionPanel storyId={storyId} characterId={1} index={3} position={null} onBack={onBack} />,
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={3}
+        position={null}
+        existingPosition={null}
+        onBack={onBack}
+      />,
     );
 
     expect(screen.getByText('Position 3')).toBeInTheDocument();
@@ -99,6 +119,7 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
       />,
     );
 
@@ -114,6 +135,7 @@ describe('PositionPanel', () => {
         index={1}
         position={{ lat: 51.5, lng: -0.1278 }}
         onBack={vi.fn()}
+        existingPosition={null}
       />,
     );
 
@@ -129,6 +151,7 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
       />,
     );
 
@@ -163,6 +186,7 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
       />,
     );
 
@@ -198,6 +222,7 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
       />,
     );
 
@@ -229,6 +254,7 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
       />,
     );
 
@@ -251,6 +277,7 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
       />,
     );
 
@@ -279,6 +306,7 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
       />,
     );
 
@@ -303,6 +331,7 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
       />,
     );
 
@@ -322,6 +351,7 @@ describe('PositionPanel', () => {
         index={1}
         position={null}
         onBack={vi.fn()}
+        existingPosition={null}
       />,
     );
 
@@ -382,5 +412,123 @@ describe('PositionPanel', () => {
     expect(allPositions).toHaveLength(1);
     expect(allPositions[0]!.id).toBe(firstSaved.id);
     expect(allPositions[0]!.dead).toBe(true);
+  });
+
+  it('prefills its fields from an existing position', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: true,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+      />,
+    );
+
+    expect(screen.getByRole('checkbox', { name: /dead/i })).toBeChecked();
+  });
+
+  it('prefills the chapter and episode range selects from an existing position', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter = await createChapter({
+      bookId: book.id,
+      name: 'Prologue',
+      url: null,
+      sortOrder: 0,
+    });
+    const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
+    const episode = await createEpisode({
+      seasonId: season.id,
+      name: 'Winter Is Coming',
+      url: null,
+      sortOrder: 0,
+    });
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      chapterRange: { startChapterId: chapter.id, endChapterId: null },
+      episodeRange: { startEpisodeId: episode.id, endEpisodeId: null },
+    });
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+      />,
+    );
+
+    expect(await screen.findByLabelText(/^start chapter$/i)).toHaveTextContent('1. AGOT: Prologue');
+    expect(screen.getByLabelText(/^end chapter$/i)).toHaveTextContent('Open');
+    expect(screen.getByLabelText(/^start episode$/i)).toHaveTextContent(
+      '1. Season 1: Winter Is Coming',
+    );
+  });
+
+  it('does not write to the database merely from opening an existing position', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+      />,
+    );
+
+    await screen.findByRole('checkbox', { name: /dead/i });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const [current] = await listCharacterPositionsForCharacter(characterId);
+    expect(current).toEqual(existingPosition);
+  });
+
+  it('updates (rather than duplicates) an existing position when its marker moves', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /simulate drag 1/i }));
+
+    await waitFor(async () => {
+      const [updated] = await listCharacterPositionsForCharacter(characterId);
+      expect(updated.position).toEqual({ lat: 51.5, lng: -0.1278 });
+    });
+
+    const allPositions = await listCharacterPositionsForCharacter(characterId);
+    expect(allPositions).toHaveLength(1);
+    expect(allPositions[0]!.id).toBe(existingPosition.id);
   });
 });

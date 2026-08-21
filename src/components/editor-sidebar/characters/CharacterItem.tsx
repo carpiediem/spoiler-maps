@@ -5,10 +5,15 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Avatar,
   Box,
   Button,
   IconButton,
   InputAdornment,
+  List,
+  ListItemAvatar,
+  ListItemButton,
+  ListItemText,
   Stack,
   TextField,
   Typography,
@@ -32,6 +37,8 @@ interface CharacterItemProps {
   onDelete: () => void;
   /** Called with the 1-based index the new position would have when "+ Position" is clicked. */
   onAddPosition: (index: number) => void;
+  /** Called with (position, 1-based index) when an existing position is clicked. */
+  onEditPosition: (position: CharacterPosition, index: number) => void;
   /** Bumped whenever a position editing session ends, to re-fetch the list below. */
   positionsVersion: number;
   /** Called once this character's positions have (re)loaded, so the map pins can be kept in sync. */
@@ -45,6 +52,7 @@ export function CharacterItem({
   onCharacterChange,
   onDelete,
   onAddPosition,
+  onEditPosition,
   positionsVersion,
   onPositionsChange,
 }: CharacterItemProps) {
@@ -204,13 +212,30 @@ export function CharacterItem({
             }}
           />
           {!!positions?.length && (
-            <Stack spacing={0.5}>
+            <List dense disablePadding>
               {positions.map((position, positionIndex) => (
-                <Typography key={position.id} variant="body2" color="text.secondary">
-                  {`${positionIndex + 1}. ${describePositionRange(position.chapterRange, position.episodeRange, chapterOptions, episodeOptions)}`}
-                </Typography>
+                <ListItemButton
+                  key={position.id}
+                  onClick={() => onEditPosition(position, positionIndex + 1)}
+                  sx={{ borderRadius: 1, py: 0.5 }}
+                >
+                  <ListItemAvatar sx={{ minWidth: 32 }}>
+                    <Avatar sx={{ width: 22, height: 22, fontSize: '0.75rem' }}>
+                      {positionIndex + 1}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={describePositionRange(
+                      position.chapterRange,
+                      position.episodeRange,
+                      chapterOptions,
+                      episodeOptions,
+                    )}
+                    slotProps={{ primary: { variant: 'body2', color: 'text.secondary' } }}
+                  />
+                </ListItemButton>
               ))}
-            </Stack>
+            </List>
           )}
           <Button
             size="small"

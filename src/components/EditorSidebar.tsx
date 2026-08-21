@@ -1,7 +1,7 @@
 import { Box, Paper } from '@mui/material';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
-import type { LatLng, Story } from '../db';
+import type { CharacterPosition, LatLng, Story } from '../db';
 import type { CharacterPositionPin } from '../lib/characterPositionPins';
 import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
@@ -60,8 +60,20 @@ interface EditorSidebarProps {
   mapPosition: { center: LatLng; zoom: number } | null;
   /** The draggable pin's current lat/lng while editing a character position. */
   draftPosition: LatLng | null;
-  onStartEditingPosition: () => void;
-  onEndEditingPosition: () => void;
+  /** Which character/position is currently open in the Position panel, if any. */
+  activePosition: {
+    characterId: number;
+    index: number;
+    existing: CharacterPosition | null;
+  } | null;
+  /** Called with (characterId, 1-based new position index) when "+ Position" is clicked. */
+  onAddPosition: (characterId: number, index: number) => void;
+  /** Called with (characterId, 1-based index, position) when an existing position is clicked. */
+  onEditPosition: (characterId: number, index: number, position: CharacterPosition) => void;
+  /** Called when the Position panel's back arrow is clicked. */
+  onBackFromPosition: () => void;
+  /** Bumped whenever a position editing session ends, so each CharacterItem re-fetches its list. */
+  positionsVersion: number;
   /** Called with the expanded character's numbered position pins, or null once collapsed. */
   onVisiblePositionsChange: (pins: CharacterPositionPin[] | null) => void;
 }
@@ -74,8 +86,11 @@ export function EditorSidebar({
   onCaptureMapPosition,
   mapPosition,
   draftPosition,
-  onStartEditingPosition,
-  onEndEditingPosition,
+  activePosition,
+  onAddPosition,
+  onEditPosition,
+  onBackFromPosition,
+  positionsVersion,
   onVisiblePositionsChange,
 }: EditorSidebarProps) {
   const {
@@ -101,17 +116,6 @@ export function EditorSidebar({
   const [charactersCount, setCharactersCount] = useState<number>();
   const [markersCount, setMarkersCount] = useState<number>();
 
-  // When set, the sidebar slides its main content out to the left and
-  // slides a Position form in from the right, in place of the accordion
-  // list — rather than opening a nested dialog like chapters/episodes,
-  // since a position is edited less like "one more row in a list" and
-  // more like a small dedicated screen of its own.
-  const [activePosition, setActivePosition] = useState<{
-    characterId: number;
-    index: number;
-  } | null>(null);
-  const [positionsVersion, setPositionsVersion] = useState(0);
-
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
   // from under whatever the user is typing — only an actual change of
@@ -125,8 +129,6 @@ export function EditorSidebar({
     const story = stories.find((candidate) => candidate.id === selectedStoryId) ?? null;
     reset(storyToFormValues(story));
     setExpandedSection('map');
-    setActivePosition(null);
-    onEndEditingPosition();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStoryId, stories, reset]);
 
@@ -169,21 +171,6 @@ export function EditorSidebar({
     return (_event: SyntheticEvent, isExpanded: boolean) => {
       setExpandedSection(isExpanded ? section : false);
     };
-  }
-
-  function handleAddPosition(characterId: number, index: number) {
-    setActivePosition({ characterId, index });
-    onStartEditingPosition();
-  }
-
-  function handleBackFromPosition() {
-    setActivePosition(null);
-    onEndEditingPosition();
-    // Bumps a value each character's CharacterItem depends on when
-    // re-fetching its positions list, so the list picks up whatever was
-    // just created/updated while its accordion stayed mounted (and
-    // silently stale) behind the Position panel.
-    setPositionsVersion((previous) => previous + 1);
   }
 
   return (
@@ -274,7 +261,8 @@ export function EditorSidebar({
                   <CharactersSection
                     storyId={selectedStoryId}
                     onCountChange={setCharactersCount}
-                    onAddPosition={handleAddPosition}
+                    onAddPosition={onAddPosition}
+                    onEditPosition={onEditPosition}
                     positionsVersion={positionsVersion}
                     onVisiblePositionsChange={onVisiblePositionsChange}
                   />
@@ -303,7 +291,8 @@ export function EditorSidebar({
               characterId={activePosition.characterId}
               index={activePosition.index}
               position={draftPosition}
-              onBack={handleBackFromPosition}
+              existingPosition={activePosition.existing}
+              onBack={onBackFromPosition}
             />
           )}
         </Box>

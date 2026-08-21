@@ -16,6 +16,8 @@ interface CharactersSectionProps {
   onCountChange?: (count: number) => void;
   /** Called with (characterId, 1-based new position index) when "+ Position" is clicked. */
   onAddPosition: (characterId: number, index: number) => void;
+  /** Called with (characterId, 1-based index, position) when an existing position is clicked. */
+  onEditPosition: (characterId: number, index: number, position: CharacterPosition) => void;
   /** Bumped whenever a position editing session ends, so each CharacterItem re-fetches its list. */
   positionsVersion: number;
   /** Called with the expanded character's numbered position pins, or null once collapsed. */
@@ -26,6 +28,7 @@ export function CharactersSection({
   storyId,
   onCountChange,
   onAddPosition,
+  onEditPosition,
   positionsVersion,
   onVisiblePositionsChange,
 }: CharactersSectionProps) {
@@ -75,8 +78,8 @@ export function CharactersSection({
     const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
     onVisiblePositionsChange(
       positions.map((position, positionIndex) => ({
-        id: position.id,
-        position: position.position,
+        characterId: expandedCharacterId,
+        characterPosition: position,
         label: String(positionIndex + 1),
         color: character?.color ?? null,
       })),
@@ -159,6 +162,7 @@ export function CharactersSection({
           onCharacterChange={handleCharacterChange}
           onDelete={() => handleDeleteCharacter(character.id)}
           onAddPosition={(index) => onAddPosition(character.id, index)}
+          onEditPosition={(position, index) => onEditPosition(character.id, index, position)}
           positionsVersion={positionsVersion}
           onPositionsChange={handlePositionsChange}
         />

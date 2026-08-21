@@ -8,7 +8,15 @@ import {
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createBook, createCharacter, createStory, type LatLng, type Story } from '../db';
+import {
+  createBook,
+  createCharacter,
+  createCharacterPosition,
+  createStory,
+  type CharacterPosition,
+  type LatLng,
+  type Story,
+} from '../db';
 import { resetDatabaseForTests } from '../db/client';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
 import { EditorSidebar } from './EditorSidebar';
@@ -44,7 +52,7 @@ function makeStory(overrides: Partial<Story>): Story {
   };
 }
 
-/** Stands in for App: owns draftPosition and drives it the way a real marker drag would. */
+/** Stands in for App: owns draftPosition/activePosition and drives them the way a real marker drag or position click would. */
 function DraggableEditorSidebar({
   stories,
   selectedStoryId,
@@ -53,6 +61,29 @@ function DraggableEditorSidebar({
   selectedStoryId: number;
 }) {
   const [draftPosition, setDraftPosition] = useState<LatLng | null>(null);
+  const [activePosition, setActivePosition] = useState<{
+    characterId: number;
+    index: number;
+    existing: CharacterPosition | null;
+  } | null>(null);
+  const [positionsVersion, setPositionsVersion] = useState(0);
+
+  function handleAddPosition(characterId: number, index: number) {
+    setActivePosition({ characterId, index, existing: null });
+    setDraftPosition({ lat: 39.8283, lng: -98.5795 });
+  }
+
+  function handleEditPosition(characterId: number, index: number, existing: CharacterPosition) {
+    setActivePosition({ characterId, index, existing });
+    setDraftPosition(existing.position);
+  }
+
+  function handleBackFromPosition() {
+    setActivePosition(null);
+    setDraftPosition(null);
+    setPositionsVersion((previous) => previous + 1);
+  }
+
   return (
     <>
       <EditorSidebar
@@ -63,8 +94,11 @@ function DraggableEditorSidebar({
         onCaptureMapPosition={() => null}
         mapPosition={{ center: { lat: 39.8283, lng: -98.5795 }, zoom: 4 }}
         draftPosition={draftPosition}
-        onStartEditingPosition={() => setDraftPosition({ lat: 39.8283, lng: -98.5795 })}
-        onEndEditingPosition={() => setDraftPosition(null)}
+        activePosition={activePosition}
+        onAddPosition={handleAddPosition}
+        onEditPosition={handleEditPosition}
+        onBackFromPosition={handleBackFromPosition}
+        positionsVersion={positionsVersion}
         onVisiblePositionsChange={vi.fn()}
       />
       <button onClick={() => setDraftPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag</button>
@@ -86,8 +120,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -113,8 +150,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -134,8 +174,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -168,8 +211,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -199,8 +245,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -226,8 +275,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -255,8 +307,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -280,8 +335,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -316,8 +374,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -331,8 +392,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -359,8 +423,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -384,8 +451,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => ({ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 })}
         mapPosition={{ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 }}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -416,8 +486,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={{ center: { lat: 10, lng: 10 }, zoom: 3 }}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -438,8 +511,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -468,8 +544,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -496,8 +575,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -526,8 +608,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -552,8 +637,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -576,8 +664,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -594,8 +685,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -614,8 +708,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -658,8 +755,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -679,8 +779,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -699,8 +802,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -718,8 +824,11 @@ describe('EditorSidebar', () => {
         onCaptureMapPosition={() => null}
         mapPosition={null}
         draftPosition={null}
-        onStartEditingPosition={vi.fn()}
-        onEndEditingPosition={vi.fn()}
+        activePosition={null}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onBackFromPosition={vi.fn()}
+        positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
       />,
     );
@@ -759,6 +868,41 @@ describe('EditorSidebar', () => {
 
     await user.click(screen.getByRole('button', { name: /back to sidebar/i }));
 
-    expect(await screen.findByText('1. Always visible')).toBeInTheDocument();
+    expect(await screen.findByText('Always visible')).toBeInTheDocument();
+  });
+
+  it('reopens an existing position, prefilled, when it is clicked in the list', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+    });
+    const character = await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 51.5, lng: -0.1278 },
+      dead: true,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const user = userEvent.setup();
+    render(<DraggableEditorSidebar stories={[story]} selectedStoryId={story.id} />);
+
+    await user.click(screen.getByRole('button', { name: /^characters$/i }));
+    await user.click(await screen.findByText('Jon Snow'));
+    await user.click(await screen.findByText('Always visible'));
+
+    expect(await screen.findByText('Position 1')).toBeInTheDocument();
+    expect(screen.getByText('51.5000, -0.1278')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /dead/i })).toBeChecked();
   });
 });

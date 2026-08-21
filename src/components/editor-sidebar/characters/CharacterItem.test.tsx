@@ -61,11 +61,13 @@ function Wrapper({
   initialCharacter,
   onDelete,
   onAddPosition,
+  onEditPosition,
   onPositionsChange,
 }: {
   initialCharacter: Character;
   onDelete?: () => void;
   onAddPosition?: (index: number) => void;
+  onEditPosition?: (position: CharacterPosition, index: number) => void;
   onPositionsChange?: (characterId: number, positions: CharacterPosition[]) => void;
 }) {
   const [character, setCharacter] = useState(initialCharacter);
@@ -78,6 +80,7 @@ function Wrapper({
       onCharacterChange={setCharacter}
       onDelete={onDelete ?? vi.fn()}
       onAddPosition={onAddPosition ?? vi.fn()}
+      onEditPosition={onEditPosition ?? vi.fn()}
       onPositionsChange={onPositionsChange ?? vi.fn()}
       positionsVersion={0}
     />
@@ -102,6 +105,7 @@ describe('CharacterItem', () => {
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         onPositionsChange={vi.fn()}
         positionsVersion={0}
       />,
@@ -127,6 +131,7 @@ describe('CharacterItem', () => {
         onCharacterChange={vi.fn()}
         onDelete={vi.fn()}
         onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
         onPositionsChange={vi.fn()}
         positionsVersion={0}
       />,
@@ -279,8 +284,27 @@ describe('CharacterItem', () => {
     });
     render(<Wrapper initialCharacter={character} />);
 
-    expect(await screen.findByText('1. Always visible')).toBeInTheDocument();
-    expect(screen.getByText('2. Always visible')).toBeInTheDocument();
+    expect(await screen.findAllByText('Always visible')).toHaveLength(2);
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+  });
+
+  it('calls onEditPosition with the position and its 1-based index when a list item is clicked', async () => {
+    const character = await seedCharacter();
+    const position = await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onEditPosition = vi.fn();
+    const user = userEvent.setup();
+    render(<Wrapper initialCharacter={character} onEditPosition={onEditPosition} />);
+
+    await user.click(await screen.findByText('Always visible'));
+
+    expect(onEditPosition).toHaveBeenCalledWith(position, 1);
   });
 
   it('reports its loaded positions via onPositionsChange, regardless of expanded state', async () => {
