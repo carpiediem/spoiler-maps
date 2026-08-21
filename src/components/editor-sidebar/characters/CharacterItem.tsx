@@ -22,6 +22,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { useEffect, useState, type ReactNode, type SyntheticEvent } from 'react';
 import {
@@ -104,6 +105,8 @@ export function CharacterItem({
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [positions, setPositions] = useState<CharacterPosition[] | null>(null);
   const { chapterOptions, episodeOptions } = useRangeOptions(character.storyId);
+  const theme = useTheme();
+  const characterColor = character.color ?? DEFAULT_CHARACTER_COLOR;
 
   useEffect(() => {
     let cancelled = false;
@@ -177,7 +180,7 @@ export function CharacterItem({
                 width: 14,
                 height: 14,
                 borderRadius: '50%',
-                backgroundColor: character.color ?? DEFAULT_CHARACTER_COLOR,
+                backgroundColor: characterColor,
                 border: 1,
                 borderColor: 'divider',
                 flexShrink: 0,
@@ -282,7 +285,15 @@ export function CharacterItem({
                       sx={{ py: 0.5 }}
                     >
                       <ListItemAvatar sx={{ minWidth: 32 }}>
-                        <Avatar sx={{ width: 22, height: 22, fontSize: '0.75rem' }}>
+                        <Avatar
+                          sx={{
+                            width: 22,
+                            height: 22,
+                            fontSize: '0.75rem',
+                            bgcolor: characterColor,
+                            color: theme.palette.getContrastText(characterColor),
+                          }}
+                        >
                           {positionIndex + 1}
                         </Avatar>
                       </ListItemAvatar>
