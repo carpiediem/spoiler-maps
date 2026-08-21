@@ -7,6 +7,9 @@ export interface Story {
   id: number;
   name: string;
   tileUrlTemplate: string | null;
+  /** Credited alongside tileLayerAttributionUrl in the map's attribution control, if both are set. */
+  tileLayerAuthor: string | null;
+  tileLayerAttributionUrl: string | null;
   initialCenter: LatLng;
   initialZoom: number;
 }
@@ -25,6 +28,7 @@ export interface Chapter {
   id: number;
   bookId: number;
   name: string;
+  url: string | null;
   /** Fractional index, zero-based; see ordering.ts. Not a display number. */
   sortOrder: number;
 }

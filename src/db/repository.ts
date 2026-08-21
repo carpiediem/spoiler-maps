@@ -64,6 +64,8 @@ function rowToStory(row: Row): Story {
     id: row.id as number,
     name: row.name as string,
     tileUrlTemplate: row.tile_url_template as string | null,
+    tileLayerAuthor: row.tile_layer_author as string | null,
+    tileLayerAttributionUrl: row.tile_layer_attribution_url as string | null,
     initialCenter: {
       lat: row.initial_center_lat as number,
       lng: row.initial_center_lng as number,
@@ -76,11 +78,15 @@ export async function createStory(input: NewStory): Promise<Story> {
   const db = await getDatabase();
   const id = insert(
     db,
-    `INSERT INTO stories (name, tile_url_template, initial_center_lat, initial_center_lng, initial_zoom)
-     VALUES (?, ?, ?, ?, ?);`,
+    `INSERT INTO stories (
+       name, tile_url_template, tile_layer_author, tile_layer_attribution_url,
+       initial_center_lat, initial_center_lng, initial_zoom
+     ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
     [
       input.name,
       input.tileUrlTemplate,
+      input.tileLayerAuthor,
+      input.tileLayerAttributionUrl,
       input.initialCenter.lat,
       input.initialCenter.lng,
       input.initialZoom,
@@ -104,11 +110,14 @@ export async function updateStory(id: number, input: NewStory): Promise<void> {
   const db = await getDatabase();
   db.run(
     `UPDATE stories
-     SET name = ?, tile_url_template = ?, initial_center_lat = ?, initial_center_lng = ?, initial_zoom = ?
+     SET name = ?, tile_url_template = ?, tile_layer_author = ?, tile_layer_attribution_url = ?,
+         initial_center_lat = ?, initial_center_lng = ?, initial_zoom = ?
      WHERE id = ?;`,
     [
       input.name,
       input.tileUrlTemplate,
+      input.tileLayerAuthor,
+      input.tileLayerAttributionUrl,
       input.initialCenter.lat,
       input.initialCenter.lng,
       input.initialZoom,
@@ -173,17 +182,18 @@ function rowToChapter(row: Row): Chapter {
     id: row.id as number,
     bookId: row.book_id as number,
     name: row.name as string,
+    url: row.url as string | null,
     sortOrder: row.sort_order as number,
   };
 }
 
 export async function createChapter(input: NewChapter): Promise<Chapter> {
   const db = await getDatabase();
-  const id = insert(db, 'INSERT INTO chapters (book_id, name, sort_order) VALUES (?, ?, ?);', [
-    input.bookId,
-    input.name,
-    input.sortOrder,
-  ]);
+  const id = insert(
+    db,
+    'INSERT INTO chapters (book_id, name, url, sort_order) VALUES (?, ?, ?, ?);',
+    [input.bookId, input.name, input.url, input.sortOrder],
+  );
   await persist();
   return { id, ...input };
 }
@@ -200,9 +210,10 @@ export async function listChaptersForBook(bookId: number): Promise<Chapter[]> {
 
 export async function updateChapter(id: number, input: NewChapter): Promise<void> {
   const db = await getDatabase();
-  db.run('UPDATE chapters SET book_id = ?, name = ?, sort_order = ? WHERE id = ?;', [
+  db.run('UPDATE chapters SET book_id = ?, name = ?, url = ?, sort_order = ? WHERE id = ?;', [
     input.bookId,
     input.name,
+    input.url,
     input.sortOrder,
     id,
   ]);

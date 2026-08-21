@@ -1,0 +1,738 @@
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createBook, createCharacter, createStory, type LatLng, type Story } from '../db';
+import { resetDatabaseForTests } from '../db/client';
+import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
+import { EditorSidebar } from './EditorSidebar';
+
+async function deleteStoredDatabase(): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase('spoiler-maps');
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+beforeEach(() => {
+  resetDatabaseForTests();
+});
+
+afterEach(async () => {
+  resetDatabaseForTests();
+  await deleteStoredDatabase();
+  window.location.hash = '';
+});
+
+function makeStory(overrides: Partial<Story>): Story {
+  return {
+    id: 1,
+    name: 'A Song of Ice and Fire',
+    tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+    tileLayerAuthor: null,
+    tileLayerAttributionUrl: null,
+    initialCenter: { lat: 51.5, lng: -0.1278 },
+    initialZoom: 6,
+    ...overrides,
+  };
+}
+
+/** Stands in for App: owns draftPosition and drives it the way a real marker drag would. */
+function DraggableEditorSidebar({
+  stories,
+  selectedStoryId,
+}: {
+  stories: Story[];
+  selectedStoryId: number;
+}) {
+  const [draftPosition, setDraftPosition] = useState<LatLng | null>(null);
+  return (
+    <>
+      <EditorSidebar
+        stories={stories}
+        selectedStoryId={selectedStoryId}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={{ center: { lat: 39.8283, lng: -98.5795 }, zoom: 4 }}
+        draftPosition={draftPosition}
+        onStartEditingPosition={() => setDraftPosition({ lat: 39.8283, lng: -98.5795 })}
+        onEndEditingPosition={() => setDraftPosition(null)}
+      />
+      <button onClick={() => setDraftPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag</button>
+    </>
+  );
+}
+
+describe('EditorSidebar', () => {
+  it('disables Save until the form has unsaved changes, then disables it again after saving', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    const story = makeStory({ id: 1 });
+    render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
+
+    await user.type(screen.getByLabelText(/map name/i), '!');
+    expect(screen.getByRole('button', { name: /save/i })).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
+  });
+
+  it('starts with Save disabled for a brand new map', () => {
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
+  });
+
+  it('calls onSave with a valid name, tile URL template, and default initial position', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledWith({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: DEFAULT_CENTER,
+      initialZoom: DEFAULT_ZOOM,
+    });
+  });
+
+  it('extrapolates a {q} template from a real example tile URL', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://carpiediem.github.io/game-of-thrones-map/fsm/tqtqr.jpg' },
+    });
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tileUrlTemplate: 'https://carpiediem.github.io/game-of-thrones-map/fsm/{q}.jpg',
+      }),
+    );
+  });
+
+  it('shows an error and does not call onSave when the name is blank', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/enter a name/i);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('shows an error and does not call onSave for an invalid tile URL', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    await user.type(screen.getByLabelText(/tile layer url template/i), 'not-a-valid-url');
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('prefills the form from the selected story', () => {
+    const story = makeStory({
+      id: 1,
+      tileLayerAuthor: 'Jane Cartographer',
+      tileLayerAttributionUrl: 'https://example.com',
+    });
+    render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/map name/i)).toHaveValue(story.name);
+    expect(screen.getByLabelText(/tile layer url template/i)).toHaveValue(story.tileUrlTemplate);
+    expect(screen.getByLabelText(/tile layer author/i)).toHaveValue('Jane Cartographer');
+    expect(screen.getByLabelText(/tile layer attribution url/i)).toHaveValue('https://example.com');
+    expect(screen.getByText(/51\.5000, -0\.1278 · Zoom 6/)).toBeInTheDocument();
+  });
+
+  it('saves the tile layer author and attribution URL when both are provided', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    await user.type(screen.getByLabelText(/tile layer author/i), '  Jane Cartographer  ');
+    await user.type(
+      screen.getByLabelText(/tile layer attribution url/i),
+      '  https://example.com  ',
+    );
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tileLayerAuthor: 'Jane Cartographer',
+        tileLayerAttributionUrl: 'https://example.com',
+      }),
+    );
+  });
+
+  it('clears the form when switching to "New Map"', () => {
+    const story = makeStory({ id: 1 });
+    const { rerender } = render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    rerender(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/map name/i)).toHaveValue('');
+    expect(screen.getByLabelText(/tile layer url template/i)).toHaveValue('');
+    expect(
+      screen.getByText(
+        new RegExp(`${DEFAULT_CENTER.lat.toFixed(4)}, ${DEFAULT_CENTER.lng.toFixed(4)}`),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('forwards story selection from the story selector', async () => {
+    const onSelectStory = vi.fn();
+    const user = userEvent.setup();
+    const stories = [makeStory({ id: 1 }), makeStory({ id: 2, name: 'The Wheel of Time' })];
+    render(
+      <EditorSidebar
+        stories={stories}
+        selectedStoryId={1}
+        onSelectStory={onSelectStory}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
+    await user.click(screen.getByRole('option', { name: /the wheel of time/i }));
+
+    expect(onSelectStory).toHaveBeenCalledWith(2);
+  });
+
+  it('captures the current map position and reflects it in the display and on save', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    const story = makeStory({ id: 1 });
+    render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={onSave}
+        onCaptureMapPosition={() => ({ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 })}
+        mapPosition={{ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 }}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /use current map position/i }));
+
+    expect(screen.getByText(/40\.7128, -74\.0060 · Zoom 10/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        initialCenter: { lat: 40.7128, lng: -74.006 },
+        initialZoom: 10,
+      }),
+    );
+  });
+
+  it('leaves the displayed position unchanged when the map is not ready', async () => {
+    const user = userEvent.setup();
+    const story = makeStory({ id: 1 });
+    render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={{ center: { lat: 10, lng: 10 }, zoom: 3 }}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /use current map position/i }));
+
+    expect(screen.getByText(/51\.5000, -0\.1278 · Zoom 6/)).toBeInTheDocument();
+  });
+
+  it('hides the tile layer author/attribution fields until the tile URL template is valid', async () => {
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText(/tile layer author/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/tile layer attribution url/i)).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/tile layer url template/i), 'not-a-valid-url');
+    expect(screen.queryByLabelText(/tile layer author/i)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    expect(screen.getByLabelText(/tile layer author/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/tile layer attribution url/i)).toBeInTheDocument();
+  });
+
+  it('opens and closes the tile URL template help dialog', async () => {
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /explain how to fill in this field/i }));
+    await screen.findByRole('dialog');
+
+    // TileUrlHelpDialog's own content and interactions are covered in
+    // TileUrlHelpDialog.test.tsx; this just proves the button opens it.
+    await user.click(screen.getByRole('button', { name: /close/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+  });
+
+  it('shows one section at a time, collapsing the previous one when another is opened', async () => {
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/map name/i)).toBeVisible();
+    expect(await screen.findByText(/no books yet/i)).not.toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /^books/i }));
+
+    expect(screen.getByText(/no books yet/i)).toBeVisible();
+    expect(screen.getByLabelText(/map name/i)).not.toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /^books/i }));
+
+    expect(screen.getByText(/no books yet/i)).not.toBeVisible();
+  });
+
+  it('renders the Television, Characters, and Markers sections', async () => {
+    const user = userEvent.setup();
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /^television/i }));
+    expect(screen.getByText(/no television seasons yet/i)).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /^characters/i }));
+    expect(screen.getByText(/no characters yet/i)).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /^markers/i }));
+    expect(screen.getByText(/no markers yet/i)).toBeVisible();
+  });
+
+  it('hides the Books/Television/Characters/Markers sections for a brand new, unsaved map', () => {
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /^books/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^television/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^characters/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^markers/i })).not.toBeInTheDocument();
+  });
+
+  it('re-collapses to the Map section when switching stories', async () => {
+    const user = userEvent.setup();
+    const stories = [makeStory({ id: 1 }), makeStory({ id: 2, name: 'The Wheel of Time' })];
+    const { rerender } = render(
+      <EditorSidebar
+        stories={stories}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /^books/i }));
+    expect(await screen.findByText(/no books yet/i)).toBeVisible();
+
+    rerender(
+      <EditorSidebar
+        stories={stories}
+        selectedStoryId={2}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/map name/i)).toBeVisible();
+  });
+
+  it('opens the Books section from a #books URL hash', async () => {
+    window.location.hash = '#books';
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText(/no books yet/i)).toBeVisible();
+    expect(screen.getByLabelText(/map name/i)).not.toBeVisible();
+  });
+
+  it('expands the Nth book from a #books-N URL hash', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+    });
+    await createBook({
+      storyId: story.id,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createBook({
+      storyId: story.id,
+      name: 'A Clash of Kings',
+      author: null,
+      url: null,
+      sortOrder: 1,
+    });
+    window.location.hash = '#books-2';
+
+    render(
+      <EditorSidebar
+        stories={[story]}
+        selectedStoryId={story.id}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByDisplayValue('A Clash of Kings')).toBeVisible();
+    expect(screen.getByDisplayValue('A Game of Thrones')).not.toBeVisible();
+  });
+
+  it('ignores a #books hash for a brand new, unsaved map', () => {
+    window.location.hash = '#books';
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={null}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/map name/i)).toBeVisible();
+  });
+
+  it('ignores a hash that does not name a known section', () => {
+    window.location.hash = '#not-a-real-section';
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/map name/i)).toBeVisible();
+  });
+
+  it('responds to the hash changing while already open', async () => {
+    render(
+      <EditorSidebar
+        stories={[]}
+        selectedStoryId={1}
+        onSelectStory={vi.fn()}
+        onSave={vi.fn()}
+        onCaptureMapPosition={() => null}
+        mapPosition={null}
+        draftPosition={null}
+        onStartEditingPosition={vi.fn()}
+        onEndEditingPosition={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText(/no television seasons yet/i)).not.toBeVisible();
+
+    window.location.hash = '#television';
+
+    expect(await screen.findByText(/no television seasons yet/i)).toBeVisible();
+  });
+
+  it('lists a newly saved position once the user returns from editing it', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+    });
+    await createCharacter({
+      storyId: story.id,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+    });
+    const user = userEvent.setup();
+    render(<DraggableEditorSidebar stories={[story]} selectedStoryId={story.id} />);
+
+    await user.click(screen.getByRole('button', { name: /^characters$/i }));
+    await user.click(await screen.findByText('Jon Snow'));
+    await user.click(screen.getByRole('button', { name: /^position$/i }));
+
+    await user.click(screen.getByRole('button', { name: /simulate drag/i }));
+    await waitFor(() => expect(screen.getByText('51.5000, -0.1278')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: /back to sidebar/i }));
+
+    expect(await screen.findByText('1. Always visible')).toBeInTheDocument();
+  });
+});

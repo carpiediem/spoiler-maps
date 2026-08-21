@@ -61,6 +61,8 @@ afterEach(async () => {
 const exampleStory: NewStory = {
   name: 'A Song of Ice and Fire',
   tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+  tileLayerAuthor: null,
+  tileLayerAttributionUrl: null,
   initialCenter: { lat: 39.8283, lng: -98.5795 },
   initialZoom: 4,
 };
@@ -143,17 +145,22 @@ describe('books and chapters', () => {
       url: null,
       sortOrder: 0,
     });
-    const chapter = await createChapter({ bookId: book.id, name: 'Bran', sortOrder: 0 });
+    const chapter = await createChapter({ bookId: book.id, name: 'Bran', url: null, sortOrder: 0 });
 
     expect(await listChaptersForBook(book.id)).toEqual([chapter]);
 
-    await updateChapter(chapter.id, { bookId: book.id, name: 'Bran I', sortOrder: 0 });
+    await updateChapter(chapter.id, { bookId: book.id, name: 'Bran I', url: null, sortOrder: 0 });
     expect((await listChaptersForBook(book.id))[0].name).toBe('Bran I');
 
     await deleteChapter(chapter.id);
     expect(await listChaptersForBook(book.id)).toEqual([]);
 
-    const secondChapter = await createChapter({ bookId: book.id, name: 'Catelyn', sortOrder: 1 });
+    const secondChapter = await createChapter({
+      bookId: book.id,
+      name: 'Catelyn',
+      url: null,
+      sortOrder: 1,
+    });
     await deleteBook(book.id);
     expect(await listChaptersForBook(secondChapter.bookId)).toEqual([]);
   });
@@ -318,8 +325,18 @@ describe('character positions', () => {
       url: null,
       sortOrder: 0,
     });
-    const chapter1 = await createChapter({ bookId: book.id, name: 'Bran I', sortOrder: 0 });
-    const chapter2 = await createChapter({ bookId: book.id, name: 'Jon I', sortOrder: 1 });
+    const chapter1 = await createChapter({
+      bookId: book.id,
+      name: 'Bran I',
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Jon I',
+      url: null,
+      sortOrder: 1,
+    });
     return { character, book, chapter1, chapter2 };
   }
 
@@ -414,11 +431,13 @@ describe('character positions', () => {
     const book1Chapter10 = await createChapter({
       bookId: book1.id,
       name: 'Chapter 10',
+      url: null,
       sortOrder: 10,
     });
     const book2Chapter5 = await createChapter({
       bookId: book2.id,
       name: 'Chapter 5',
+      url: null,
       sortOrder: 5,
     });
 
