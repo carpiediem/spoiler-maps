@@ -455,7 +455,12 @@ describe('CharacterItem', () => {
       sortOrder: 0,
     });
     await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
-    const chapter2 = await createChapter({ bookId: book.id, name: 'Bran', url: null, sortOrder: 1 });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Bran',
+      url: null,
+      sortOrder: 1,
+    });
     await createCharacterPosition({
       characterId: character.id,
       position: { lat: 1, lng: 1 },
@@ -476,9 +481,7 @@ describe('CharacterItem', () => {
 
     rerender(<Wrapper initialCharacter={character} timelineMode="book" timelineIndex={2} />);
 
-    await waitFor(() =>
-      expect(avatar).not.toHaveStyle({ backgroundColor: 'rgba(0, 0, 0, 0)' }),
-    );
+    await waitFor(() => expect(avatar).not.toHaveStyle({ backgroundColor: 'rgba(0, 0, 0, 0)' }));
   });
 
   it('shows a position’s note instead of its lat/lng when one is set', async () => {
