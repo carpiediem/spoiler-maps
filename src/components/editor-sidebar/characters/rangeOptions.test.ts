@@ -8,12 +8,12 @@ import {
 } from './rangeOptions';
 
 const chapterOptions: FlatOption[] = [
-  { id: 1, index: 1, label: '1. AGOT: Prologue' },
-  { id: 2, index: 2, label: '2. AGOT: Bran' },
+  { id: 1, index: 1, label: '1. AGOT: Prologue', url: null },
+  { id: 2, index: 2, label: '2. AGOT: Bran', url: null },
 ];
 const episodeOptions: FlatOption[] = [
-  { id: 10, index: 1, label: '1. S01E01: Winter Is Coming' },
-  { id: 11, index: 2, label: '2. S01E02: The Kingsroad' },
+  { id: 10, index: 1, label: '1. S01E01: Winter Is Coming', url: null },
+  { id: 11, index: 2, label: '2. S01E02: The Kingsroad', url: null },
 ];
 
 describe('toAcronym', () => {
@@ -41,9 +41,9 @@ describe('flattenEpisodeOptions', () => {
     };
 
     expect(flattenEpisodeOptions(seasons, episodesBySeasonId)).toEqual([
-      { id: 10, index: 1, label: '1. S01E01: Winter Is Coming' },
-      { id: 11, index: 2, label: '2. S01E02: The Kingsroad' },
-      { id: 20, index: 3, label: '3. S02E01: The North Remembers' },
+      { id: 10, index: 1, label: '1. S01E01: Winter Is Coming', url: null },
+      { id: 11, index: 2, label: '2. S01E02: The Kingsroad', url: null },
+      { id: 20, index: 3, label: '3. S02E01: The North Remembers', url: null },
     ]);
   });
 
@@ -72,6 +72,7 @@ describe('flattenEpisodeOptions', () => {
       id: 1009,
       index: 100,
       label: '100. S10E10: Untitled Episode',
+      url: null,
     });
   });
 });

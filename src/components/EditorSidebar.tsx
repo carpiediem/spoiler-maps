@@ -5,6 +5,7 @@ import type { CharacterPosition, LatLng, Story } from '../db';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
+import type { TimelineMode } from './MapTimelineControl';
 import { storyToFormValues, type FormValues } from './editor-sidebar/formValues';
 import { MapSection } from './editor-sidebar/MapSection';
 import { MarkersSection } from './editor-sidebar/MarkersSection';
@@ -94,6 +95,10 @@ interface EditorSidebarProps {
   onStartDrawingTail: () => void;
   /** Called when Save or Cancel is clicked, to leave drawing mode either way. */
   onFinishDrawingTail: () => void;
+  /** The map timeline control's current mode, used to filter which character positions show as map pins. */
+  timelineMode: TimelineMode;
+  /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
+  timelineIndex: number;
 }
 
 export function EditorSidebar({
@@ -115,6 +120,8 @@ export function EditorSidebar({
   tailDraftPoints,
   onStartDrawingTail,
   onFinishDrawingTail,
+  timelineMode,
+  timelineIndex,
 }: EditorSidebarProps) {
   const {
     control,
@@ -292,6 +299,9 @@ export function EditorSidebar({
                     positionsVersion={positionsVersion}
                     onVisiblePositionsChange={onVisiblePositionsChange}
                     onVisibleTailsChange={onVisibleTailsChange}
+                    timelineMode={timelineMode}
+                    timelineIndex={timelineIndex}
+                    sectionExpanded={expandedSection === 'characters'}
                   />
                 </SidebarSection>
 

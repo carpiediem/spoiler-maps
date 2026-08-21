@@ -1,32 +1,21 @@
-import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import PersonalVideoIcon from '@mui/icons-material/PersonalVideo';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Avatar,
   Box,
   Button,
-  FormControl,
   IconButton,
   InputAdornment,
-  InputLabel,
-  List,
-  ListItemAvatar,
-  ListItemButton,
-  ListItemText,
   Stack,
   TextField,
   Tooltip,
   Typography,
-  useTheme,
 } from '@mui/material';
-import { useEffect, useState, type DragEvent, type ReactNode, type SyntheticEvent } from 'react';
+import { useEffect, useState, type DragEvent, type SyntheticEvent } from 'react';
 import {
   listCharacterPositionsForCharacter,
   updateCharacter,
@@ -34,48 +23,9 @@ import {
   type CharacterPosition,
 } from '../../../db';
 import { DEFAULT_CHARACTER_COLOR } from '../../../lib/characterColor';
+import type { TimelineMode } from '../../MapTimelineControl';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
-import {
-  summarizePositionRange,
-  useRangeOptions,
-  type PositionRangeSummary,
-  type RangeSummaryPart,
-} from './rangeOptions';
-
-function RangeSummaryPartView({ icon, part }: { icon: ReactNode; part: RangeSummaryPart }) {
-  return (
-    <Tooltip title={part.fullLabel}>
-      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
-        {icon}
-        <span>{part.shortLabel}</span>
-      </Box>
-    </Tooltip>
-  );
-}
-
-function PositionRangeSummaryView({ summary }: { summary: PositionRangeSummary }) {
-  if (!summary.chapters && !summary.episodes) return 'Always visible';
-
-  return (
-    <Box
-      component="span"
-      sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}
-    >
-      {summary.chapters && (
-        <RangeSummaryPartView
-          icon={<MenuBookIcon sx={{ fontSize: 14 }} />}
-          part={summary.chapters}
-        />
-      )}
-      {summary.episodes && (
-        <RangeSummaryPartView
-          icon={<PersonalVideoIcon sx={{ fontSize: 14 }} />}
-          part={summary.episodes}
-        />
-      )}
-    </Box>
-  );
-}
+import { PositionList } from './PositionList';
 
 interface CharacterItemProps {
   character: Character;
@@ -100,6 +50,10 @@ interface CharacterItemProps {
   positionsVersion: number;
   /** Called once this character's positions have (re)loaded, so the map pins can be kept in sync. */
   onPositionsChange: (characterId: number, positions: CharacterPosition[]) => void;
+  /** The map timeline control's current mode, used to tell which positions it currently shows on the map. */
+  timelineMode: TimelineMode;
+  /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
+  timelineIndex: number;
 }
 
 export function CharacterItem({
@@ -119,11 +73,11 @@ export function CharacterItem({
   onEditPosition,
   positionsVersion,
   onPositionsChange,
+  timelineMode,
+  timelineIndex,
 }: CharacterItemProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [positions, setPositions] = useState<CharacterPosition[] | null>(null);
-  const { chapterOptions, episodeOptions } = useRangeOptions(character.storyId);
-  const theme = useTheme();
   const characterColor = character.color ?? DEFAULT_CHARACTER_COLOR;
 
   useEffect(() => {
@@ -317,77 +271,15 @@ export function CharacterItem({
               },
             }}
           />
-          <FormControl
-            size="small"
-            fullWidth
-            sx={{ border: 1, borderColor: 'divider', borderRadius: 1, mt: 1 }}
-          >
-            <InputLabel shrink sx={{ px: 0.5, ml: 0.5, backgroundColor: 'background.paper' }}>
-              Route
-            </InputLabel>
-            {/* Clips the list/button to the FormControl's rounded corners,
-                separately from the label above, which pokes above this box
-                and would otherwise get clipped along with them. */}
-            <Box sx={{ borderRadius: 1, overflow: 'hidden' }}>
-              {!!positions?.length && (
-                <List dense disablePadding>
-                  {positions.map((position, positionIndex) => (
-                    <ListItemButton
-                      key={position.id}
-                      onClick={() => onEditPosition(position, positionIndex + 1)}
-                      sx={{ py: 0.5 }}
-                    >
-                      <ListItemAvatar sx={{ minWidth: 32 }}>
-                        <Avatar
-                          sx={{
-                            width: 22,
-                            height: 22,
-                            fontSize: '0.75rem',
-                            bgcolor: characterColor,
-                            color: theme.palette.getContrastText(characterColor),
-                          }}
-                        >
-                          {positionIndex + 1}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          position.note ||
-                          `${position.position.lat.toFixed(4)}, ${position.position.lng.toFixed(4)}`
-                        }
-                        secondary={
-                          <PositionRangeSummaryView
-                            summary={summarizePositionRange(
-                              position.chapterRange,
-                              position.episodeRange,
-                              chapterOptions,
-                              episodeOptions,
-                            )}
-                          />
-                        }
-                        slotProps={{
-                          primary: { variant: 'body2' },
-                          secondary: { component: 'span' },
-                        }}
-                      />
-                    </ListItemButton>
-                  ))}
-                </List>
-              )}
-              <Button
-                size="small"
-                startIcon={<AddIcon fontSize="small" />}
-                // Only reachable once positions have loaded: disabled below
-                // while it's still null.
-                onClick={() => onAddPosition(positions!.length + 1)}
-                disabled={positions === null}
-                fullWidth
-                sx={{ borderRadius: 0 }}
-              >
-                Position
-              </Button>
-            </Box>
-          </FormControl>
+          <PositionList
+            storyId={character.storyId}
+            positions={positions}
+            characterColor={characterColor}
+            timelineMode={timelineMode}
+            timelineIndex={timelineIndex}
+            onAddPosition={onAddPosition}
+            onEditPosition={onEditPosition}
+          />
           <Button size="small" color="error" onClick={() => setIsDeleteConfirmOpen(true)} fullWidth>
             Delete Character
           </Button>

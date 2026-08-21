@@ -70,12 +70,16 @@ function Wrapper({
   onAddPosition,
   onEditPosition,
   onPositionsChange,
+  timelineMode,
+  timelineIndex,
 }: {
   initialCharacter: Character;
   onDelete?: () => void;
   onAddPosition?: (index: number) => void;
   onEditPosition?: (position: CharacterPosition, index: number) => void;
   onPositionsChange?: (characterId: number, positions: CharacterPosition[]) => void;
+  timelineMode?: 'book' | 'tv';
+  timelineIndex?: number;
 }) {
   const [character, setCharacter] = useState(initialCharacter);
   const [expanded, setExpanded] = useState(true);
@@ -98,6 +102,8 @@ function Wrapper({
       onEditPosition={onEditPosition ?? vi.fn()}
       onPositionsChange={onPositionsChange ?? vi.fn()}
       positionsVersion={0}
+      timelineMode={timelineMode ?? 'book'}
+      timelineIndex={timelineIndex ?? Number.MAX_SAFE_INTEGER}
     />
   );
 }
@@ -131,6 +137,8 @@ describe('CharacterItem', () => {
         onEditPosition={vi.fn()}
         onPositionsChange={vi.fn()}
         positionsVersion={0}
+        timelineMode="book"
+        timelineIndex={Number.MAX_SAFE_INTEGER}
       />,
     );
 
@@ -165,6 +173,8 @@ describe('CharacterItem', () => {
         onEditPosition={vi.fn()}
         onPositionsChange={vi.fn()}
         positionsVersion={0}
+        timelineMode="book"
+        timelineIndex={Number.MAX_SAFE_INTEGER}
       />,
     );
 
@@ -200,6 +210,8 @@ describe('CharacterItem', () => {
         onEditPosition={vi.fn()}
         onPositionsChange={vi.fn()}
         positionsVersion={0}
+        timelineMode="book"
+        timelineIndex={Number.MAX_SAFE_INTEGER}
       />,
     );
 
@@ -431,6 +443,45 @@ describe('CharacterItem', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
       '1. AGOT: Prologue → 2. AGOT: Bran',
     );
+  });
+
+  it('outlines a position’s avatar instead of filling it once the timeline is before its start chapter', async () => {
+    const character = await seedCharacter();
+    const book = await createBook({
+      storyId: character.storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Bran',
+      url: null,
+      sortOrder: 1,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: { startChapterId: chapter2.id, endChapterId: null },
+      episodeRange: null,
+    });
+
+    const { rerender } = render(
+      <Wrapper initialCharacter={character} timelineMode="book" timelineIndex={1} />,
+    );
+
+    const avatar = (await screen.findByText('1')).closest('.MuiAvatar-root')!;
+    await waitFor(() => expect(avatar).toHaveStyle({ backgroundColor: 'rgba(0, 0, 0, 0)' }));
+    expect(avatar).toHaveStyle({ border: '1px solid #1976d2' });
+
+    rerender(<Wrapper initialCharacter={character} timelineMode="book" timelineIndex={2} />);
+
+    await waitFor(() => expect(avatar).not.toHaveStyle({ backgroundColor: 'rgba(0, 0, 0, 0)' }));
   });
 
   it('shows a position’s note instead of its lat/lng when one is set', async () => {

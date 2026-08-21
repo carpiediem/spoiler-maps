@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  createBook,
+  createChapter,
   createCharacter,
   createCharacterPosition,
   createStory,
@@ -52,6 +54,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -77,6 +82,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -111,6 +119,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -129,6 +140,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -154,6 +168,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -194,6 +211,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -228,6 +248,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -254,6 +277,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -292,6 +318,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -335,6 +364,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -381,6 +413,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -420,6 +455,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -459,6 +497,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -505,6 +546,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -548,6 +592,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -582,6 +629,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -628,6 +678,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -691,6 +744,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={onVisibleTailsChange}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -700,13 +756,19 @@ describe('CharactersSection', () => {
       expect(onVisibleTailsChange).toHaveBeenLastCalledWith([
         {
           characterId: character.id,
-          points: [{ lat: 0.5, lng: 0.5 }],
+          points: [
+            { lat: 1, lng: 1 },
+            { lat: 0.5, lng: 0.5 },
+          ],
           color: '#ff0000',
           opacity: 1,
         },
         {
           characterId: character.id,
-          points: [{ lat: 1.5, lng: 1.5 }],
+          points: [
+            { lat: 2, lng: 2 },
+            { lat: 1.5, lng: 1.5 },
+          ],
           color: '#ff0000',
           opacity: 1,
         },
@@ -743,6 +805,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -753,6 +818,81 @@ describe('CharactersSection', () => {
 
     await user.click(screen.getByText('Jon Snow'));
     await waitFor(() => expect(onVisiblePositionsChange).toHaveBeenLastCalledWith(null));
+  });
+
+  it('collapses the expanded character when the Characters section itself collapses', async () => {
+    const storyId = await seedStoryId();
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 14,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([expect.any(Object)]),
+    );
+
+    rerender(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded={false}
+      />,
+    );
+
+    await waitFor(() => expect(onVisiblePositionsChange).toHaveBeenLastCalledWith(null));
+
+    // Re-expanding the section shouldn't bring the character back expanded.
+    rerender(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
+      />,
+    );
+
+    const accordionButton = screen.getByRole('button', { name: /Jon Snow/i });
+    expect(accordionButton).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('reports the newly expanded character’s pins when switching directly between two expanded characters', async () => {
@@ -801,6 +941,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -875,6 +1018,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={onVisibleTailsChange}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -901,7 +1047,15 @@ describe('CharactersSection', () => {
       ]),
     );
     expect(onVisibleTailsChange).toHaveBeenLastCalledWith([
-      { characterId: jon.id, points: [{ lat: 0.5, lng: 0.5 }], color: '#ff0000', opacity: 0.5 },
+      {
+        characterId: jon.id,
+        points: [
+          { lat: 1, lng: 1 },
+          { lat: 0.5, lng: 0.5 },
+        ],
+        color: '#ff0000',
+        opacity: 0.5,
+      },
     ]);
 
     await user.click(screen.getByRole('button', { name: /hide on map/i }));
@@ -939,6 +1093,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -972,6 +1129,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -1013,6 +1173,9 @@ describe('CharactersSection', () => {
         positionsVersion={0}
         onVisiblePositionsChange={vi.fn()}
         onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
       />,
     );
 
@@ -1020,5 +1183,158 @@ describe('CharactersSection', () => {
     await user.click(await screen.findByText('Always visible'));
 
     expect(onEditPosition).toHaveBeenCalledWith(character.id, 1, position, null);
+  });
+
+  it('hides an expanded character’s position once the timeline is before its start chapter', async () => {
+    const storyId = await seedStoryId();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Bran',
+      url: null,
+      sortOrder: 1,
+    });
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+      sortOrder: 21,
+    });
+    const reachedPosition = await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: { startChapterId: chapter2.id, endChapterId: null },
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
+        {
+          characterId: character.id,
+          characterPosition: expect.objectContaining({ id: reachedPosition.id }),
+          label: '1',
+          positionIndex: 1,
+          color: '#ff0000',
+        },
+      ]),
+    );
+  });
+
+  it('skips a visible-but-collapsed character’s not-yet-reached positions, marking the last reached one as the pin', async () => {
+    const storyId = await seedStoryId();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Bran',
+      url: null,
+      sortOrder: 1,
+    });
+    const chapter3 = await createChapter({
+      bookId: book.id,
+      name: 'Catelyn',
+      url: null,
+      sortOrder: 2,
+    });
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+      sortOrder: 22,
+    });
+    const reachedPosition = await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: { startChapterId: chapter2.id, endChapterId: null },
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: { startChapterId: chapter3.id, endChapterId: null },
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={2}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: /show on map/i }));
+
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
+        {
+          characterId: character.id,
+          characterPosition: expect.objectContaining({ id: reachedPosition.id }),
+          label: 'JS',
+          positionIndex: 1,
+          color: '#ff0000',
+          style: 'pin',
+        },
+      ]),
+    );
   });
 });

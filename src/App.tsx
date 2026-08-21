@@ -1,6 +1,7 @@
 import type { Map as LeafletMap } from 'leaflet';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { EditorSidebar } from './components/EditorSidebar';
+import { MapTimelineControl, type TimelineMode } from './components/MapTimelineControl';
 import { MapView } from './components/MapView';
 import {
   createStory,
@@ -49,7 +50,20 @@ function App() {
   // null when not drawing a tail; an (possibly empty) array of points
   // clicked so far while drawing one.
   const [tailDraftPoints, setTailDraftPoints] = useState<LatLng[] | null>(null);
+  // The map timeline control's current mode and scrub position (a flat
+  // 1-based index into that mode's chapters or episodes) — filters which
+  // character positions CharactersSection surfaces as map pins.
+  const [timelineMode, setTimelineMode] = useState<TimelineMode>('book');
+  const [timelineIndex, setTimelineIndex] = useState(1);
   const mapRef = useRef<LeafletMap | null>(null);
+
+  // Stable identity (functional setState form needs no deps) so it doesn't
+  // re-trigger MapTimelineControl's onChange effect on every unrelated App
+  // re-render.
+  const handleTimelineChange = useCallback((mode: TimelineMode, index: number) => {
+    setTimelineMode(mode);
+    setTimelineIndex(index);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -210,6 +224,7 @@ function App() {
           onTailPointClick={handleTailPointClick}
           tailColor={activePosition?.color ?? null}
         />
+        <MapTimelineControl storyId={selectedStoryId} onChange={handleTimelineChange} />
       </main>
       <EditorSidebar
         stories={stories}
@@ -230,6 +245,8 @@ function App() {
         tailDraftPoints={tailDraftPoints ?? []}
         onStartDrawingTail={handleStartDrawingTail}
         onFinishDrawingTail={handleFinishDrawingTail}
+        timelineMode={timelineMode}
+        timelineIndex={timelineIndex}
       />
     </div>
   );

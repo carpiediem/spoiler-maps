@@ -12,6 +12,9 @@ import {
 import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
+import { makeTimelineVisibilityChecker } from '../../lib/timelineVisibility';
+import type { TimelineMode } from '../MapTimelineControl';
+import { useRangeOptions } from './characters/rangeOptions';
 import { CharacterItem } from './characters/CharacterItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
 
@@ -35,6 +38,12 @@ interface CharactersSectionProps {
   onVisiblePositionsChange: (pins: CharacterPositionPin[] | null) => void;
   /** Called with the tails to draw for every character toggled visible (independent of which is expanded). */
   onVisibleTailsChange: (tails: CharacterTailOverlay[]) => void;
+  /** The map timeline control's current mode, used to filter which positions show as map pins. */
+  timelineMode: TimelineMode;
+  /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
+  timelineIndex: number;
+  /** Whether the Characters accordion itself is expanded; collapsing it also collapses whichever character was expanded inside it. */
+  sectionExpanded: boolean;
 }
 
 export function CharactersSection({
@@ -46,6 +55,9 @@ export function CharactersSection({
   positionsVersion,
   onVisiblePositionsChange,
   onVisibleTailsChange,
+  timelineMode,
+  timelineIndex,
+  sectionExpanded,
 }: CharactersSectionProps) {
   // A character stays visible on the map (last position + tails) once
   // toggled on, independent of — and in addition to — whichever character's
@@ -79,9 +91,19 @@ export function CharactersSection({
     onCountChange,
     load,
     onReset,
+    sectionExpanded,
   });
 
+  const { chapterOptions, episodeOptions } = useRangeOptions(storyId);
+
   useEffect(() => {
+    const isPositionVisible = makeTimelineVisibilityChecker(
+      timelineMode,
+      timelineIndex,
+      chapterOptions,
+      episodeOptions,
+    );
+
     const pins: CharacterPositionPin[] = [];
     const tails: CharacterTailOverlay[] = [];
 
@@ -90,6 +112,8 @@ export function CharactersSection({
       const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
       const color = character?.color ?? null;
       positions?.forEach((position, positionIndex) => {
+        if (!isPositionVisible(position)) return;
+
         pins.push({
           characterId: expandedCharacterId,
           characterPosition: position,
@@ -101,7 +125,7 @@ export function CharactersSection({
         if (position.tail && position.tail.length > 0) {
           tails.push({
             characterId: expandedCharacterId,
-            points: position.tail,
+            points: [position.position, ...position.tail],
             color,
             opacity: 1,
           });
@@ -122,8 +146,15 @@ export function CharactersSection({
       /* v8 ignore next -- character can only be undefined here if visibleCharacterIds still names a just-deleted character, but handleDeleteCharacter clears both in the same batched update. */
       const color = character?.color ?? null;
 
+      const lastVisiblePositionIndex = positions.reduce(
+        (lastIndex, position, positionIndex) =>
+          isPositionVisible(position) ? positionIndex : lastIndex,
+        -1,
+      );
+
       positions.forEach((position, positionIndex) => {
-        const isLast = positionIndex === positions.length - 1;
+        if (!isPositionVisible(position)) return;
+        const isLast = positionIndex === lastVisiblePositionIndex;
         pins.push({
           characterId,
           characterPosition: position,
@@ -135,7 +166,12 @@ export function CharactersSection({
         });
 
         if (position.tail && position.tail.length > 0) {
-          tails.push({ characterId, points: position.tail, color, opacity: 0.5 });
+          tails.push({
+            characterId,
+            points: [position.position, ...position.tail],
+            color,
+            opacity: 0.5,
+          });
         }
       });
     });
@@ -147,6 +183,10 @@ export function CharactersSection({
     visibleCharacterIds,
     positionsByCharacterId,
     characters,
+    timelineMode,
+    timelineIndex,
+    chapterOptions,
+    episodeOptions,
     onVisiblePositionsChange,
     onVisibleTailsChange,
   ]);
@@ -280,6 +320,8 @@ export function CharactersSection({
           }
           positionsVersion={positionsVersion}
           onPositionsChange={handlePositionsChange}
+          timelineMode={timelineMode}
+          timelineIndex={timelineIndex}
         />
       ))}
 
