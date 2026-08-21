@@ -3,7 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { resetDatabaseForTests } from './db/client';
-import { createCharacter, createCharacterPosition, createStory } from './db';
+import {
+  createBook,
+  createChapter,
+  createCharacter,
+  createCharacterPosition,
+  createStory,
+} from './db';
 
 async function deleteStoredDatabase(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
@@ -317,6 +323,31 @@ describe('App', () => {
     // resolve after unmount should not throw or warn about updating an
     // unmounted component.
     await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+
+  it('shows the map timeline control for a story with books, and reports the initial scrub position', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+    });
+    const book = await createBook({
+      storyId: story.id,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
+
+    render(<App />);
+
+    expect(await screen.findByText('AGOT: Prologue')).toBeInTheDocument();
   });
 
   it('contains all content within landmark regions', () => {
