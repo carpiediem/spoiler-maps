@@ -132,14 +132,16 @@ export function MapTimelineControl({ storyId, onChange }: MapTimelineControlProp
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Tooltip title={`Previous ${unitLabel}`}>
-            <IconButton
-              size="small"
-              onClick={() => step(-1)}
-              disabled={index <= 1}
-              aria-label={`Previous ${unitLabel}`}
-            >
-              <ChevronLeftIcon fontSize="small" />
-            </IconButton>
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => step(-1)}
+                disabled={index <= 1}
+                aria-label={`Previous ${unitLabel}`}
+              >
+                <ChevronLeftIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
 
           <Typography variant="caption" noWrap sx={{ flex: 1, textAlign: 'center' }}>
@@ -156,15 +158,17 @@ export function MapTimelineControl({ storyId, onChange }: MapTimelineControlProp
             )}
           </Typography>
 
-          <Tooltip title={index < activeOptions.length && `Next ${unitLabel}`}>
-            <IconButton
-              size="small"
-              onClick={() => step(1)}
-              disabled={index >= activeOptions.length}
-              aria-label={`Next ${unitLabel}`}
-            >
-              <ChevronRightIcon fontSize="small" />
-            </IconButton>
+          <Tooltip title={`Next ${unitLabel}`}>
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => step(1)}
+                disabled={index >= activeOptions.length}
+                aria-label={`Next ${unitLabel}`}
+              >
+                <ChevronRightIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
         </Box>
       </Box>
