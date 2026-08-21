@@ -121,14 +121,19 @@ describe('MapView', () => {
     expect(markerCount).toBe(0);
   });
 
-  function makePin(id: number, position: { lat: number; lng: number }, label: string) {
+  function makePin(
+    id: number,
+    position: { lat: number; lng: number },
+    label: string,
+    dead = false,
+  ) {
     return {
       characterId: 1,
       characterPosition: {
         id,
         characterId: 1,
         position,
-        dead: false,
+        dead,
         note: null,
         tail: null,
         chapterRange: null,
@@ -164,6 +169,35 @@ describe('MapView', () => {
     }
     expect(markers[0].getLatLng().lat).toBeCloseTo(41);
     expect(markers[1].getLatLng().lat).toBeCloseTo(42);
+  });
+
+  it('renders a skull marker, not a numbered pin, for a dead position', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const { container } = render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        characterPositionPins={[
+          makePin(1, { lat: 41, lng: -101 }, '1'),
+          makePin(2, { lat: 42, lng: -102 }, '2', true),
+        ]}
+      />,
+    );
+
+    const markers: LeafletMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) markers.push(layer);
+    });
+    expect(markers).toHaveLength(2);
+
+    const icons = container.querySelectorAll('.leaflet-marker-icon');
+    const iconUrls = Array.from(icons).map((el) =>
+      decodeURIComponent(el.getAttribute('src') ?? ''),
+    );
+    expect(iconUrls.some((url) => url.includes('<circle'))).toBe(true);
+    expect(iconUrls.some((url) => url.includes('>1<'))).toBe(true);
   });
 
   it('calls onCharacterPositionPinClick when a static pin is clicked', () => {

@@ -12,7 +12,7 @@ import 'leaflet/dist/leaflet.css';
 import type { LatLng } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
 import type { CharacterPositionPin } from '../lib/characterPositionPins';
-import { buildPinIcon } from '../lib/pinIcon';
+import { buildPinIcon, buildSkullIcon } from '../lib/pinIcon';
 import { detectTileUrlTemplateKind } from '../lib/tileUrl';
 import { QuadkeyTileLayer } from './QuadkeyTileLayer';
 
@@ -165,12 +165,17 @@ export function MapView({
           ))}
         </>
       )}
-      {characterPositionPins?.map((pin) =>
-        pin.characterPosition.id === editingPositionId && draftPosition && onDraftPositionChange ? (
+      {characterPositionPins?.map((pin) => {
+        const color = pin.color ?? DEFAULT_CHARACTER_COLOR;
+        const icon = pin.characterPosition.dead ? buildSkullIcon() : buildPinIcon(pin.label, color);
+
+        return pin.characterPosition.id === editingPositionId &&
+          draftPosition &&
+          onDraftPositionChange ? (
           <Marker
             key={pin.characterPosition.id}
             position={[draftPosition.lat, draftPosition.lng]}
-            icon={buildPinIcon(pin.label, pin.color ?? DEFAULT_CHARACTER_COLOR)}
+            icon={icon}
             draggable
             eventHandlers={{
               dragend: (event) => {
@@ -183,13 +188,13 @@ export function MapView({
           <Marker
             key={pin.characterPosition.id}
             position={[pin.characterPosition.position.lat, pin.characterPosition.position.lng]}
-            icon={buildPinIcon(pin.label, pin.color ?? DEFAULT_CHARACTER_COLOR)}
+            icon={icon}
             eventHandlers={{
               click: () => onCharacterPositionPinClick?.(pin),
             }}
           />
-        ),
-      )}
+        );
+      })}
       {kind === 'quadkey' ? (
         <QuadkeyTileLayer
           key={activeTileUrl}

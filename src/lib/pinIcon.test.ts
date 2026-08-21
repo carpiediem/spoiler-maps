@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPinIcon } from './pinIcon';
+import { buildPinIcon, buildSkullIcon } from './pinIcon';
 
 function decodeSvg(dataUrl: string): string {
   const [, encoded] = dataUrl.split(',', 2);
@@ -45,5 +45,34 @@ describe('buildPinIcon', () => {
     const pin = buildPinIcon('1', '#1976d2');
     expect(pin.options.iconSize).toEqual([24, 37]);
     expect(pin.options.iconAnchor).toEqual([12, 37]);
+  });
+});
+
+describe('buildSkullIcon', () => {
+  it('draws a skull from shapes, not a text glyph', () => {
+    const svg = decodeSvg(buildSkullIcon().options.iconUrl as string);
+
+    expect(svg).toContain('<circle');
+    expect(svg).not.toContain('☠');
+    expect(svg).not.toContain('<text');
+    // No teardrop pin path.
+    expect(svg).not.toContain('<path d="M12 0C5.4 0');
+  });
+
+  it('fills the skull white with black lines, regardless of character color', () => {
+    const svg = decodeSvg(buildSkullIcon().options.iconUrl as string);
+
+    expect(svg).toContain('fill="#ffffff"');
+    expect(svg).toContain('stroke="#000000"');
+  });
+
+  it('is the same width as a numbered pin, sized and anchored at its own center', () => {
+    const skull = buildSkullIcon();
+    const pin = buildPinIcon('1', '#1976d2');
+
+    // Both icons are 24px wide, so a skull and a pin line up on the map.
+    expect(skull.options.iconSize).toEqual([24, 24]);
+    expect(pin.options.iconSize).toEqual([24, 37]);
+    expect(skull.options.iconAnchor).toEqual([12, 12]);
   });
 });

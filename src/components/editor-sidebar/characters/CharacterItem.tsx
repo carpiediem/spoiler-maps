@@ -218,6 +218,7 @@ export function CharacterItem({
             fullWidth
             sx={{
               '& .MuiInputBase-input': {
+                mx: 1,
                 p: 0.5,
                 pt: 1,
                 height: 24,

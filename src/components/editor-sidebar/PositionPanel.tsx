@@ -1,6 +1,7 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import RouteIcon from '@mui/icons-material/Route';
 import {
+  Box,
   Button,
   Checkbox,
   FormControl,
@@ -178,7 +179,7 @@ export function PositionPanel({
   ]);
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2} sx={{ flexGrow: 1 }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
         <IconButton size="small" aria-label="Back to sidebar" onClick={onBack}>
           <ArrowBackIcon fontSize="small" />
@@ -239,6 +240,11 @@ export function PositionPanel({
         onChange={(event) => setNote(event.target.value)}
       />
 
+      <FormControlLabel
+        control={<Checkbox checked={dead} onChange={(event) => setDead(event.target.checked)} />}
+        label="Dead"
+      />
+
       {hasBooks && (
         <Stack spacing={1.5}>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -279,10 +285,25 @@ export function PositionPanel({
         </Stack>
       )}
 
-      <FormControlLabel
-        control={<Checkbox checked={dead} onChange={(event) => setDead(event.target.checked)} />}
-        label="Dead"
-      />
+      {/* !important beats Stack's own "& > * ~ *" margin-top rule, which
+          otherwise overrides a plain mt: 'auto' here. */}
+      {(hasBooks || hasSeasons) && (
+        <Box
+          sx={{
+            mt: 'auto !important',
+            backgroundColor: 'action.hover',
+            borderRadius: 1,
+            p: 1.5,
+            lineHeight: 1,
+          }}
+        >
+          <Typography variant="caption" color="text.secondary">
+            Start is the first chapter or episode where we know they’re in this location; End is the
+            last one that still has them here. A brief visit they leave again belongs on this
+            position’s tail, not as a separate Route entry.
+          </Typography>
+        </Box>
+      )}
     </Stack>
   );
 }

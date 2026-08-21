@@ -302,7 +302,16 @@ export function EditorSidebar({
         </Box>
 
         <Box
-          sx={{ width: '50%', flexShrink: 0, boxSizing: 'border-box', p: 2, ...SIDEBAR_HEIGHT_SX }}
+          sx={{
+            width: '50%',
+            flexShrink: 0,
+            boxSizing: 'border-box',
+            p: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            height: SIDEBAR_HEIGHT_SX.maxHeight,
+            overflowY: SIDEBAR_HEIGHT_SX.overflowY,
+          }}
         >
           {activePosition && selectedStoryId !== null && (
             <PositionPanel
