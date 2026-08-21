@@ -59,6 +59,70 @@ function insert(db: SqlDatabase, sql: string, params: unknown[]): number {
   return result[0].values[0][0] as number;
 }
 
+/**
+ * Config for a table whose rows map 1:1 onto {id, ...fields} with a single
+ * parent foreign key, covering the create/list-for-parent/update/delete
+ * shape shared by most entities in this file. `columns` and `toParams` must
+ * agree on order: `toParams(input)[i]` is bound to `columns[i]`.
+ */
+interface CrudConfig<T, TNew> {
+  table: string;
+  columns: string[];
+  toParams: (input: TNew) => unknown[];
+  fromRow: (row: Row) => T;
+  parentColumn: string;
+  orderBy: string;
+  /** Runs before an insert/update is written, e.g. to validate input against other rows. */
+  beforeWrite?: (db: SqlDatabase, input: TNew) => void;
+  /** Builds the created record from the input and its new id. Defaults to `{ id, ...input }`. */
+  buildResult?: (id: number, input: TNew) => T;
+}
+
+function makeCrud<T, TNew>(config: CrudConfig<T, TNew>) {
+  const { table, columns, toParams, fromRow, parentColumn, orderBy, beforeWrite, buildResult } =
+    config;
+  const columnList = columns.join(', ');
+  const placeholders = columns.map(() => '?').join(', ');
+  const setClause = columns.map((column) => `${column} = ?`).join(', ');
+
+  return {
+    async create(input: TNew): Promise<T> {
+      const db = await getDatabase();
+      beforeWrite?.(db, input);
+      const id = insert(
+        db,
+        `INSERT INTO ${table} (${columnList}) VALUES (${placeholders});`,
+        toParams(input),
+      );
+      await persist();
+      return buildResult ? buildResult(id, input) : ({ id, ...input } as T);
+    },
+
+    async listForParent(parentId: number): Promise<T[]> {
+      const db = await getDatabase();
+      return selectAll(
+        db,
+        `SELECT * FROM ${table} WHERE ${parentColumn} = ? ORDER BY ${orderBy};`,
+        fromRow,
+        [parentId],
+      );
+    },
+
+    async update(id: number, input: TNew): Promise<void> {
+      const db = await getDatabase();
+      beforeWrite?.(db, input);
+      db.run(`UPDATE ${table} SET ${setClause} WHERE id = ?;`, [...toParams(input), id] as never);
+      await persist();
+    },
+
+    async delete(id: number): Promise<void> {
+      const db = await getDatabase();
+      db.run(`DELETE FROM ${table} WHERE id = ?;`, [id]);
+      await persist();
+    },
+  };
+}
+
 function rowToStory(row: Row): Story {
   return {
     id: row.id as number,
@@ -139,238 +203,103 @@ export async function deleteStory(id: number): Promise<void> {
   await persist();
 }
 
-function rowToBook(row: Row): Book {
-  return {
+const bookCrud = makeCrud<Book, NewBook>({
+  table: 'books',
+  columns: ['story_id', 'name', 'author', 'url', 'sort_order'],
+  toParams: (input) => [input.storyId, input.name, input.author, input.url, input.sortOrder],
+  fromRow: (row) => ({
     id: row.id as number,
     storyId: row.story_id as number,
     name: row.name as string,
     author: row.author as string | null,
     url: row.url as string | null,
     sortOrder: row.sort_order as number,
-  };
-}
+  }),
+  parentColumn: 'story_id',
+  orderBy: 'sort_order',
+});
 
-export async function createBook(input: NewBook): Promise<Book> {
-  const db = await getDatabase();
-  const id = insert(
-    db,
-    'INSERT INTO books (story_id, name, author, url, sort_order) VALUES (?, ?, ?, ?, ?);',
-    [input.storyId, input.name, input.author, input.url, input.sortOrder],
-  );
-  await persist();
-  return { id, ...input };
-}
+export const createBook = bookCrud.create;
+export const listBooksForStory = bookCrud.listForParent;
+export const updateBook = bookCrud.update;
+export const deleteBook = bookCrud.delete;
 
-export async function listBooksForStory(storyId: number): Promise<Book[]> {
-  const db = await getDatabase();
-  return selectAll(db, 'SELECT * FROM books WHERE story_id = ? ORDER BY sort_order;', rowToBook, [
-    storyId,
-  ]);
-}
-
-export async function updateBook(id: number, input: NewBook): Promise<void> {
-  const db = await getDatabase();
-  db.run(
-    'UPDATE books SET story_id = ?, name = ?, author = ?, url = ?, sort_order = ? WHERE id = ?;',
-    [input.storyId, input.name, input.author, input.url, input.sortOrder, id],
-  );
-  await persist();
-}
-
-export async function deleteBook(id: number): Promise<void> {
-  const db = await getDatabase();
-  db.run('DELETE FROM books WHERE id = ?;', [id]);
-  await persist();
-}
-
-function rowToChapter(row: Row): Chapter {
-  return {
+const chapterCrud = makeCrud<Chapter, NewChapter>({
+  table: 'chapters',
+  columns: ['book_id', 'name', 'url', 'sort_order'],
+  toParams: (input) => [input.bookId, input.name, input.url, input.sortOrder],
+  fromRow: (row) => ({
     id: row.id as number,
     bookId: row.book_id as number,
     name: row.name as string,
     url: row.url as string | null,
     sortOrder: row.sort_order as number,
-  };
-}
+  }),
+  parentColumn: 'book_id',
+  orderBy: 'sort_order',
+});
 
-export async function createChapter(input: NewChapter): Promise<Chapter> {
-  const db = await getDatabase();
-  const id = insert(
-    db,
-    'INSERT INTO chapters (book_id, name, url, sort_order) VALUES (?, ?, ?, ?);',
-    [input.bookId, input.name, input.url, input.sortOrder],
-  );
-  await persist();
-  return { id, ...input };
-}
+export const createChapter = chapterCrud.create;
+export const listChaptersForBook = chapterCrud.listForParent;
+export const updateChapter = chapterCrud.update;
+export const deleteChapter = chapterCrud.delete;
 
-export async function listChaptersForBook(bookId: number): Promise<Chapter[]> {
-  const db = await getDatabase();
-  return selectAll(
-    db,
-    'SELECT * FROM chapters WHERE book_id = ? ORDER BY sort_order;',
-    rowToChapter,
-    [bookId],
-  );
-}
-
-export async function updateChapter(id: number, input: NewChapter): Promise<void> {
-  const db = await getDatabase();
-  db.run('UPDATE chapters SET book_id = ?, name = ?, url = ?, sort_order = ? WHERE id = ?;', [
-    input.bookId,
-    input.name,
-    input.url,
-    input.sortOrder,
-    id,
-  ]);
-  await persist();
-}
-
-export async function deleteChapter(id: number): Promise<void> {
-  const db = await getDatabase();
-  db.run('DELETE FROM chapters WHERE id = ?;', [id]);
-  await persist();
-}
-
-function rowToTvSeason(row: Row): TvSeason {
-  return {
+const tvSeasonCrud = makeCrud<TvSeason, NewTvSeason>({
+  table: 'tv_seasons',
+  columns: ['story_id', 'url', 'sort_order'],
+  toParams: (input) => [input.storyId, input.url, input.sortOrder],
+  fromRow: (row) => ({
     id: row.id as number,
     storyId: row.story_id as number,
     url: row.url as string | null,
     sortOrder: row.sort_order as number,
-  };
-}
+  }),
+  parentColumn: 'story_id',
+  orderBy: 'sort_order',
+});
 
-export async function createTvSeason(input: NewTvSeason): Promise<TvSeason> {
-  const db = await getDatabase();
-  const id = insert(db, 'INSERT INTO tv_seasons (story_id, url, sort_order) VALUES (?, ?, ?);', [
-    input.storyId,
-    input.url,
-    input.sortOrder,
-  ]);
-  await persist();
-  return { id, ...input };
-}
+export const createTvSeason = tvSeasonCrud.create;
+export const listTvSeasonsForStory = tvSeasonCrud.listForParent;
+export const updateTvSeason = tvSeasonCrud.update;
+export const deleteTvSeason = tvSeasonCrud.delete;
 
-export async function listTvSeasonsForStory(storyId: number): Promise<TvSeason[]> {
-  const db = await getDatabase();
-  return selectAll(
-    db,
-    'SELECT * FROM tv_seasons WHERE story_id = ? ORDER BY sort_order;',
-    rowToTvSeason,
-    [storyId],
-  );
-}
-
-export async function updateTvSeason(id: number, input: NewTvSeason): Promise<void> {
-  const db = await getDatabase();
-  db.run('UPDATE tv_seasons SET story_id = ?, url = ?, sort_order = ? WHERE id = ?;', [
-    input.storyId,
-    input.url,
-    input.sortOrder,
-    id,
-  ]);
-  await persist();
-}
-
-export async function deleteTvSeason(id: number): Promise<void> {
-  const db = await getDatabase();
-  db.run('DELETE FROM tv_seasons WHERE id = ?;', [id]);
-  await persist();
-}
-
-function rowToEpisode(row: Row): Episode {
-  return {
+const episodeCrud = makeCrud<Episode, NewEpisode>({
+  table: 'episodes',
+  columns: ['season_id', 'name', 'url', 'sort_order'],
+  toParams: (input) => [input.seasonId, input.name, input.url, input.sortOrder],
+  fromRow: (row) => ({
     id: row.id as number,
     seasonId: row.season_id as number,
     name: row.name as string,
     url: row.url as string | null,
     sortOrder: row.sort_order as number,
-  };
-}
+  }),
+  parentColumn: 'season_id',
+  orderBy: 'sort_order',
+});
 
-export async function createEpisode(input: NewEpisode): Promise<Episode> {
-  const db = await getDatabase();
-  const id = insert(
-    db,
-    'INSERT INTO episodes (season_id, name, url, sort_order) VALUES (?, ?, ?, ?);',
-    [input.seasonId, input.name, input.url, input.sortOrder],
-  );
-  await persist();
-  return { id, ...input };
-}
+export const createEpisode = episodeCrud.create;
+export const listEpisodesForSeason = episodeCrud.listForParent;
+export const updateEpisode = episodeCrud.update;
+export const deleteEpisode = episodeCrud.delete;
 
-export async function listEpisodesForSeason(seasonId: number): Promise<Episode[]> {
-  const db = await getDatabase();
-  return selectAll(
-    db,
-    'SELECT * FROM episodes WHERE season_id = ? ORDER BY sort_order;',
-    rowToEpisode,
-    [seasonId],
-  );
-}
-
-export async function updateEpisode(id: number, input: NewEpisode): Promise<void> {
-  const db = await getDatabase();
-  db.run('UPDATE episodes SET season_id = ?, name = ?, url = ?, sort_order = ? WHERE id = ?;', [
-    input.seasonId,
-    input.name,
-    input.url,
-    input.sortOrder,
-    id,
-  ]);
-  await persist();
-}
-
-export async function deleteEpisode(id: number): Promise<void> {
-  const db = await getDatabase();
-  db.run('DELETE FROM episodes WHERE id = ?;', [id]);
-  await persist();
-}
-
-function rowToMarkerSet(row: Row): MarkerSet {
-  return {
+const markerSetCrud = makeCrud<MarkerSet, NewMarkerSet>({
+  table: 'marker_sets',
+  columns: ['story_id', 'name'],
+  toParams: (input) => [input.storyId, input.name],
+  fromRow: (row) => ({
     id: row.id as number,
     storyId: row.story_id as number,
     name: row.name as string,
-  };
-}
+  }),
+  parentColumn: 'story_id',
+  orderBy: 'id',
+});
 
-export async function createMarkerSet(input: NewMarkerSet): Promise<MarkerSet> {
-  const db = await getDatabase();
-  const id = insert(db, 'INSERT INTO marker_sets (story_id, name) VALUES (?, ?);', [
-    input.storyId,
-    input.name,
-  ]);
-  await persist();
-  return { id, ...input };
-}
-
-export async function listMarkerSetsForStory(storyId: number): Promise<MarkerSet[]> {
-  const db = await getDatabase();
-  return selectAll(
-    db,
-    'SELECT * FROM marker_sets WHERE story_id = ? ORDER BY id;',
-    rowToMarkerSet,
-    [storyId],
-  );
-}
-
-export async function updateMarkerSet(id: number, input: NewMarkerSet): Promise<void> {
-  const db = await getDatabase();
-  db.run('UPDATE marker_sets SET story_id = ?, name = ? WHERE id = ?;', [
-    input.storyId,
-    input.name,
-    id,
-  ]);
-  await persist();
-}
-
-export async function deleteMarkerSet(id: number): Promise<void> {
-  const db = await getDatabase();
-  db.run('DELETE FROM marker_sets WHERE id = ?;', [id]);
-  await persist();
-}
+export const createMarkerSet = markerSetCrud.create;
+export const listMarkerSetsForStory = markerSetCrud.listForParent;
+export const updateMarkerSet = markerSetCrud.update;
+export const deleteMarkerSet = markerSetCrud.delete;
 
 /** A chapter's or episode's place within its story, for range-order comparisons. */
 interface StoryOrderKey {
@@ -478,8 +407,52 @@ function rowToPolygon(row: Row): LatLng[] | null {
   return column ? (JSON.parse(column) as LatLng[]) : null;
 }
 
-function rowToMarker(row: Row): Marker {
+function assertRanges(
+  db: SqlDatabase,
+  input: { chapterRange: ChapterRange | null; episodeRange: EpisodeRange | null },
+): void {
+  assertChapterRangeOrder(db, input.chapterRange);
+  assertEpisodeRangeOrder(db, input.episodeRange);
+}
+
+function withNormalizedRanges<
+  T extends { chapterRange: ChapterRange | null; episodeRange: EpisodeRange | null },
+>(id: number, input: Omit<T, 'id'>): T {
   return {
+    id,
+    ...input,
+    chapterRange: normalizeChapterRange(input.chapterRange),
+    episodeRange: normalizeEpisodeRange(input.episodeRange),
+  } as unknown as T;
+}
+
+const markerCrud = makeCrud<Marker, NewMarker>({
+  table: 'markers',
+  columns: [
+    'marker_set_id',
+    'label',
+    'icon',
+    'color',
+    'lat',
+    'lng',
+    'polygon',
+    'chapter_range_start_chapter_id',
+    'chapter_range_end_chapter_id',
+    'episode_range_start_episode_id',
+    'episode_range_end_episode_id',
+  ],
+  toParams: (input) => [
+    input.markerSetId,
+    input.label,
+    input.icon,
+    input.color,
+    input.position.lat,
+    input.position.lng,
+    polygonToColumn(input.polygon),
+    ...chapterRangeColumns(input.chapterRange),
+    ...episodeRangeColumns(input.episodeRange),
+  ],
+  fromRow: (row) => ({
     id: row.id as number,
     markerSetId: row.marker_set_id as number,
     label: row.label as string,
@@ -489,82 +462,30 @@ function rowToMarker(row: Row): Marker {
     polygon: rowToPolygon(row),
     chapterRange: rowToChapterRange(row),
     episodeRange: rowToEpisodeRange(row),
-  };
-}
+  }),
+  parentColumn: 'marker_set_id',
+  orderBy: 'id',
+  beforeWrite: assertRanges,
+  buildResult: withNormalizedRanges<Marker>,
+});
 
-export async function createMarker(input: NewMarker): Promise<Marker> {
-  const db = await getDatabase();
-  assertChapterRangeOrder(db, input.chapterRange);
-  assertEpisodeRangeOrder(db, input.episodeRange);
-  const id = insert(
-    db,
-    `INSERT INTO markers (
-       marker_set_id, label, icon, color, lat, lng, polygon,
-       chapter_range_start_chapter_id, chapter_range_end_chapter_id,
-       episode_range_start_episode_id, episode_range_end_episode_id
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-    [
-      input.markerSetId,
-      input.label,
-      input.icon,
-      input.color,
-      input.position.lat,
-      input.position.lng,
-      polygonToColumn(input.polygon),
-      ...chapterRangeColumns(input.chapterRange),
-      ...episodeRangeColumns(input.episodeRange),
-    ],
-  );
-  await persist();
-  return {
-    id,
-    ...input,
-    chapterRange: normalizeChapterRange(input.chapterRange),
-    episodeRange: normalizeEpisodeRange(input.episodeRange),
-  };
-}
+export const createMarker = markerCrud.create;
+export const listMarkersForMarkerSet = markerCrud.listForParent;
+export const updateMarker = markerCrud.update;
+export const deleteMarker = markerCrud.delete;
 
-export async function listMarkersForMarkerSet(markerSetId: number): Promise<Marker[]> {
-  const db = await getDatabase();
-  return selectAll(db, 'SELECT * FROM markers WHERE marker_set_id = ? ORDER BY id;', rowToMarker, [
-    markerSetId,
-  ]);
-}
-
-export async function updateMarker(id: number, input: NewMarker): Promise<void> {
-  const db = await getDatabase();
-  assertChapterRangeOrder(db, input.chapterRange);
-  assertEpisodeRangeOrder(db, input.episodeRange);
-  db.run(
-    `UPDATE markers
-     SET marker_set_id = ?, label = ?, icon = ?, color = ?, lat = ?, lng = ?, polygon = ?,
-         chapter_range_start_chapter_id = ?, chapter_range_end_chapter_id = ?,
-         episode_range_start_episode_id = ?, episode_range_end_episode_id = ?
-     WHERE id = ?;`,
-    [
-      input.markerSetId,
-      input.label,
-      input.icon,
-      input.color,
-      input.position.lat,
-      input.position.lng,
-      polygonToColumn(input.polygon),
-      ...chapterRangeColumns(input.chapterRange),
-      ...episodeRangeColumns(input.episodeRange),
-      id,
-    ],
-  );
-  await persist();
-}
-
-export async function deleteMarker(id: number): Promise<void> {
-  const db = await getDatabase();
-  db.run('DELETE FROM markers WHERE id = ?;', [id]);
-  await persist();
-}
-
-function rowToCharacter(row: Row): Character {
-  return {
+const characterCrud = makeCrud<Character, NewCharacter>({
+  table: 'characters',
+  columns: ['story_id', 'name', '"group"', 'icon', 'color', 'sort_order'],
+  toParams: (input) => [
+    input.storyId,
+    input.name,
+    input.group,
+    input.icon,
+    input.color,
+    input.sortOrder,
+  ],
+  fromRow: (row) => ({
     id: row.id as number,
     storyId: row.story_id as number,
     name: row.name as string,
@@ -572,44 +493,15 @@ function rowToCharacter(row: Row): Character {
     icon: row.icon as string | null,
     color: row.color as string | null,
     sortOrder: row.sort_order as number,
-  };
-}
+  }),
+  parentColumn: 'story_id',
+  orderBy: 'sort_order',
+});
 
-export async function createCharacter(input: NewCharacter): Promise<Character> {
-  const db = await getDatabase();
-  const id = insert(
-    db,
-    'INSERT INTO characters (story_id, name, "group", icon, color, sort_order) VALUES (?, ?, ?, ?, ?, ?);',
-    [input.storyId, input.name, input.group, input.icon, input.color, input.sortOrder],
-  );
-  await persist();
-  return { id, ...input };
-}
-
-export async function listCharactersForStory(storyId: number): Promise<Character[]> {
-  const db = await getDatabase();
-  return selectAll(
-    db,
-    'SELECT * FROM characters WHERE story_id = ? ORDER BY sort_order;',
-    rowToCharacter,
-    [storyId],
-  );
-}
-
-export async function updateCharacter(id: number, input: NewCharacter): Promise<void> {
-  const db = await getDatabase();
-  db.run(
-    'UPDATE characters SET story_id = ?, name = ?, "group" = ?, icon = ?, color = ?, sort_order = ? WHERE id = ?;',
-    [input.storyId, input.name, input.group, input.icon, input.color, input.sortOrder, id],
-  );
-  await persist();
-}
-
-export async function deleteCharacter(id: number): Promise<void> {
-  const db = await getDatabase();
-  db.run('DELETE FROM characters WHERE id = ?;', [id]);
-  await persist();
-}
+export const createCharacter = characterCrud.create;
+export const listCharactersForStory = characterCrud.listForParent;
+export const updateCharacter = characterCrud.update;
+export const deleteCharacter = characterCrud.delete;
 
 function tailToColumn(tail: LatLng[] | null): string | null {
   return tail ? JSON.stringify(tail) : null;
@@ -620,8 +512,31 @@ function rowToTail(row: Row): LatLng[] | null {
   return column ? (JSON.parse(column) as LatLng[]) : null;
 }
 
-function rowToCharacterPosition(row: Row): CharacterPosition {
-  return {
+const characterPositionCrud = makeCrud<CharacterPosition, NewCharacterPosition>({
+  table: 'character_positions',
+  columns: [
+    'character_id',
+    'lat',
+    'lng',
+    'dead',
+    'note',
+    'tail',
+    'chapter_range_start_chapter_id',
+    'chapter_range_end_chapter_id',
+    'episode_range_start_episode_id',
+    'episode_range_end_episode_id',
+  ],
+  toParams: (input) => [
+    input.characterId,
+    input.position.lat,
+    input.position.lng,
+    input.dead ? 1 : 0,
+    input.note,
+    tailToColumn(input.tail),
+    ...chapterRangeColumns(input.chapterRange),
+    ...episodeRangeColumns(input.episodeRange),
+  ],
+  fromRow: (row) => ({
     id: row.id as number,
     characterId: row.character_id as number,
     position: { lat: row.lat as number, lng: row.lng as number },
@@ -630,84 +545,14 @@ function rowToCharacterPosition(row: Row): CharacterPosition {
     tail: rowToTail(row),
     chapterRange: rowToChapterRange(row),
     episodeRange: rowToEpisodeRange(row),
-  };
-}
+  }),
+  parentColumn: 'character_id',
+  orderBy: 'id',
+  beforeWrite: assertRanges,
+  buildResult: withNormalizedRanges<CharacterPosition>,
+});
 
-export async function createCharacterPosition(
-  input: NewCharacterPosition,
-): Promise<CharacterPosition> {
-  const db = await getDatabase();
-  assertChapterRangeOrder(db, input.chapterRange);
-  assertEpisodeRangeOrder(db, input.episodeRange);
-  const id = insert(
-    db,
-    `INSERT INTO character_positions (
-       character_id, lat, lng, dead, note, tail,
-       chapter_range_start_chapter_id, chapter_range_end_chapter_id,
-       episode_range_start_episode_id, episode_range_end_episode_id
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-    [
-      input.characterId,
-      input.position.lat,
-      input.position.lng,
-      input.dead ? 1 : 0,
-      input.note,
-      tailToColumn(input.tail),
-      ...chapterRangeColumns(input.chapterRange),
-      ...episodeRangeColumns(input.episodeRange),
-    ],
-  );
-  await persist();
-  return {
-    id,
-    ...input,
-    chapterRange: normalizeChapterRange(input.chapterRange),
-    episodeRange: normalizeEpisodeRange(input.episodeRange),
-  };
-}
-
-export async function listCharacterPositionsForCharacter(
-  characterId: number,
-): Promise<CharacterPosition[]> {
-  const db = await getDatabase();
-  return selectAll(
-    db,
-    'SELECT * FROM character_positions WHERE character_id = ? ORDER BY id;',
-    rowToCharacterPosition,
-    [characterId],
-  );
-}
-
-export async function updateCharacterPosition(
-  id: number,
-  input: NewCharacterPosition,
-): Promise<void> {
-  const db = await getDatabase();
-  assertChapterRangeOrder(db, input.chapterRange);
-  assertEpisodeRangeOrder(db, input.episodeRange);
-  db.run(
-    `UPDATE character_positions
-     SET character_id = ?, lat = ?, lng = ?, dead = ?, note = ?, tail = ?,
-         chapter_range_start_chapter_id = ?, chapter_range_end_chapter_id = ?,
-         episode_range_start_episode_id = ?, episode_range_end_episode_id = ?
-     WHERE id = ?;`,
-    [
-      input.characterId,
-      input.position.lat,
-      input.position.lng,
-      input.dead ? 1 : 0,
-      input.note,
-      tailToColumn(input.tail),
-      ...chapterRangeColumns(input.chapterRange),
-      ...episodeRangeColumns(input.episodeRange),
-      id,
-    ],
-  );
-  await persist();
-}
-
-export async function deleteCharacterPosition(id: number): Promise<void> {
-  const db = await getDatabase();
-  db.run('DELETE FROM character_positions WHERE id = ?;', [id]);
-  await persist();
-}
+export const createCharacterPosition = characterPositionCrud.create;
+export const listCharacterPositionsForCharacter = characterPositionCrud.listForParent;
+export const updateCharacterPosition = characterPositionCrud.update;
+export const deleteCharacterPosition = characterPositionCrud.delete;
