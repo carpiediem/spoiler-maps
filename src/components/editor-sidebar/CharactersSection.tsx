@@ -1,13 +1,6 @@
 import AddIcon from '@mui/icons-material/Add';
 import { Button, Stack, Typography } from '@mui/material';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type DragEvent,
-  type SyntheticEvent,
-} from 'react';
+import { useCallback, useEffect, useState, type DragEvent } from 'react';
 import {
   createCharacter,
   deleteCharacter,
@@ -20,6 +13,7 @@ import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
 import { CharacterItem } from './characters/CharacterItem';
+import { useExpandableEntityList } from './useExpandableEntityList';
 
 interface CharactersSectionProps {
   storyId: number;
@@ -53,14 +47,11 @@ export function CharactersSection({
   onVisiblePositionsChange,
   onVisibleTailsChange,
 }: CharactersSectionProps) {
-  const [characters, setCharacters] = useState<Character[] | null>(null);
-  const [expandedCharacterId, setExpandedCharacterId] = useState<number | null>(null);
   // A character stays visible on the map (last position + tails) once
   // toggled on, independent of — and in addition to — whichever character's
   // accordion happens to be expanded.
   const [visibleCharacterIds, setVisibleCharacterIds] = useState<Set<number>>(new Set());
   const [draggedCharacterId, setDraggedCharacterId] = useState<number | null>(null);
-  const appliedInitialIndexRef = useRef(false);
   // Keyed by character id, so map pins can be recomputed here — the single
   // place that already knows which character is expanded — instead of each
   // CharacterItem racing to report its own visibility.
@@ -68,43 +59,27 @@ export function CharactersSection({
     Record<number, CharacterPosition[]>
   >({});
 
-  useEffect(() => {
-    if (characters !== null) onCountChange?.(characters.length);
-  }, [characters, onCountChange]);
+  const load = useCallback((storyId: number) => listCharactersForStory(storyId), []);
+  const onReset = useCallback(() => {
+    setVisibleCharacterIds(new Set());
+    setPositionsByCharacterId({});
+  }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    function resetForNewStory() {
-      setCharacters(null);
-      setExpandedCharacterId(null);
-      setVisibleCharacterIds(new Set());
-      setPositionsByCharacterId({});
-      appliedInitialIndexRef.current = false;
-    }
-    resetForNewStory();
-
-    listCharactersForStory(storyId).then((loadedCharacters) => {
-      if (cancelled) return;
-      setCharacters(loadedCharacters);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [storyId]);
-
-  useEffect(() => {
-    function applyInitialExpandedIndex() {
-      if (characters === null || appliedInitialIndexRef.current) return;
-      appliedInitialIndexRef.current = true;
-      const targetCharacter = initialExpandedIndex
-        ? characters[initialExpandedIndex - 1]
-        : undefined;
-      if (targetCharacter) setExpandedCharacterId(targetCharacter.id);
-    }
-    applyInitialExpandedIndex();
-  }, [characters, initialExpandedIndex]);
+  const {
+    entities: characters,
+    setEntities,
+    expandedId: expandedCharacterId,
+    toggle,
+    addEntity,
+    updateEntity,
+    removeEntity,
+  } = useExpandableEntityList<Character>({
+    storyId,
+    initialExpandedIndex,
+    onCountChange,
+    load,
+    onReset,
+  });
 
   useEffect(() => {
     const pins: CharacterPositionPin[] = [];
@@ -199,14 +174,7 @@ export function CharactersSection({
       color: null,
       sortOrder: sortOrderAfter(characters!.map((existing) => existing.sortOrder)),
     });
-    setCharacters((previous) => [...previous!, character]);
-    setExpandedCharacterId(character.id);
-  }
-
-  function handleCharacterChange(updated: Character) {
-    setCharacters((previous) =>
-      previous!.map((character) => (character.id === updated.id ? updated : character)),
-    );
+    addEntity(character);
   }
 
   // Only reachable while characterId is the expanded character: the Delete
@@ -214,8 +182,7 @@ export function CharactersSection({
   // character's own AccordionDetails.
   async function handleDeleteCharacter(characterId: number) {
     await deleteCharacter(characterId);
-    setCharacters((previous) => previous!.filter((character) => character.id !== characterId));
-    setExpandedCharacterId(null);
+    removeEntity(characterId);
     setPositionsByCharacterId((previous) => {
       const { [characterId]: _removed, ...rest } = previous;
       return rest;
@@ -226,12 +193,6 @@ export function CharactersSection({
       next.delete(characterId);
       return next;
     });
-  }
-
-  function handleToggle(characterId: number) {
-    return (_event: SyntheticEvent, isExpanded: boolean) => {
-      setExpandedCharacterId(isExpanded ? characterId : null);
-    };
   }
 
   function handleToggleVisible(characterId: number) {
@@ -277,7 +238,7 @@ export function CharactersSection({
 
       const reordered = [...withoutDragged];
       reordered.splice(targetIndex, 0, updated);
-      setCharacters(reordered);
+      setEntities(reordered);
       await updateCharacter(updated.id, updated);
     };
   }
@@ -303,7 +264,7 @@ export function CharactersSection({
           key={character.id}
           character={character}
           expanded={expandedCharacterId === character.id}
-          onToggle={handleToggle(character.id)}
+          onToggle={toggle(character.id)}
           visible={visibleCharacterIds.has(character.id)}
           onToggleVisible={() => handleToggleVisible(character.id)}
           isDragging={draggedCharacterId === character.id}
@@ -311,7 +272,7 @@ export function CharactersSection({
           onDragEnd={() => setDraggedCharacterId(null)}
           onDragOver={handleDragOver}
           onDrop={handleDrop(character.id)}
-          onCharacterChange={handleCharacterChange}
+          onCharacterChange={updateEntity}
           onDelete={() => handleDeleteCharacter(character.id)}
           onAddPosition={(index) => onAddPosition(character.id, index, character.color)}
           onEditPosition={(position, index) =>
