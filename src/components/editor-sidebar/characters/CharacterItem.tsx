@@ -8,8 +8,10 @@ import {
   Avatar,
   Box,
   Button,
+  FormControl,
   IconButton,
   InputAdornment,
+  InputLabel,
   List,
   ListItemAvatar,
   ListItemButton,
@@ -215,50 +217,62 @@ export function CharacterItem({
               },
             }}
           />
-          <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-            {!!positions?.length && (
-              <List dense disablePadding>
-                {positions.map((position, positionIndex) => (
-                  <ListItemButton
-                    key={position.id}
-                    onClick={() => onEditPosition(position, positionIndex + 1)}
-                    sx={{ py: 0.5 }}
-                  >
-                    <ListItemAvatar sx={{ minWidth: 32 }}>
-                      <Avatar sx={{ width: 22, height: 22, fontSize: '0.75rem' }}>
-                        {positionIndex + 1}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        position.note ||
-                        `${position.position.lat.toFixed(4)}, ${position.position.lng.toFixed(4)}`
-                      }
-                      secondary={describePositionRange(
-                        position.chapterRange,
-                        position.episodeRange,
-                        chapterOptions,
-                        episodeOptions,
-                      )}
-                      slotProps={{ primary: { variant: 'body2' } }}
-                    />
-                  </ListItemButton>
-                ))}
-              </List>
-            )}
-            <Button
-              size="small"
-              startIcon={<AddIcon fontSize="small" />}
-              // Only reachable once positions have loaded: disabled below
-              // while it's still null.
-              onClick={() => onAddPosition(positions!.length + 1)}
-              disabled={positions === null}
-              fullWidth
-              sx={{ borderRadius: 0 }}
-            >
-              Position
-            </Button>
-          </Box>
+          <FormControl
+            size="small"
+            fullWidth
+            sx={{ border: 1, borderColor: 'divider', borderRadius: 1, mt: 1 }}
+          >
+            <InputLabel shrink sx={{ px: 0.5, ml: 0.5, backgroundColor: 'background.paper' }}>
+              Route
+            </InputLabel>
+            {/* Clips the list/button to the FormControl's rounded corners,
+                separately from the label above, which pokes above this box
+                and would otherwise get clipped along with them. */}
+            <Box sx={{ borderRadius: 1, overflow: 'hidden' }}>
+              {!!positions?.length && (
+                <List dense disablePadding>
+                  {positions.map((position, positionIndex) => (
+                    <ListItemButton
+                      key={position.id}
+                      onClick={() => onEditPosition(position, positionIndex + 1)}
+                      sx={{ py: 0.5 }}
+                    >
+                      <ListItemAvatar sx={{ minWidth: 32 }}>
+                        <Avatar sx={{ width: 22, height: 22, fontSize: '0.75rem' }}>
+                          {positionIndex + 1}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          position.note ||
+                          `${position.position.lat.toFixed(4)}, ${position.position.lng.toFixed(4)}`
+                        }
+                        secondary={describePositionRange(
+                          position.chapterRange,
+                          position.episodeRange,
+                          chapterOptions,
+                          episodeOptions,
+                        )}
+                        slotProps={{ primary: { variant: 'body2' } }}
+                      />
+                    </ListItemButton>
+                  ))}
+                </List>
+              )}
+              <Button
+                size="small"
+                startIcon={<AddIcon fontSize="small" />}
+                // Only reachable once positions have loaded: disabled below
+                // while it's still null.
+                onClick={() => onAddPosition(positions!.length + 1)}
+                disabled={positions === null}
+                fullWidth
+                sx={{ borderRadius: 0 }}
+              >
+                Position
+              </Button>
+            </Box>
+          </FormControl>
           <Button size="small" color="error" onClick={() => setIsDeleteConfirmOpen(true)} fullWidth>
             Delete Character
           </Button>
