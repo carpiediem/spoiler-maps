@@ -269,10 +269,10 @@ describe('PositionPanel', () => {
     await user.click(screen.getByLabelText(/^start episode$/i));
 
     expect(
-      await screen.findByRole('option', { name: '1. Season 1: Winter Is Coming' }),
+      await screen.findByRole('option', { name: '1. S01E01: Winter Is Coming' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('option', { name: '2. Season 2: The North Remembers' }),
+      screen.getByRole('option', { name: '2. S02E01: The North Remembers' }),
     ).toBeInTheDocument();
   });
 
@@ -331,7 +331,7 @@ describe('PositionPanel', () => {
     await user.click(await screen.findByLabelText(/^start episode$/i));
 
     expect(
-      await screen.findByRole('option', { name: '1. Season 1: Untitled Episode' }),
+      await screen.findByRole('option', { name: '1. S01E01: Untitled Episode' }),
     ).toBeInTheDocument();
   });
 
@@ -713,7 +713,7 @@ describe('PositionPanel', () => {
     expect(await screen.findByLabelText(/^start chapter$/i)).toHaveTextContent('1. AGOT: Prologue');
     expect(screen.getByLabelText(/^end chapter$/i)).toHaveTextContent('Open');
     expect(screen.getByLabelText(/^start episode$/i)).toHaveTextContent(
-      '1. Season 1: Winter Is Coming',
+      '1. S01E01: Winter Is Coming',
     );
   });
 

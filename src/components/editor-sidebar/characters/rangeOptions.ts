@@ -54,7 +54,12 @@ export function flattenChapterOptions(
   });
 }
 
-/** The episode equivalent of flattenChapterOptions, grouped by "Season N" instead of book name. */
+/** Zero-pads to (at least) 2 digits, e.g. for "S01E01"-style codes. */
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+/** The episode equivalent of flattenChapterOptions, grouped by an "SxxExx" code instead of book name. */
 export function flattenEpisodeOptions(
   seasons: TvSeason[],
   episodesBySeasonId: Record<number, Episode[]>,
@@ -63,12 +68,13 @@ export function flattenEpisodeOptions(
   // episodesBySeasonId is populated for every season id in `seasons` in the
   // same state update, so this is never actually undefined.
   return seasons.flatMap((season, seasonIndex) =>
-    episodesBySeasonId[season.id]!.map((episode) => {
+    episodesBySeasonId[season.id]!.map((episode, episodeIndex) => {
       overallIndex += 1;
+      const code = `S${pad2(seasonIndex + 1)}E${pad2(episodeIndex + 1)}`;
       return {
         id: episode.id,
         index: overallIndex,
-        label: `${overallIndex}. Season ${seasonIndex + 1}: ${episode.name || 'Untitled Episode'}`,
+        label: `${overallIndex}. ${code}: ${episode.name || 'Untitled Episode'}`,
       };
     }),
   );
