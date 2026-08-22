@@ -9,13 +9,18 @@ This app will help people build maps that summarize their favorite books or movi
 
 A story can be exported to (and imported from) a human-editable YAML file — see [docs/yaml-export-format.md](docs/yaml-export-format.md) for the schema.
 
+## Routes
+
+- `/edit/:storyId?` — the editor, working against the browser's local database. A bare `/edit` returns to whichever story you last had open; `/edit/new` always starts the create-new-story flow. `/` redirects here.
+- `/view/:storyId?` — the read-only, spoiler-safe viewer, for sharing a finished map. Pass `?d=<url>` to load a story from anywhere on the internet (the same YAML export format above — see [docs/yaml-export-format.md](docs/yaml-export-format.md)) instead of the local database; the URL must be reachable with CORS enabled (a GitHub Gist's raw URL works). `/view/:storyId` (no `?d=`) previews a locally-stored story the same way, without exporting it first.
+
 ## Inspiration
 
 Ten years ago, I adapted an existing map of The Song of Ice and Fire book series into [an interactive map](https://carpiediem.github.io/game-of-thrones-map/) that included controls to avoid spoiling the plot. As the Game of Thrones TV show gained popularity, my map got [quite a bit](https://lifehacker.com/get-your-game-of-thrones-fix-with-this-interactive-spo-1782986360/) of attention. I did my best to update the map to match subsequent series of the show, but the original code was quite brittle and each change meant editing lots of JSON data by hand. Since then, I've found myself wanting to make similar maps for other stories, so I finally got around to building a tool that would make it easier.
 
 ## Tech Stack
 
-- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [React Router](https://reactrouter.com/)
 - [Vite](https://vitejs.dev/) for dev server and builds
 - [Leaflet](https://leafletjs.com/) / [react-leaflet](https://react-leaflet.js.org/) for the map
 - [sql.js](https://sql.js.org/) for in-browser SQLite persistence, backed by IndexedDB
