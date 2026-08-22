@@ -104,6 +104,34 @@ describe('buildViewPinsAndTails', () => {
     ]);
   });
 
+  it('draws a straight tail to the preceding position even when a position has no tail of its own', () => {
+    const document = minimalDocument({
+      characters: [
+        {
+          name: 'Jon Snow',
+          positions: [
+            { lat: 1, lng: 1 },
+            { lat: 2, lng: 2 },
+          ],
+        },
+      ],
+    });
+
+    const { tails } = buildViewPinsAndTails(document, new Set([0]), true, 'book', 1);
+
+    expect(tails).toEqual([
+      {
+        characterId: 0,
+        points: [
+          { lat: 2, lng: 2 },
+          { lat: 1, lng: 1 },
+        ],
+        color: null,
+        opacity: 1,
+      },
+    ]);
+  });
+
   it('produces nothing for a checked character whose positions have not been reached yet', () => {
     const document = minimalDocument({
       characters: [

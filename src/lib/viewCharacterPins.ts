@@ -1,7 +1,7 @@
 import type { CharacterPosition } from '../db';
 import { characterInitials } from './characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from './characterPositionPins';
-import { buildTailPoints } from './tailConnection';
+import { buildTailPoints, hasTailToDraw } from './tailConnection';
 import { isPositionVisible } from './viewTimeline';
 import type { TimelineMode } from '../components/MapTimelineControl';
 import type { StoryDocument, StoryDocumentPosition } from './storyDocument';
@@ -72,13 +72,14 @@ export function buildViewPinsAndTails(
         style: isLast ? 'pin' : 'dot',
       });
 
-      if (showFullPath && position.tail && position.tail.length > 0) {
-        const precedingPosition = character.positions[positionIndex - 1];
+      const precedingPosition = character.positions[positionIndex - 1];
+      const precedingLatLng = precedingPosition && toLatLngPosition(precedingPosition);
+      if (showFullPath && hasTailToDraw(position, precedingLatLng)) {
         tails.push({
           characterId: characterIndex,
           points: buildTailPoints(
             { position: { lat: position.lat, lng: position.lng }, tail: position.tail },
-            precedingPosition && toLatLngPosition(precedingPosition),
+            precedingLatLng,
           ),
           color,
           opacity: 1,
