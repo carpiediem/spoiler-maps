@@ -73,6 +73,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     render(
       <CharactersSection
@@ -100,6 +101,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     });
     await createCharacter({
       storyId,
@@ -108,6 +110,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 2,
+      url: null,
     });
     const onCountChange = vi.fn();
     render(
@@ -158,6 +161,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 3,
+      url: null,
     });
     const user = userEvent.setup();
     render(
@@ -193,6 +197,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 4,
+      url: null,
     });
     await createCharacter({
       storyId,
@@ -201,6 +206,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 5,
+      url: null,
     });
     render(
       <CharactersSection
@@ -238,6 +244,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 6,
+      url: null,
     });
     render(
       <CharactersSection
@@ -267,6 +274,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 7,
+      url: null,
     });
     const user = userEvent.setup();
     render(
@@ -300,6 +308,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 8,
+      url: null,
     });
     await createCharacter({
       storyId,
@@ -308,6 +317,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 9,
+      url: null,
     });
     const user = userEvent.setup();
     render(
@@ -346,6 +356,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 10,
+      url: null,
     });
     await createCharacter({
       storyId,
@@ -354,6 +365,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 11,
+      url: null,
     });
     const user = userEvent.setup();
     render(
@@ -388,6 +400,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     await createCharacter({
       storyId,
@@ -396,6 +409,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     });
     await createCharacter({
       storyId,
@@ -404,6 +418,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 2,
+      url: null,
     });
     render(
       <CharactersSection
@@ -446,6 +461,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     render(
       <CharactersSection
@@ -480,6 +496,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     await createCharacter({
       storyId,
@@ -488,6 +505,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     });
     render(
       <CharactersSection
@@ -529,6 +547,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     await createCharacter({
       storyId,
@@ -537,6 +556,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     });
     render(
       <CharactersSection
@@ -575,6 +595,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     await createCharacter({
       storyId,
@@ -583,6 +604,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     });
     render(
       <CharactersSection
@@ -620,6 +642,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 12,
+      url: null,
     });
     const { unmount } = render(
       <CharactersSection
@@ -649,6 +672,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: '#ff0000',
       sortOrder: 13,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -715,6 +739,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: '#ff0000',
       sortOrder: 0,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -786,6 +811,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: '#ff0000',
       sortOrder: 0,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -847,6 +873,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 14,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -891,6 +918,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 14,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -966,6 +994,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 15,
+      url: null,
     });
     const daenerys = await createCharacter({
       storyId,
@@ -974,6 +1003,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 16,
+      url: null,
     });
     await createCharacterPosition({
       characterId: jon.id,
@@ -1050,6 +1080,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: '#ff0000',
       sortOrder: 17,
+      url: null,
     });
     const firstPosition = await createCharacterPosition({
       characterId: jon.id,
@@ -1147,6 +1178,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 18,
+      url: null,
     });
     await createCharacterPosition({
       characterId: jon.id,
@@ -1192,6 +1224,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 19,
+      url: null,
     });
     const onVisiblePositionsChange = vi.fn();
     const user = userEvent.setup();
@@ -1227,6 +1260,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: null,
       sortOrder: 20,
+      url: null,
     });
     const position = await createCharacterPosition({
       characterId: character.id,
@@ -1282,6 +1316,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: '#ff0000',
       sortOrder: 21,
+      url: null,
     });
     const reachedPosition = await createCharacterPosition({
       characterId: character.id,
@@ -1361,6 +1396,7 @@ describe('CharactersSection', () => {
       icon: null,
       color: '#ff0000',
       sortOrder: 22,
+      url: null,
     });
     const reachedPosition = await createCharacterPosition({
       characterId: character.id,

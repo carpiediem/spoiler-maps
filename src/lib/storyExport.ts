@@ -130,6 +130,7 @@ export async function buildStoryDocument(storyId: number): Promise<StoryDocument
         ...(character.group ? { group: character.group } : {}),
         ...(character.icon ? { icon: character.icon } : {}),
         ...(character.color ? { color: character.color } : {}),
+        ...(character.url ? { url: character.url } : {}),
         positions: positionDocs,
       };
     }),

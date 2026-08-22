@@ -410,6 +410,7 @@ describe('round trip', () => {
       icon: null,
       color: '#ff0000',
       sortOrder: 0,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,

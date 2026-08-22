@@ -11,7 +11,6 @@ import { parseStoryDocument } from '../lib/storyImport';
 import type { StoryDocument } from '../lib/storyDocument';
 import { buildDocumentChapterOptions, buildDocumentEpisodeOptions } from '../lib/viewTimeline';
 import { buildViewPinsAndTails } from '../lib/viewCharacterPins';
-import { isWelcomeDismissed, setWelcomeDismissed } from '../lib/welcomeDismissed';
 import './EditScreen.css';
 
 type LoadState =
@@ -82,7 +81,7 @@ export function ViewScreen() {
   const [showFullPath, setShowFullPath] = useState(false);
   const [timelineMode, setTimelineMode] = useState<TimelineMode>('book');
   const [timelineIndex, setTimelineIndex] = useState(1);
-  const [isWelcomeOpen, setIsWelcomeOpen] = useState(() => !isWelcomeDismissed());
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);
 
   const document = loadState.status === 'ready' ? loadState.document : null;
 
@@ -107,7 +106,6 @@ export function ViewScreen() {
   }, [document, checkedIndices, showFullPath, timelineMode, timelineIndex]);
 
   function handleCloseWelcome() {
-    setWelcomeDismissed();
     setIsWelcomeOpen(false);
   }
 

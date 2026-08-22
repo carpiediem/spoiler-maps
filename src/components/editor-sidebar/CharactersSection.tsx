@@ -215,6 +215,7 @@ export function CharactersSection({
       group: null,
       icon: null,
       color: null,
+      url: null,
       sortOrder: sortOrderAfter(characters!.map((existing) => existing.sortOrder)),
     });
     addEntity(character);

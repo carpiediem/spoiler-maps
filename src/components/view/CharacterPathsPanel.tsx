@@ -1,12 +1,13 @@
-import RouteIcon from '@mui/icons-material/Route';
+import RoomOutlinedIcon from '@mui/icons-material/RoomOutlined';
 import RouteOutlinedIcon from '@mui/icons-material/RouteOutlined';
 import {
-  Box,
+  Avatar,
   Checkbox,
   IconButton,
+  Link,
   List,
   ListItem,
-  ListItemIcon,
+  ListItemAvatar,
   ListItemText,
   Paper,
   Stack,
@@ -88,7 +89,11 @@ export function CharacterPathsPanel({
             aria-label={showFullPath ? 'Show full path' : 'Current locations only'}
             onClick={() => onShowFullPathChange(!showFullPath)}
           >
-            {showFullPath ? <RouteIcon fontSize="small" /> : <RouteOutlinedIcon fontSize="small" />}
+            {showFullPath ? (
+              <RoomOutlinedIcon fontSize="small" />
+            ) : (
+              <RouteOutlinedIcon fontSize="small" />
+            )}
           </IconButton>
         </Tooltip>
       </Stack>
@@ -99,48 +104,44 @@ export function CharacterPathsPanel({
         </Typography>
       ) : (
         <List dense disablePadding>
-          {characters.map((character, index) => (
-            <ListItem key={index} disablePadding>
-              <Checkbox
-                checked={checkedIndices.has(index)}
-                onChange={() => handleToggleOne(index)}
-                size="small"
-                slotProps={{ input: { 'aria-label': character.name || 'Unnamed Character' } }}
-              />
-              <ListItemIcon sx={{ minWidth: 0, mr: 1 }}>
-                {character.icon ? (
-                  <Box
-                    component="img"
-                    src={character.icon}
-                    alt=""
+          {characters.map((character, index) => {
+            const name = character.name || 'Unnamed Character';
+            return (
+              <ListItem key={index} disablePadding>
+                <Checkbox
+                  checked={checkedIndices.has(index)}
+                  onChange={() => handleToggleOne(index)}
+                  size="small"
+                  slotProps={{ input: { 'aria-label': name } }}
+                />
+                <ListItemAvatar sx={{ minWidth: 0, mr: 1 }}>
+                  <Avatar
+                    src={character.icon ?? undefined}
+                    alt={name}
                     sx={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      objectFit: 'cover',
+                      width: 24,
+                      height: 24,
+                      bgcolor: character.color ?? 'grey.400',
                       border: 1,
                       borderColor: 'divider',
                     }}
                   />
-                ) : (
-                  <Box
-                    sx={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: '50%',
-                      backgroundColor: character.color ?? 'grey.400',
-                      border: 1,
-                      borderColor: 'divider',
-                    }}
-                  />
-                )}
-              </ListItemIcon>
-              <ListItemText
-                primary={character.name || 'Unnamed Character'}
-                slotProps={{ primary: { noWrap: true } }}
-              />
-            </ListItem>
-          ))}
+                </ListItemAvatar>
+                <ListItemText
+                  primary={
+                    character.url ? (
+                      <Link href={character.url} target="_blank" rel="noopener noreferrer">
+                        {name}
+                      </Link>
+                    ) : (
+                      name
+                    )
+                  }
+                  slotProps={{ primary: { noWrap: true } }}
+                />
+              </ListItem>
+            );
+          })}
         </List>
       )}
     </Paper>

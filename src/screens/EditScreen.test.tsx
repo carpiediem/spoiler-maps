@@ -235,6 +235,7 @@ describe('App', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -306,6 +307,7 @@ describe('App', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     });
     // The story's own initial center is, by definition, within its initial
     // view.
@@ -481,6 +483,7 @@ describe('App', () => {
         </MemoryRouter>,
       );
 
+      await user.click(await screen.findByRole('button', { name: /a song of ice and fire/i }));
       const exportButton = await screen.findByRole('button', { name: /export as yaml/i });
       await user.click(exportButton);
 
@@ -515,6 +518,7 @@ describe('App', () => {
         </MemoryRouter>,
       );
 
+      await user.click(await screen.findByRole('button', { name: '!!!' }));
       const exportButton = await screen.findByRole('button', { name: /export as yaml/i });
       await user.click(exportButton);
 

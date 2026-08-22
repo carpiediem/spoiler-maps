@@ -195,6 +195,7 @@ describe('buildStoryDocument', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -228,6 +229,7 @@ describe('buildStoryDocument', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -261,6 +263,7 @@ describe('buildStoryDocument', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -286,6 +289,7 @@ describe('buildStoryDocument', () => {
       icon: null,
       color: '#ff0000',
       sortOrder: 0,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -339,6 +343,7 @@ describe('buildStoryDocument', () => {
       icon: 'https://example.com/jon.png',
       color: null,
       sortOrder: 0,
+      url: 'https://awoiaf.westeros.org/index.php/Jon_Snow',
     });
     await createCharacterPosition({
       characterId: character.id,
@@ -354,6 +359,7 @@ describe('buildStoryDocument', () => {
 
     expect(document.television[0]!.url).toBe('https://example.com/season1');
     expect(document.characters[0]!.icon).toBe('https://example.com/jon.png');
+    expect(document.characters[0]!.url).toBe('https://awoiaf.westeros.org/index.php/Jon_Snow');
     expect(document.characters[0]!.positions[0]!.episodes).toEqual([0, 0]);
   });
 
@@ -373,6 +379,7 @@ describe('buildStoryDocument', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
