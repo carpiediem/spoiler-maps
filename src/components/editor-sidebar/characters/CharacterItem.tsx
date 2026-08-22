@@ -97,7 +97,7 @@ export function CharacterItem({
     onPositionsChange(character.id, positions);
   }, [character.id, positions, onPositionsChange]);
 
-  function handleFieldChange(field: 'name' | 'group' | 'icon' | 'color', value: string) {
+  function handleFieldChange(field: 'name' | 'group' | 'icon' | 'color' | 'url', value: string) {
     onCharacterChange({
       ...character,
       [field]: field === 'name' ? value : value || null,
@@ -112,6 +112,7 @@ export function CharacterItem({
       icon: character.icon,
       color: character.color,
       sortOrder: character.sortOrder,
+      url: character.url,
     });
   }
 
@@ -273,6 +274,33 @@ export function CharacterItem({
                       size="small"
                       aria-label="Open Icon URL"
                       href={character.icon}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      edge="end"
+                    >
+                      <OpenInNewIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          <TextField
+            label="URL"
+            size="small"
+            fullWidth
+            value={character.url ?? ''}
+            onChange={(event) => handleFieldChange('url', event.target.value)}
+            onBlur={handleBlur}
+            sx={{ '& .MuiInputBase-input': { fontSize: '0.8125rem' } }}
+            slotProps={{
+              input: {
+                endAdornment: character.url && (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      aria-label="Open URL"
+                      href={character.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       edge="end"

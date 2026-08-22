@@ -47,6 +47,8 @@ export interface StoryDocumentCharacter {
   group?: string;
   icon?: string;
   color?: string;
+  /** The character's own wiki page, if any — their name links here in the view screen. */
+  url?: string;
   positions: StoryDocumentPosition[];
 }
 

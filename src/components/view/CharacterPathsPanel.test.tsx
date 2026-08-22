@@ -44,6 +44,32 @@ describe('CharacterPathsPanel', () => {
     expect(screen.getByRole('checkbox', { name: 'Ghost' })).toBeInTheDocument();
   });
 
+  it('links the name to the character’s own URL when set, plain text otherwise', () => {
+    render(
+      <CharacterPathsPanel
+        characters={[
+          {
+            name: 'Jon Snow',
+            url: 'https://awoiaf.westeros.org/index.php/Jon_Snow',
+            positions: [],
+          },
+          { name: 'Ghost', positions: [] },
+        ]}
+        checkedIndices={new Set()}
+        onCheckedIndicesChange={vi.fn()}
+        showFullPath={false}
+        onShowFullPathChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('link', { name: 'Jon Snow' })).toHaveAttribute(
+      'href',
+      'https://awoiaf.westeros.org/index.php/Jon_Snow',
+    );
+    expect(screen.queryByRole('link', { name: 'Ghost' })).not.toBeInTheDocument();
+    expect(screen.getByText('Ghost')).toBeInTheDocument();
+  });
+
   it('lists every character, unchecked by default', () => {
     render(
       <CharacterPathsPanel

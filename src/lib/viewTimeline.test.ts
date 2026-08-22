@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { StoryDocument } from './storyDocument';
+import type { StoryDocument, StoryDocumentPosition } from './storyDocument';
 import {
   buildDocumentChapterOptions,
   buildDocumentEpisodeOptions,
@@ -81,7 +81,7 @@ describe('isPositionVisible', () => {
   });
 
   it('is visible once the 1-based current index passes the 0-based start boundary', () => {
-    const position = { lat: 0, lng: 0, chapters: [2, null] as const };
+    const position: StoryDocumentPosition = { lat: 0, lng: 0, chapters: [2, null] };
 
     expect(isPositionVisible(position, 'book', 2)).toBe(false);
     expect(isPositionVisible(position, 'book', 3)).toBe(true);
@@ -89,7 +89,12 @@ describe('isPositionVisible', () => {
   });
 
   it('checks the episode range only in tv mode', () => {
-    const position = { lat: 0, lng: 0, chapters: [5, null] as const, episodes: [0, null] as const };
+    const position: StoryDocumentPosition = {
+      lat: 0,
+      lng: 0,
+      chapters: [5, null],
+      episodes: [0, null],
+    };
 
     expect(isPositionVisible(position, 'book', 1)).toBe(false);
     expect(isPositionVisible(position, 'tv', 1)).toBe(true);

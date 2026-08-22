@@ -108,6 +108,8 @@ export interface Character {
   color: string | null;
   /** Fractional index, zero-based; see ordering.ts. Not a display number. */
   sortOrder: number;
+  /** The character's own wiki page, if any — their name links here in the view screen. */
+  url: string | null;
 }
 
 /**

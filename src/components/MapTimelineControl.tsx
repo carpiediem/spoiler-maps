@@ -88,20 +88,23 @@ export function MapTimelineControl({
   const currentLabel = currentOption?.label.replace(/^\d+\.\s*/, '') ?? null;
 
   return (
-    <Box sx={{ position: 'absolute', top: 10, left: 52, zIndex: 1000, width: 260 }}>
+    <Paper
+      elevation={2}
+      sx={{
+        position: 'absolute',
+        top: 10,
+        left: 52,
+        zIndex: 1000,
+        width: 260,
+        p: 0.5,
+      }}
+    >
       {heading && (
-        <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontWeight: 500 }}>
+        <Typography variant="caption" sx={{ display: 'block', px: 0.5, pt: 0.5, fontWeight: 500 }}>
           {heading}
         </Typography>
       )}
-      <Paper
-        elevation={2}
-        sx={{
-          p: 0.5,
-          display: 'flex',
-          gap: 0.5,
-        }}
-      >
+      <Box sx={{ display: 'flex', gap: 0.5 }}>
         <ToggleButtonGroup
           value={mode}
           exclusive
@@ -183,7 +186,7 @@ export function MapTimelineControl({
             </Tooltip>
           </Box>
         </Box>
-      </Paper>
-    </Box>
+      </Box>
+    </Paper>
   );
 }

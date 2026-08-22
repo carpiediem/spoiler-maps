@@ -1,5 +1,4 @@
-import DownloadIcon from '@mui/icons-material/Download';
-import { Box, Button, IconButton, Paper, Stack, Tooltip } from '@mui/material';
+import { Box, Button, Paper } from '@mui/material';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import type { CharacterPosition, LatLng, Story } from '../db';
@@ -244,23 +243,13 @@ export function EditorSidebar({
         <Box
           sx={{ width: '50%', flexShrink: 0, boxSizing: 'border-box', p: 2, ...SIDEBAR_HEIGHT_SX }}
         >
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <StorySelector
-                stories={stories}
-                selectedStoryId={selectedStoryId}
-                onSelect={onSelectStory}
-                onImportFile={onImportFile}
-              />
-            </Box>
-            {selectedStoryId !== null && (
-              <Tooltip title="Export as YAML" arrow>
-                <IconButton size="small" aria-label="Export as YAML" onClick={onExportStory}>
-                  <DownloadIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Stack>
+          <StorySelector
+            stories={stories}
+            selectedStoryId={selectedStoryId}
+            onSelect={onSelectStory}
+            onImportFile={onImportFile}
+            onExportStory={onExportStory}
+          />
 
           <Box component="form" onSubmit={handleSubmit(onValid)} sx={{ mt: 2 }}>
             <SidebarSection

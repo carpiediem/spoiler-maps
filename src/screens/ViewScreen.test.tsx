@@ -4,7 +4,6 @@ import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCharacter, createStory } from '../db';
 import { resetDatabaseForTests } from '../db/client';
-import { isWelcomeDismissed } from '../lib/welcomeDismissed';
 import { ViewScreen } from './ViewScreen';
 
 async function deleteStoredDatabase(): Promise<void> {
@@ -129,6 +128,7 @@ describe('ViewScreen', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     resetDatabaseForTests();
 
@@ -138,7 +138,6 @@ describe('ViewScreen', () => {
   });
 
   it('shows a pin once a character is checked, respecting the spoiler slider', async () => {
-    localStorage.setItem('spoiler-maps:view-welcome-dismissed', 'true');
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
@@ -147,6 +146,8 @@ describe('ViewScreen', () => {
     const { container } = renderAt('/view?d=https://example.com/story.yaml');
 
     await screen.findByText('Jon Snow');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
     expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
 
     await user.click(screen.getByRole('checkbox', { name: 'Jon Snow' }));
@@ -160,7 +161,6 @@ describe('ViewScreen', () => {
   });
 
   it('draws a tail once "Show full path" is toggled on', async () => {
-    localStorage.setItem('spoiler-maps:view-welcome-dismissed', 'true');
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
@@ -169,6 +169,8 @@ describe('ViewScreen', () => {
     const { container } = renderAt('/view?d=https://example.com/story.yaml');
 
     await screen.findByText('Jon Snow');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
     await user.click(screen.getByRole('checkbox', { name: 'Jon Snow' }));
     await waitFor(() => expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1));
 
@@ -183,7 +185,7 @@ describe('ViewScreen', () => {
     });
   });
 
-  it('shows the welcome dialog once, dismissing it for future visits', async () => {
+  it('shows the welcome dialog on open, and closes it on dismiss', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
@@ -192,15 +194,12 @@ describe('ViewScreen', () => {
     renderAt('/view?d=https://example.com/story.yaml');
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
-    expect(isWelcomeDismissed()).toBe(false);
 
     await user.click(screen.getByRole('button', { name: /got it/i }));
     await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
-
-    expect(isWelcomeDismissed()).toBe(true);
   });
 
-  it('does not show the welcome dialog again once already dismissed', async () => {
+  it('shows the welcome dialog again on a fresh visit, even after a prior dismissal', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
@@ -209,12 +208,10 @@ describe('ViewScreen', () => {
 
     renderAt('/view?d=https://example.com/story.yaml');
 
-    await screen.findByText('Jon Snow');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
   it('reloads when navigating from one data URL to another without unmounting', async () => {
-    localStorage.setItem('spoiler-maps:view-welcome-dismissed', 'true');
     const otherYaml = validYaml.replace('Jon Snow', 'Daenerys Targaryen');
     vi.stubGlobal(
       'fetch',
@@ -229,6 +226,8 @@ describe('ViewScreen', () => {
     renderAt('/view?d=https://example.com/story.yaml');
 
     await screen.findByText('Jon Snow');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
     await user.click(screen.getByRole('link', { name: /switch map/i }));
 
     expect(await screen.findByText('Daenerys Targaryen')).toBeInTheDocument();

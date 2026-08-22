@@ -8,6 +8,7 @@ import {
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createBook,
@@ -89,31 +90,33 @@ function DraggableEditorSidebar({
 
   return (
     <>
-      <EditorSidebar
-        stories={stories}
-        selectedStoryId={selectedStoryId}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={{ center: { lat: 39.8283, lng: -98.5795 }, zoom: 4 }}
-        draftPosition={draftPosition}
-        activePosition={activePosition}
-        onAddPosition={handleAddPosition}
-        onEditPosition={handleEditPosition}
-        onBackFromPosition={handleBackFromPosition}
-        positionsVersion={positionsVersion}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={stories}
+          selectedStoryId={selectedStoryId}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={{ center: { lat: 39.8283, lng: -98.5795 }, zoom: 4 }}
+          draftPosition={draftPosition}
+          activePosition={activePosition}
+          onAddPosition={handleAddPosition}
+          onEditPosition={handleEditPosition}
+          onBackFromPosition={handleBackFromPosition}
+          positionsVersion={positionsVersion}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>
       <button onClick={() => setDraftPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag</button>
     </>
   );
@@ -125,31 +128,33 @@ describe('EditorSidebar', () => {
     const user = userEvent.setup();
     const story = makeStory({ id: 1 });
     render(
-      <EditorSidebar
-        stories={[story]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={onSave}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={onSave}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
@@ -165,31 +170,33 @@ describe('EditorSidebar', () => {
 
   it('starts with Save disabled for a brand new map', () => {
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
@@ -199,31 +206,33 @@ describe('EditorSidebar', () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={onSave}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={onSave}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
@@ -248,31 +257,33 @@ describe('EditorSidebar', () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={onSave}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={onSave}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
@@ -292,31 +303,33 @@ describe('EditorSidebar', () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={onSave}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={onSave}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
@@ -332,31 +345,33 @@ describe('EditorSidebar', () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={onSave}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={onSave}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
@@ -374,31 +389,33 @@ describe('EditorSidebar', () => {
       tileLayerAttributionUrl: 'https://example.com',
     });
     render(
-      <EditorSidebar
-        stories={[story]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByLabelText(/map name/i)).toHaveValue(story.name);
@@ -412,31 +429,33 @@ describe('EditorSidebar', () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={onSave}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={onSave}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
@@ -462,31 +481,33 @@ describe('EditorSidebar', () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={onSave}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={onSave}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
@@ -504,31 +525,33 @@ describe('EditorSidebar', () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={onSave}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={onSave}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
@@ -553,31 +576,33 @@ describe('EditorSidebar', () => {
 
     try {
       render(
-        <EditorSidebar
-          stories={[]}
-          selectedStoryId={null}
-          onSelectStory={vi.fn()}
-          onSave={vi.fn()}
-          onDeleteStory={vi.fn()}
-          onCaptureMapPosition={() => null}
-          mapPosition={null}
-          draftPosition={null}
-          activePosition={null}
-          onAddPosition={vi.fn()}
-          onEditPosition={vi.fn()}
-          onBackFromPosition={vi.fn()}
-          positionsVersion={0}
-          onVisiblePositionsChange={vi.fn()}
-          onVisibleTailsChange={vi.fn()}
-          isDrawingTail={false}
-          tailDraftPoints={[]}
-          onStartDrawingTail={vi.fn()}
-          onFinishDrawingTail={vi.fn()}
-          onExportStory={vi.fn()}
-          onImportFile={vi.fn()}
-          timelineMode="book"
-          timelineIndex={1}
-        />,
+        <MemoryRouter initialEntries={['/edit']}>
+          <EditorSidebar
+            stories={[]}
+            selectedStoryId={null}
+            onSelectStory={vi.fn()}
+            onSave={vi.fn()}
+            onDeleteStory={vi.fn()}
+            onCaptureMapPosition={() => null}
+            mapPosition={null}
+            draftPosition={null}
+            activePosition={null}
+            onAddPosition={vi.fn()}
+            onEditPosition={vi.fn()}
+            onBackFromPosition={vi.fn()}
+            positionsVersion={0}
+            onVisiblePositionsChange={vi.fn()}
+            onVisibleTailsChange={vi.fn()}
+            isDrawingTail={false}
+            tailDraftPoints={[]}
+            onStartDrawingTail={vi.fn()}
+            onFinishDrawingTail={vi.fn()}
+            onExportStory={vi.fn()}
+            onImportFile={vi.fn()}
+            timelineMode="book"
+            timelineIndex={1}
+          />
+        </MemoryRouter>,
       );
 
       fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
@@ -607,31 +632,33 @@ describe('EditorSidebar', () => {
 
     try {
       render(
-        <EditorSidebar
-          stories={[]}
-          selectedStoryId={null}
-          onSelectStory={vi.fn()}
-          onSave={vi.fn()}
-          onDeleteStory={vi.fn()}
-          onCaptureMapPosition={() => null}
-          mapPosition={null}
-          draftPosition={null}
-          activePosition={null}
-          onAddPosition={vi.fn()}
-          onEditPosition={vi.fn()}
-          onBackFromPosition={vi.fn()}
-          positionsVersion={0}
-          onVisiblePositionsChange={vi.fn()}
-          onVisibleTailsChange={vi.fn()}
-          isDrawingTail={false}
-          tailDraftPoints={[]}
-          onStartDrawingTail={vi.fn()}
-          onFinishDrawingTail={vi.fn()}
-          onExportStory={vi.fn()}
-          onImportFile={vi.fn()}
-          timelineMode="book"
-          timelineIndex={1}
-        />,
+        <MemoryRouter initialEntries={['/edit']}>
+          <EditorSidebar
+            stories={[]}
+            selectedStoryId={null}
+            onSelectStory={vi.fn()}
+            onSave={vi.fn()}
+            onDeleteStory={vi.fn()}
+            onCaptureMapPosition={() => null}
+            mapPosition={null}
+            draftPosition={null}
+            activePosition={null}
+            onAddPosition={vi.fn()}
+            onEditPosition={vi.fn()}
+            onBackFromPosition={vi.fn()}
+            positionsVersion={0}
+            onVisiblePositionsChange={vi.fn()}
+            onVisibleTailsChange={vi.fn()}
+            isDrawingTail={false}
+            tailDraftPoints={[]}
+            onStartDrawingTail={vi.fn()}
+            onFinishDrawingTail={vi.fn()}
+            onExportStory={vi.fn()}
+            onImportFile={vi.fn()}
+            timelineMode="book"
+            timelineIndex={1}
+          />
+        </MemoryRouter>,
       );
 
       fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
@@ -656,31 +683,33 @@ describe('EditorSidebar', () => {
 
     try {
       render(
-        <EditorSidebar
-          stories={[]}
-          selectedStoryId={null}
-          onSelectStory={vi.fn()}
-          onSave={vi.fn()}
-          onDeleteStory={vi.fn()}
-          onCaptureMapPosition={() => null}
-          mapPosition={null}
-          draftPosition={null}
-          activePosition={null}
-          onAddPosition={vi.fn()}
-          onEditPosition={vi.fn()}
-          onBackFromPosition={vi.fn()}
-          positionsVersion={0}
-          onVisiblePositionsChange={vi.fn()}
-          onVisibleTailsChange={vi.fn()}
-          isDrawingTail={false}
-          tailDraftPoints={[]}
-          onStartDrawingTail={vi.fn()}
-          onFinishDrawingTail={vi.fn()}
-          onExportStory={vi.fn()}
-          onImportFile={vi.fn()}
-          timelineMode="book"
-          timelineIndex={1}
-        />,
+        <MemoryRouter initialEntries={['/edit']}>
+          <EditorSidebar
+            stories={[]}
+            selectedStoryId={null}
+            onSelectStory={vi.fn()}
+            onSave={vi.fn()}
+            onDeleteStory={vi.fn()}
+            onCaptureMapPosition={() => null}
+            mapPosition={null}
+            draftPosition={null}
+            activePosition={null}
+            onAddPosition={vi.fn()}
+            onEditPosition={vi.fn()}
+            onBackFromPosition={vi.fn()}
+            positionsVersion={0}
+            onVisiblePositionsChange={vi.fn()}
+            onVisibleTailsChange={vi.fn()}
+            isDrawingTail={false}
+            tailDraftPoints={[]}
+            onStartDrawingTail={vi.fn()}
+            onFinishDrawingTail={vi.fn()}
+            onExportStory={vi.fn()}
+            onImportFile={vi.fn()}
+            timelineMode="book"
+            timelineIndex={1}
+          />
+        </MemoryRouter>,
       );
 
       fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
@@ -715,31 +744,33 @@ describe('EditorSidebar', () => {
 
     try {
       const { unmount } = render(
-        <EditorSidebar
-          stories={[]}
-          selectedStoryId={null}
-          onSelectStory={vi.fn()}
-          onSave={vi.fn()}
-          onDeleteStory={vi.fn()}
-          onCaptureMapPosition={() => null}
-          mapPosition={null}
-          draftPosition={null}
-          activePosition={null}
-          onAddPosition={vi.fn()}
-          onEditPosition={vi.fn()}
-          onBackFromPosition={vi.fn()}
-          positionsVersion={0}
-          onVisiblePositionsChange={vi.fn()}
-          onVisibleTailsChange={vi.fn()}
-          isDrawingTail={false}
-          tailDraftPoints={[]}
-          onStartDrawingTail={vi.fn()}
-          onFinishDrawingTail={vi.fn()}
-          onExportStory={vi.fn()}
-          onImportFile={vi.fn()}
-          timelineMode="book"
-          timelineIndex={1}
-        />,
+        <MemoryRouter initialEntries={['/edit']}>
+          <EditorSidebar
+            stories={[]}
+            selectedStoryId={null}
+            onSelectStory={vi.fn()}
+            onSave={vi.fn()}
+            onDeleteStory={vi.fn()}
+            onCaptureMapPosition={() => null}
+            mapPosition={null}
+            draftPosition={null}
+            activePosition={null}
+            onAddPosition={vi.fn()}
+            onEditPosition={vi.fn()}
+            onBackFromPosition={vi.fn()}
+            positionsVersion={0}
+            onVisiblePositionsChange={vi.fn()}
+            onVisibleTailsChange={vi.fn()}
+            isDrawingTail={false}
+            tailDraftPoints={[]}
+            onStartDrawingTail={vi.fn()}
+            onFinishDrawingTail={vi.fn()}
+            onExportStory={vi.fn()}
+            onImportFile={vi.fn()}
+            timelineMode="book"
+            timelineIndex={1}
+          />
+        </MemoryRouter>,
       );
 
       fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
@@ -767,59 +798,63 @@ describe('EditorSidebar', () => {
   it('clears the form when switching to "New Map"', () => {
     const story = makeStory({ id: 1 });
     const { rerender } = render(
-      <EditorSidebar
-        stories={[story]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     rerender(
-      <EditorSidebar
-        stories={[story]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByLabelText(/map name/i)).toHaveValue('');
@@ -836,31 +871,33 @@ describe('EditorSidebar', () => {
     const user = userEvent.setup();
     const stories = [makeStory({ id: 1 }), makeStory({ id: 2, name: 'The Wheel of Time' })];
     render(
-      <EditorSidebar
-        stories={stories}
-        selectedStoryId={1}
-        onSelectStory={onSelectStory}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={stories}
+          selectedStoryId={1}
+          onSelectStory={onSelectStory}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -869,99 +906,108 @@ describe('EditorSidebar', () => {
     expect(onSelectStory).toHaveBeenCalledWith(2);
   });
 
-  it('shows an Export button only once a story is selected, and calls onExportStory when clicked', async () => {
+  it('disables the Export menu item until a story is selected, and calls onExportStory when clicked', async () => {
     const onExportStory = vi.fn();
     const user = userEvent.setup();
     const stories = [makeStory({ id: 1 })];
     const { rerender } = render(
-      <EditorSidebar
-        stories={stories}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onExportStory={onExportStory}
-        onImportFile={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={stories}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onExportStory={onExportStory}
+          onImportFile={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
-    expect(screen.queryByRole('button', { name: /export as yaml/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /new map/i }));
+    expect(screen.getByRole('button', { name: /export as yaml/i })).toBeDisabled();
+    await user.keyboard('{Escape}');
 
     rerender(
-      <EditorSidebar
-        stories={stories}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onExportStory={onExportStory}
-        onImportFile={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={stories}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onExportStory={onExportStory}
+          onImportFile={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
+    await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
     await user.click(screen.getByRole('button', { name: /export as yaml/i }));
     expect(onExportStory).toHaveBeenCalled();
   });
 
   it('shows a Delete Story button only once a story is selected', () => {
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.queryByRole('button', { name: /delete story/i })).not.toBeInTheDocument();
@@ -972,31 +1018,33 @@ describe('EditorSidebar', () => {
     const user = userEvent.setup();
     const story = makeStory({ id: 1, name: 'A Song of Ice and Fire' });
     render(
-      <EditorSidebar
-        stories={[story]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={onDeleteStory}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={onDeleteStory}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /delete story/i }));
@@ -1022,31 +1070,33 @@ describe('EditorSidebar', () => {
     const user = userEvent.setup();
     const story = makeStory({ id: 1 });
     render(
-      <EditorSidebar
-        stories={[story]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={onSave}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => ({ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 })}
-        mapPosition={{ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 }}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={onSave}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => ({ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 })}
+          mapPosition={{ center: { lat: 40.7128, lng: -74.006 }, zoom: 10 }}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /use current map position/i }));
@@ -1069,31 +1119,33 @@ describe('EditorSidebar', () => {
     const user = userEvent.setup();
     const story = makeStory({ id: 1 });
     render(
-      <EditorSidebar
-        stories={[story]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={{ center: { lat: 10, lng: 10 }, zoom: 3 }}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={{ center: { lat: 10, lng: 10 }, zoom: 3 }}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /use current map position/i }));
@@ -1104,31 +1156,33 @@ describe('EditorSidebar', () => {
   it('hides the tile layer author/attribution fields until the tile URL template is valid', async () => {
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.queryByLabelText(/tile layer author/i)).not.toBeInTheDocument();
@@ -1147,31 +1201,33 @@ describe('EditorSidebar', () => {
   it('opens and closes the tile URL template help dialog', async () => {
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -1188,31 +1244,33 @@ describe('EditorSidebar', () => {
   it('shows one section at a time, collapsing the previous one when another is opened', async () => {
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByLabelText(/map name/i)).toBeVisible();
@@ -1231,31 +1289,33 @@ describe('EditorSidebar', () => {
   it('renders the Television, Characters, and Markers sections', async () => {
     const user = userEvent.setup();
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /^television/i }));
@@ -1270,31 +1330,33 @@ describe('EditorSidebar', () => {
 
   it('hides the Books/Television/Characters/Markers sections for a brand new, unsaved map', () => {
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.queryByRole('button', { name: /^books/i })).not.toBeInTheDocument();
@@ -1307,62 +1369,66 @@ describe('EditorSidebar', () => {
     const user = userEvent.setup();
     const stories = [makeStory({ id: 1 }), makeStory({ id: 2, name: 'The Wheel of Time' })];
     const { rerender } = render(
-      <EditorSidebar
-        stories={stories}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={stories}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /^books/i }));
     expect(await screen.findByText(/no books yet/i)).toBeVisible();
 
     rerender(
-      <EditorSidebar
-        stories={stories}
-        selectedStoryId={2}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={stories}
+          selectedStoryId={2}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByLabelText(/map name/i)).toBeVisible();
@@ -1371,31 +1437,33 @@ describe('EditorSidebar', () => {
   it('opens the Books section from a #books URL hash', async () => {
     window.location.hash = '#books';
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(await screen.findByText(/no books yet/i)).toBeVisible();
@@ -1430,31 +1498,33 @@ describe('EditorSidebar', () => {
     window.location.hash = '#books-2';
 
     render(
-      <EditorSidebar
-        stories={[story]}
-        selectedStoryId={story.id}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={story.id}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(await screen.findByDisplayValue('A Clash of Kings')).toBeVisible();
@@ -1479,6 +1549,7 @@ describe('EditorSidebar', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: null,
     });
     await createCharacter({
       storyId: story.id,
@@ -1487,35 +1558,38 @@ describe('EditorSidebar', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     });
     window.location.hash = '#characters-2';
 
     render(
-      <EditorSidebar
-        stories={[story]}
-        selectedStoryId={story.id}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={story.id}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     await screen.findByText('Jon Snow');
@@ -1533,31 +1607,33 @@ describe('EditorSidebar', () => {
   it('ignores a #books hash for a brand new, unsaved map', () => {
     window.location.hash = '#books';
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={null}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByLabelText(/map name/i)).toBeVisible();
@@ -1566,31 +1642,33 @@ describe('EditorSidebar', () => {
   it('ignores a hash that does not name a known section', () => {
     window.location.hash = '#not-a-real-section';
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByLabelText(/map name/i)).toBeVisible();
@@ -1598,31 +1676,33 @@ describe('EditorSidebar', () => {
 
   it('responds to the hash changing while already open', async () => {
     render(
-      <EditorSidebar
-        stories={[]}
-        selectedStoryId={1}
-        onSelectStory={vi.fn()}
-        onSave={vi.fn()}
-        onDeleteStory={vi.fn()}
-        onCaptureMapPosition={() => null}
-        mapPosition={null}
-        draftPosition={null}
-        activePosition={null}
-        onAddPosition={vi.fn()}
-        onEditPosition={vi.fn()}
-        onBackFromPosition={vi.fn()}
-        positionsVersion={0}
-        onVisiblePositionsChange={vi.fn()}
-        onVisibleTailsChange={vi.fn()}
-        isDrawingTail={false}
-        tailDraftPoints={[]}
-        onStartDrawingTail={vi.fn()}
-        onFinishDrawingTail={vi.fn()}
-        onExportStory={vi.fn()}
-        onImportFile={vi.fn()}
-        timelineMode="book"
-        timelineIndex={1}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
     );
 
     expect(await screen.findByText(/no television seasons yet/i)).not.toBeVisible();
@@ -1650,6 +1730,7 @@ describe('EditorSidebar', () => {
       icon: null,
       color: null,
       sortOrder: 2,
+      url: null,
     });
     const user = userEvent.setup();
     render(<DraggableEditorSidebar stories={[story]} selectedStoryId={story.id} />);
@@ -1684,6 +1765,7 @@ describe('EditorSidebar', () => {
       icon: null,
       color: null,
       sortOrder: 3,
+      url: null,
     });
     await createCharacterPosition({
       characterId: character.id,
