@@ -4,6 +4,8 @@ A story can be exported to a single human-editable YAML file (via the download b
 
 Importing always creates a **brand-new** story — it never edits or overwrites an existing one, even if you re-import the same file. The imported story's name gets " v2" appended, so you can tell it apart from wherever it came from.
 
+This same file also drives the read-only viewer at `/view?d=<url>` (see the [README](../README.md#routes)) — a hosted export is the whole map, ready to render, with no server or database on the other end.
+
 ## Why not just dump the database?
 
 The underlying SQLite tables reference each other by numeric id (a chapter range is stored as `chapter_range_start_chapter_id: 47`), which means nothing to someone hand-editing a file. The export format instead:

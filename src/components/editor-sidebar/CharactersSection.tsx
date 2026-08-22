@@ -12,6 +12,7 @@ import {
 import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
+import { buildTailPoints } from '../../lib/tailConnection';
 import { makeTimelineVisibilityChecker } from '../../lib/timelineVisibility';
 import type { TimelineMode } from '../MapTimelineControl';
 import { useRangeOptions } from './characters/rangeOptions';
@@ -123,14 +124,9 @@ export function CharactersSection({
         });
 
         if (position.tail && position.tail.length > 0) {
-          const precedingPosition = positions?.[positionIndex - 1];
           tails.push({
             characterId: expandedCharacterId,
-            points: [
-              position.position,
-              ...position.tail,
-              ...(precedingPosition ? [precedingPosition.position] : []),
-            ],
+            points: buildTailPoints(position, positions?.[positionIndex - 1]),
             color,
             opacity: 1,
           });
@@ -171,14 +167,9 @@ export function CharactersSection({
         });
 
         if (position.tail && position.tail.length > 0) {
-          const precedingPosition = positions[positionIndex - 1];
           tails.push({
             characterId,
-            points: [
-              position.position,
-              ...position.tail,
-              ...(precedingPosition ? [precedingPosition.position] : []),
-            ],
+            points: buildTailPoints(position, positions[positionIndex - 1]),
             color,
             opacity: 0.75,
           });
