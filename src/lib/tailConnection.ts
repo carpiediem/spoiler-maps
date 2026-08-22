@@ -16,3 +16,16 @@ export function buildTailPoints(
     ...(precedingPosition ? [precedingPosition.position] : []),
   ];
 }
+
+/**
+ * Whether a tail overlay is worth drawing for this position: either it has
+ * its own waypoints, or there's a preceding position to draw a straight
+ * connecting line to (buildTailPoints would otherwise return a single,
+ * invisible point).
+ */
+export function hasTailToDraw(
+  position: { tail?: LatLng[] | null },
+  precedingPosition: { position: LatLng } | undefined,
+): boolean {
+  return Boolean(position.tail && position.tail.length > 0) || precedingPosition !== undefined;
+}

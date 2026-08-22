@@ -777,6 +777,67 @@ describe('CharactersSection', () => {
     );
   });
 
+  it('draws a straight tail to the preceding position even when a position has no tail of its own', async () => {
+    const storyId = await seedStoryId();
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+      sortOrder: 0,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisibleTailsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={onVisibleTailsChange}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+
+    await waitFor(() =>
+      expect(onVisibleTailsChange).toHaveBeenLastCalledWith([
+        {
+          characterId: character.id,
+          points: [
+            { lat: 2, lng: 2 },
+            { lat: 1, lng: 1 },
+          ],
+          color: '#ff0000',
+          opacity: 1,
+        },
+      ]),
+    );
+  });
+
   it('clears the pins once the expanded character is collapsed again', async () => {
     const storyId = await seedStoryId();
     const character = await createCharacter({
