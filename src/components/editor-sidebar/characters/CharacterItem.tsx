@@ -174,7 +174,7 @@ export function CharacterItem({
                 }}
               />
             )}
-            <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+            <Typography variant="body2" noWrap sx={{ fontWeight: 500, maxWidth: 120 }}>
               {character.name || 'Unnamed Character'}
             </Typography>
           </Stack>
