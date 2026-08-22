@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { Story } from '../db';
 import { StorySelector } from './StorySelector';
@@ -22,12 +23,15 @@ function makeStory(overrides: Partial<Story>): Story {
 describe('StorySelector', () => {
   it('shows "New Map" when no story is selected', () => {
     render(
-      <StorySelector
-        stories={[]}
-        selectedStoryId={null}
-        onSelect={vi.fn()}
-        onImportFile={vi.fn()}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={[]}
+          selectedStoryId={null}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole('button', { name: /new map/i })).toBeInTheDocument();
@@ -36,15 +40,96 @@ describe('StorySelector', () => {
   it('shows the selected story name as the title', () => {
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={vi.fn()}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole('button', { name: /a song of ice and fire/i })).toBeInTheDocument();
+  });
+
+  it('links the title to the view screen for the selected story', () => {
+    const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
+    render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('link', { name: /a song of ice and fire/i })).toHaveAttribute(
+      'href',
+      '/view/1',
+    );
+  });
+
+  it('does not link the title when no story is selected (New Map)', () => {
+    render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={[]}
+          selectedStoryId={null}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('link', { name: /new map/i })).not.toBeInTheDocument();
+    expect(screen.getByText('New Map')).toBeInTheDocument();
+  });
+
+  it('disables the Export option until a story is selected, and calls onExportStory when clicked', async () => {
+    const onExportStory = vi.fn();
+    const user = userEvent.setup();
+    const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
+    const { rerender } = render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={null}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={onExportStory}
+        />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /new map/i }));
+    expect(screen.getByRole('button', { name: /export as yaml/i })).toBeDisabled();
+
+    await user.keyboard('{Escape}');
+    rerender(
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={onExportStory}
+        />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
+    const exportOption = screen.getByRole('button', { name: /export as yaml/i });
+    expect(exportOption).toBeEnabled();
+    await user.click(exportOption);
+
+    expect(onExportStory).toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole('listbox')).not.toBeInTheDocument());
   });
 
   it('opens the menu and lists every story plus a New Map option', async () => {
@@ -54,12 +139,15 @@ describe('StorySelector', () => {
       makeStory({ id: 2, name: 'The Wheel of Time' }),
     ];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={vi.fn()}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -83,12 +171,15 @@ describe('StorySelector', () => {
       makeStory({ id: 2, name: 'The Wheel of Time' }),
     ];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={onSelect}
-        onImportFile={vi.fn()}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={onSelect}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -103,12 +194,15 @@ describe('StorySelector', () => {
     const onSelect = vi.fn();
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={onSelect}
-        onImportFile={vi.fn()}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={onSelect}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -124,12 +218,15 @@ describe('StorySelector', () => {
       makeStory({ id: 2, name: 'The Wheel of Time' }),
     ];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={vi.fn()}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -145,12 +242,15 @@ describe('StorySelector', () => {
     const user = userEvent.setup();
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={vi.fn()}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -164,12 +264,15 @@ describe('StorySelector', () => {
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
       <div>
-        <StorySelector
-          stories={stories}
-          selectedStoryId={1}
-          onSelect={vi.fn()}
-          onImportFile={vi.fn()}
-        />
+        <MemoryRouter initialEntries={['/edit']}>
+          <StorySelector
+            stories={stories}
+            selectedStoryId={1}
+            onSelect={vi.fn()}
+            onImportFile={vi.fn()}
+            onExportStory={vi.fn()}
+          />
+        </MemoryRouter>
         <button type="button">Outside</button>
       </div>,
     );
@@ -185,12 +288,15 @@ describe('StorySelector', () => {
     const user = userEvent.setup();
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={vi.fn()}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -204,12 +310,15 @@ describe('StorySelector', () => {
     const user = userEvent.setup();
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={vi.fn()}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     const trigger = screen.getByRole('button', { name: /a song of ice and fire/i });
@@ -225,12 +334,15 @@ describe('StorySelector', () => {
     const clickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {});
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={vi.fn()}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={vi.fn()}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -245,12 +357,15 @@ describe('StorySelector', () => {
     const onImportFile = vi.fn().mockResolvedValue(undefined);
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={onImportFile}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={onImportFile}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -266,12 +381,15 @@ describe('StorySelector', () => {
     const onImportFile = vi.fn().mockRejectedValue(new Error('name must be a string.'));
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={onImportFile}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={onImportFile}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -287,12 +405,15 @@ describe('StorySelector', () => {
     const onImportFile = vi.fn().mockRejectedValue('boom');
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={onImportFile}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={onImportFile}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -307,12 +428,15 @@ describe('StorySelector', () => {
     const onImportFile = vi.fn();
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={onImportFile}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={onImportFile}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /a song of ice and fire/i }));
@@ -327,12 +451,15 @@ describe('StorySelector', () => {
     const onImportFile = vi.fn().mockRejectedValue(new Error('Bad file.'));
     const stories = [makeStory({ id: 1, name: 'A Song of Ice and Fire' })];
     render(
-      <StorySelector
-        stories={stories}
-        selectedStoryId={1}
-        onSelect={vi.fn()}
-        onImportFile={onImportFile}
-      />,
+      <MemoryRouter initialEntries={['/edit']}>
+        <StorySelector
+          stories={stories}
+          selectedStoryId={1}
+          onSelect={vi.fn()}
+          onImportFile={onImportFile}
+          onExportStory={vi.fn()}
+        />
+      </MemoryRouter>,
     );
     const trigger = screen.getByRole('button', { name: /a song of ice and fire/i });
 

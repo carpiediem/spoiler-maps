@@ -476,7 +476,7 @@ export const deleteMarker = markerCrud.delete;
 
 const characterCrud = makeCrud<Character, NewCharacter>({
   table: 'characters',
-  columns: ['story_id', 'name', '"group"', 'icon', 'color', 'sort_order'],
+  columns: ['story_id', 'name', '"group"', 'icon', 'color', 'sort_order', 'url'],
   toParams: (input) => [
     input.storyId,
     input.name,
@@ -484,6 +484,7 @@ const characterCrud = makeCrud<Character, NewCharacter>({
     input.icon,
     input.color,
     input.sortOrder,
+    input.url,
   ],
   fromRow: (row) => ({
     id: row.id as number,
@@ -493,6 +494,7 @@ const characterCrud = makeCrud<Character, NewCharacter>({
     icon: row.icon as string | null,
     color: row.color as string | null,
     sortOrder: row.sort_order as number,
+    url: row.url as string | null,
   }),
   parentColumn: 'story_id',
   orderBy: 'sort_order',

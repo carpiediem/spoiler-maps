@@ -61,6 +61,7 @@ async function seedCharacter(
     color: null,
     ...overrides,
     sortOrder: 0,
+    url: null,
   });
 }
 
@@ -118,6 +119,7 @@ describe('CharacterItem', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     };
     render(
       <CharacterItem
@@ -154,6 +156,7 @@ describe('CharacterItem', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     };
     render(
       <CharacterItem
@@ -191,6 +194,7 @@ describe('CharacterItem', () => {
       icon: null,
       color: null,
       sortOrder: 2,
+      url: null,
     };
     render(
       <CharacterItem
@@ -218,7 +222,7 @@ describe('CharacterItem', () => {
     expect(screen.getByText('Unnamed Character')).toBeInTheDocument();
   });
 
-  it('edits and persists the name, group, and icon URL fields on blur', async () => {
+  it('edits and persists the name, group, icon URL, and URL fields on blur', async () => {
     const character = await seedCharacter();
     const user = userEvent.setup();
     render(<Wrapper initialCharacter={character} />);
@@ -227,6 +231,10 @@ describe('CharacterItem', () => {
     await user.type(screen.getByLabelText(/^name$/i), 'Aegon Targaryen');
     await user.type(screen.getByLabelText(/^group$/i), "Night's Watch");
     await user.type(screen.getByLabelText(/^icon url$/i), 'https://example.com/jon.png');
+    await user.type(
+      screen.getByLabelText(/^url$/i),
+      'https://awoiaf.westeros.org/index.php/Jon_Snow',
+    );
     await user.tab();
 
     const [persisted] = await listCharactersForStory(character.storyId);
@@ -234,13 +242,19 @@ describe('CharacterItem', () => {
       name: 'Aegon Targaryen',
       group: "Night's Watch",
       icon: 'https://example.com/jon.png',
+      url: 'https://awoiaf.westeros.org/index.php/Jon_Snow',
     });
+    expect(screen.getByRole('link', { name: /open url/i })).toHaveAttribute(
+      'href',
+      'https://awoiaf.westeros.org/index.php/Jon_Snow',
+    );
   });
 
-  it('stores blank group/icon as null', async () => {
+  it('stores blank group/icon/url as null', async () => {
     const character = await seedCharacter({
       group: 'Stark',
       icon: 'https://example.com/jon.png',
+      url: 'https://awoiaf.westeros.org/index.php/Jon_Snow',
     });
     const user = userEvent.setup();
     render(<Wrapper initialCharacter={character} />);
@@ -249,10 +263,14 @@ describe('CharacterItem', () => {
     await user.tab();
     await user.clear(screen.getByLabelText(/^icon url$/i));
     await user.tab();
+    await user.clear(screen.getByLabelText(/^url$/i));
+    await user.tab();
 
     const [persisted] = await listCharactersForStory(character.storyId);
     expect(persisted.group).toBeNull();
     expect(persisted.icon).toBeNull();
+    expect(persisted.url).toBeNull();
+    expect(screen.queryByRole('link', { name: /open url/i })).not.toBeInTheDocument();
   });
 
   it('edits and persists the color field on blur', async () => {

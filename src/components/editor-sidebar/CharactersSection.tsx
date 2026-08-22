@@ -12,6 +12,7 @@ import {
 import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
+import { buildTailPoints, hasTailToDraw } from '../../lib/tailConnection';
 import { makeTimelineVisibilityChecker } from '../../lib/timelineVisibility';
 import type { TimelineMode } from '../MapTimelineControl';
 import { useRangeOptions } from './characters/rangeOptions';
@@ -122,15 +123,11 @@ export function CharactersSection({
           color,
         });
 
-        if (position.tail && position.tail.length > 0) {
-          const precedingPosition = positions?.[positionIndex - 1];
+        const precedingPosition = positions?.[positionIndex - 1];
+        if (hasTailToDraw(position, precedingPosition)) {
           tails.push({
             characterId: expandedCharacterId,
-            points: [
-              position.position,
-              ...position.tail,
-              ...(precedingPosition ? [precedingPosition.position] : []),
-            ],
+            points: buildTailPoints(position, precedingPosition),
             color,
             opacity: 1,
           });
@@ -170,15 +167,11 @@ export function CharactersSection({
           style: isLast ? 'pin' : 'dot',
         });
 
-        if (position.tail && position.tail.length > 0) {
-          const precedingPosition = positions[positionIndex - 1];
+        const precedingPosition = positions[positionIndex - 1];
+        if (hasTailToDraw(position, precedingPosition)) {
           tails.push({
             characterId,
-            points: [
-              position.position,
-              ...position.tail,
-              ...(precedingPosition ? [precedingPosition.position] : []),
-            ],
+            points: buildTailPoints(position, precedingPosition),
             color,
             opacity: 0.75,
           });
@@ -222,6 +215,7 @@ export function CharactersSection({
       group: null,
       icon: null,
       color: null,
+      url: null,
       sortOrder: sortOrderAfter(characters!.map((existing) => existing.sortOrder)),
     });
     addEntity(character);

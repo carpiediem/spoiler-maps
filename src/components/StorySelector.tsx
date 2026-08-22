@@ -1,4 +1,7 @@
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { Link } from 'react-router-dom';
 import type { Story } from '../db';
 import './StorySelector.css';
 
@@ -10,6 +13,8 @@ interface StorySelectorProps {
   onSelect: (storyId: number | null) => void;
   /** Reads and imports a YAML export as a brand-new story; rejects with a user-facing message on failure. */
   onImportFile: (file: File) => Promise<void>;
+  /** Downloads the currently selected story as a YAML file. */
+  onExportStory: () => void;
 }
 
 export function StorySelector({
@@ -17,6 +22,7 @@ export function StorySelector({
   selectedStoryId,
   onSelect,
   onImportFile,
+  onExportStory,
 }: StorySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -85,20 +91,36 @@ export function StorySelector({
     }
   }
 
+  function handleExportClick() {
+    onExportStory();
+    close();
+  }
+
   return (
     <div className="story-selector" ref={containerRef}>
-      <button
-        type="button"
-        className="story-selector__trigger"
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        onClick={() => setIsOpen((open) => !open)}
-      >
-        <span className="story-selector__title">{title}</span>
-        <span className="story-selector__chevron" aria-hidden="true">
-          ▾
-        </span>
-      </button>
+      <div className="story-selector__trigger-group">
+        {selectedStoryId !== null ? (
+          <Link to={`/view/${selectedStoryId}`} className="story-selector__title-link">
+            <span className="story-selector__title">{title}</span>
+          </Link>
+        ) : (
+          <span className="story-selector__title-link story-selector__title-link--disabled">
+            <span className="story-selector__title">{title}</span>
+          </span>
+        )}
+        <button
+          type="button"
+          className="story-selector__chevron-button"
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          aria-label={title}
+          onClick={() => setIsOpen((open) => !open)}
+        >
+          <span className="story-selector__chevron" aria-hidden="true">
+            ▾
+          </span>
+        </button>
+      </div>
 
       {isOpen && (
         <div className="story-selector__menu">
@@ -151,10 +173,17 @@ export function StorySelector({
             onClick={handleImportClick}
             disabled={isImporting}
           >
-            <span className="story-selector__check" aria-hidden="true">
-              ⇪
-            </span>
+            <FileUploadOutlinedIcon className="story-selector__check" aria-hidden="true" />
             {isImporting ? 'Importing…' : 'Import from file…'}
+          </button>
+          <button
+            type="button"
+            className="story-selector__option"
+            onClick={handleExportClick}
+            disabled={selectedStoryId === null}
+          >
+            <FileDownloadOutlinedIcon className="story-selector__check" aria-hidden="true" />
+            Export as YAML
           </button>
           {importError && <div className="story-selector__error">{importError}</div>}
           <input

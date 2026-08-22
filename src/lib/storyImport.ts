@@ -200,6 +200,7 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
         group: assertOptionalString(character.group, `characters[${characterIndex}].group`),
         icon: assertOptionalString(character.icon, `characters[${characterIndex}].icon`),
         color: assertOptionalString(character.color, `characters[${characterIndex}].color`),
+        url: assertOptionalString(character.url, `characters[${characterIndex}].url`),
         positions,
       };
     },
@@ -386,6 +387,7 @@ async function importCharacters(
       group: character.group ?? null,
       icon: character.icon ?? null,
       color: character.color ?? null,
+      url: character.url ?? null,
       sortOrder: characterIndex,
     });
     for (const [positionIndex, position] of character.positions.entries()) {

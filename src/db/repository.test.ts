@@ -299,12 +299,15 @@ describe('characters', () => {
       icon: null,
       color: null,
       sortOrder: 0,
+      url: 'https://awoiaf.westeros.org/index.php/Jon_Snow',
     });
 
     expect(await listCharactersForStory(story.id)).toEqual([character]);
 
-    await updateCharacter(character.id, { ...character, group: 'Night’s Watch' });
-    expect((await listCharactersForStory(story.id))[0].group).toBe('Night’s Watch');
+    await updateCharacter(character.id, { ...character, group: 'Night’s Watch', url: null });
+    const [updated] = await listCharactersForStory(story.id);
+    expect(updated.group).toBe('Night’s Watch');
+    expect(updated.url).toBeNull();
 
     await deleteCharacter(character.id);
     expect(await listCharactersForStory(story.id)).toEqual([]);
@@ -321,6 +324,7 @@ describe('character positions', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     });
     const book = await createBook({
       storyId: story.id,
@@ -451,6 +455,7 @@ describe('character positions', () => {
       icon: null,
       color: null,
       sortOrder: 2,
+      url: null,
     });
     const book1 = await createBook({
       storyId: story.id,
@@ -566,6 +571,7 @@ describe('character positions', () => {
       icon: null,
       color: null,
       sortOrder: 3,
+      url: null,
     });
     const season = await createTvSeason({ storyId: story.id, url: null, sortOrder: 0 });
     const episode1 = await createEpisode({
