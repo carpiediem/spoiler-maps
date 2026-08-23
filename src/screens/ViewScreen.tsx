@@ -9,11 +9,8 @@ import { buildTileAttribution } from '../lib/attribution';
 import { buildStoryDocument } from '../lib/storyExport';
 import { parseStoryDocument } from '../lib/storyImport';
 import type { StoryDocument } from '../lib/storyDocument';
-import {
-  buildDocumentChapterOptions,
-  buildDocumentEpisodeOptions,
-  parseTimelineHash,
-} from '../lib/viewTimeline';
+import { parseTimelineHash } from '../lib/timelineHash';
+import { buildDocumentChapterOptions, buildDocumentEpisodeOptions } from '../lib/viewTimeline';
 import { buildViewPinsAndTails } from '../lib/viewCharacterPins';
 import './EditScreen.css';
 

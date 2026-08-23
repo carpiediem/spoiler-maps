@@ -160,6 +160,23 @@ describe('MapTimelineControl', () => {
     await waitFor(() => expect(onChange).toHaveBeenLastCalledWith('book', 2));
   });
 
+  it('applies initialIndex without an initialMode, leaving the mode at its default', async () => {
+    const onChange = vi.fn();
+    render(
+      <MapTimelineControl
+        chapterOptions={chapterOptions('Prologue', 'Bran', 'Catelyn')}
+        episodeOptions={[]}
+        hasBooks
+        hasSeasons={false}
+        initialIndex={1}
+        onChange={onChange}
+      />,
+    );
+
+    expect(screen.getByText('AGOT: Prologue')).toBeInTheDocument();
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith('book', 1));
+  });
+
   it('switches modes, jumping to the new medium’s last entry', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
