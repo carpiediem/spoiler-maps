@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 
 export interface Migration {
   version: number;
@@ -206,6 +206,14 @@ export const MIGRATIONS: Migration[] = [
       -- ORDER BY id ordering they were always listed under.
       ALTER TABLE characters ADD COLUMN sort_order REAL NOT NULL DEFAULT 0;
       UPDATE characters SET sort_order = id;
+    `,
+  },
+  {
+    version: 11,
+    sql: `
+      -- Lets a character's name in the view screen link out to their own
+      -- wiki page, the same way a chapter/episode/book already can.
+      ALTER TABLE characters ADD COLUMN url TEXT;
     `,
   },
 ];

@@ -12,6 +12,7 @@ import {
 import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
+import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from '../../lib/tailConnection';
 import { makeTimelineVisibilityChecker } from '../../lib/timelineVisibility';
 import type { TimelineMode } from '../MapTimelineControl';
 import { useRangeOptions } from './characters/rangeOptions';
@@ -111,6 +112,8 @@ export function CharactersSection({
       const positions = positionsByCharacterId[expandedCharacterId];
       const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
       const color = character?.color ?? null;
+      const characterTails: CharacterTailOverlay[] = [];
+      let precedingPosition: CharacterPosition | undefined;
       positions?.forEach((position, positionIndex) => {
         if (!isPositionVisible(position)) return;
 
@@ -122,20 +125,17 @@ export function CharactersSection({
           color,
         });
 
-        if (position.tail && position.tail.length > 0) {
-          const precedingPosition = positions?.[positionIndex - 1];
-          tails.push({
+        if (hasTailToDraw(position, precedingPosition)) {
+          characterTails.push({
             characterId: expandedCharacterId,
-            points: [
-              position.position,
-              ...position.tail,
-              ...(precedingPosition ? [precedingPosition.position] : []),
-            ],
+            points: buildTailPoints(position, precedingPosition),
             color,
-            opacity: 1,
+            opacity: 0,
           });
         }
+        precedingPosition = position;
       });
+      tails.push(...applyTailOpacityGradient(characterTails));
     }
 
     // A visible-but-collapsed character shows its last position as an
@@ -157,6 +157,8 @@ export function CharactersSection({
         -1,
       );
 
+      const characterTails: CharacterTailOverlay[] = [];
+      let precedingPosition: CharacterPosition | undefined;
       positions.forEach((position, positionIndex) => {
         if (!isPositionVisible(position)) return;
         const isLast = positionIndex === lastVisiblePositionIndex;
@@ -170,20 +172,17 @@ export function CharactersSection({
           style: isLast ? 'pin' : 'dot',
         });
 
-        if (position.tail && position.tail.length > 0) {
-          const precedingPosition = positions[positionIndex - 1];
-          tails.push({
+        if (hasTailToDraw(position, precedingPosition)) {
+          characterTails.push({
             characterId,
-            points: [
-              position.position,
-              ...position.tail,
-              ...(precedingPosition ? [precedingPosition.position] : []),
-            ],
+            points: buildTailPoints(position, precedingPosition),
             color,
-            opacity: 0.75,
+            opacity: 0,
           });
         }
+        precedingPosition = position;
       });
+      tails.push(...applyTailOpacityGradient(characterTails));
     });
 
     onVisiblePositionsChange(pins.length > 0 ? pins : null);
@@ -222,6 +221,7 @@ export function CharactersSection({
       group: null,
       icon: null,
       color: null,
+      url: null,
       sortOrder: sortOrderAfter(characters!.map((existing) => existing.sortOrder)),
     });
     addEntity(character);

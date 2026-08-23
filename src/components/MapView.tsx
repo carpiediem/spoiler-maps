@@ -17,6 +17,7 @@ import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characte
 import { buildPinIcon, buildSkullIcon } from '../lib/pinIcon';
 import { detectTileUrlTemplateKind } from '../lib/tileUrl';
 import { QuadkeyTileLayer } from './QuadkeyTileLayer';
+import './MapView.css';
 
 const DEFAULT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const DEFAULT_ATTRIBUTION =
@@ -216,6 +217,7 @@ export function MapView({
             color: tail.color ?? DEFAULT_CHARACTER_COLOR,
             weight: CHARACTER_TAIL_WEIGHT,
             opacity: tail.opacity,
+            className: 'character-tail-flow',
           }}
         />
       ))}
