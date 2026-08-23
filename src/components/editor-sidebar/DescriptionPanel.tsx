@@ -30,6 +30,7 @@ export function DescriptionPanel({ description, onSave }: DescriptionPanelProps)
             id="description-value"
             variant="body2"
             color={description ? 'text.primary' : 'text.secondary'}
+            sx={{ ml: '14px' }}
           >
             {description || 'No description yet.'}
           </Typography>
