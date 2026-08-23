@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { SidebarSection } from './SidebarSection';
+import { SIDEBAR_SECTION_HEADER_Z_INDEX, SidebarSection } from './SidebarSection';
 
 describe('SidebarSection', () => {
   it('shows no count chip when count is omitted', () => {
@@ -44,6 +44,7 @@ describe('SidebarSection', () => {
     const heading = document.getElementById('books-header')!.closest('h3')!;
     expect(getComputedStyle(heading).position).toBe('sticky');
     expect(getComputedStyle(heading).top).toBe('0px');
+    expect(getComputedStyle(heading).zIndex).toBe(String(SIDEBAR_SECTION_HEADER_Z_INDEX));
   });
 
   it('gives the button an opaque background, not just the h3 wrapper, so scrolled content can’t show through', () => {

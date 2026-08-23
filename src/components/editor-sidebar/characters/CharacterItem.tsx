@@ -25,7 +25,7 @@ import {
 import { DEFAULT_CHARACTER_COLOR } from '../../../lib/characterColor';
 import type { TimelineMode } from '../../MapTimelineControl';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
-import { SIDEBAR_SECTION_HEADER_HEIGHT } from '../SidebarSection';
+import { SIDEBAR_SECTION_HEADER_HEIGHT, SIDEBAR_SECTION_HEADER_Z_INDEX } from '../SidebarSection';
 import { PositionList } from './PositionList';
 
 interface CharacterItemProps {
@@ -131,8 +131,11 @@ export function CharacterItem({
           sx: {
             position: 'sticky',
             top: SIDEBAR_SECTION_HEADER_HEIGHT,
-            // See SidebarSection: above MUI's own floating-label z-index of 1.
-            zIndex: 2,
+            // Above MUI's own floating-label z-index of 1 (see
+            // SidebarSection), but below SIDEBAR_SECTION_HEADER_Z_INDEX so
+            // the outer "Characters" header stays on top of this one when
+            // both are stuck and stacked.
+            zIndex: SIDEBAR_SECTION_HEADER_Z_INDEX - 1,
           },
         },
       }}

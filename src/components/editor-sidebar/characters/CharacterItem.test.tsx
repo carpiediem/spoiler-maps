@@ -21,6 +21,7 @@ import {
   type CharacterPosition,
 } from '../../../db';
 import { resetDatabaseForTests } from '../../../db/client';
+import { SIDEBAR_SECTION_HEADER_Z_INDEX } from '../SidebarSection';
 import { CharacterItem } from './CharacterItem';
 
 async function deleteStoredDatabase(): Promise<void> {
@@ -184,6 +185,9 @@ describe('CharacterItem', () => {
     expect(getComputedStyle(heading).top).toBe('48px');
     expect(getComputedStyle(button).backgroundColor).not.toBe('');
     expect(getComputedStyle(button).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    // Below SIDEBAR_SECTION_HEADER_Z_INDEX, so the outer SidebarSection
+    // header (e.g. "Characters") stays on top when both are stuck at once.
+    expect(Number(getComputedStyle(heading).zIndex)).toBeLessThan(SIDEBAR_SECTION_HEADER_Z_INDEX);
   });
 
   it('dims the row while it is the one being dragged', () => {

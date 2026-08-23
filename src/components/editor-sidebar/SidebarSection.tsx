@@ -12,6 +12,14 @@ import type { ReactNode, SyntheticEvent } from 'react';
 /** This section header's rendered height, so a nested sticky header (e.g. CharacterItem's) can offset below it instead of overlapping it. */
 export const SIDEBAR_SECTION_HEADER_HEIGHT = 48;
 
+/**
+ * Sticky z-index for this outer header. Above MUI's own floating input
+ * labels (z-index: 1) — see the comment below — and above
+ * CHARACTER_ITEM_HEADER_Z_INDEX, so this header stays on top of a nested
+ * sticky CharacterItem header when both are stacked and scrolling.
+ */
+export const SIDEBAR_SECTION_HEADER_Z_INDEX = 3;
+
 interface SidebarSectionProps {
   id: string;
   title: string;
@@ -50,11 +58,7 @@ export function SidebarSection({
           sx: {
             position: 'sticky',
             top: 0,
-            // Above 1: MUI's own floating input labels (e.g. inside an
-            // expanded character's form fields) use z-index: 1, and being
-            // later in DOM order, could otherwise tie and win the paint
-            // order against this header as it scrolls past them.
-            zIndex: 2,
+            zIndex: SIDEBAR_SECTION_HEADER_Z_INDEX,
           },
         },
       }}
