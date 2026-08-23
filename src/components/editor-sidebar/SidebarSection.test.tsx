@@ -33,4 +33,16 @@ describe('SidebarSection', () => {
 
     expect(screen.getByText('3')).toBeInTheDocument();
   });
+
+  it('sticks the header to the top of its scroll container', () => {
+    render(
+      <SidebarSection id="books" title="Books" expanded onChange={vi.fn()}>
+        content
+      </SidebarSection>,
+    );
+
+    const header = document.getElementById('books-header')!;
+    expect(getComputedStyle(header).position).toBe('sticky');
+    expect(getComputedStyle(header).top).toBe('0px');
+  });
 });

@@ -45,6 +45,9 @@ export function SidebarSection({
           px: 1,
           minHeight: 40,
           '&.Mui-expanded': { minHeight: 40 },
+          position: 'sticky',
+          top: 0,
+          zIndex: 1,
         }}
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
