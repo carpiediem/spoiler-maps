@@ -29,3 +29,35 @@ export function hasTailToDraw(
 ): boolean {
   return Boolean(position.tail && position.tail.length > 0) || precedingPosition !== undefined;
 }
+
+/** A single two-point stretch of a tail, faded relative to how far it is from the position itself. */
+export interface TailSegment {
+  positions: [LatLng, LatLng];
+  opacity: number;
+}
+
+// How faint the far (oldest) end of a tail gets, as a fraction of its base
+// opacity — never fully invisible, just enough to read as "further back".
+const MIN_FADE_FACTOR = 0.3;
+
+/**
+ * Splits a tail's points (ordered from the position itself outward into the
+ * past — see buildTailPoints) into consecutive two-point segments, each
+ * given a progressively lower opacity the farther it is from the position,
+ * so the tail visually fades out toward its older end. Leaflet's Polyline
+ * only supports one uniform opacity per path, hence the segments — the
+ * fade is a stepped approximation, coarser for tails with few points.
+ */
+export function buildFadedTailSegments(points: LatLng[], baseOpacity: number): TailSegment[] {
+  const segmentCount = points.length - 1;
+  if (segmentCount <= 0) return [];
+
+  return Array.from({ length: segmentCount }, (_, index) => {
+    const t = segmentCount === 1 ? 0 : index / (segmentCount - 1);
+    const fade = 1 - t * (1 - MIN_FADE_FACTOR);
+    return {
+      positions: [points[index]!, points[index + 1]!] as [LatLng, LatLng],
+      opacity: baseOpacity * fade,
+    };
+  });
+}

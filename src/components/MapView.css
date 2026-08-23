@@ -1,0 +1,19 @@
+/* A "marching dashes" animation along a character tail, giving a sense of
+   motion flowing toward the (more recent) end of each segment — i.e.
+   toward the character's actual position. */
+.character-tail-flow {
+  stroke-dasharray: 12 10;
+  animation: character-tail-flow 1.4s linear infinite;
+}
+
+@keyframes character-tail-flow {
+  to {
+    stroke-dashoffset: 22;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character-tail-flow {
+    animation: none;
+  }
+}
