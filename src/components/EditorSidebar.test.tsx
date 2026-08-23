@@ -1319,13 +1319,13 @@ describe('EditorSidebar', () => {
     );
 
     await user.click(screen.getByRole('button', { name: /^television/i }));
-    expect(screen.getByText(/no television seasons yet/i)).toBeVisible();
+    expect(await screen.findByText(/no television seasons yet/i)).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: /^characters/i }));
-    expect(screen.getByText(/no characters yet/i)).toBeVisible();
+    expect(await screen.findByText(/no characters yet/i)).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: /^markers/i }));
-    expect(screen.getByText(/no markers yet/i)).toBeVisible();
+    expect(await screen.findByText(/no markers yet/i)).toBeVisible();
   });
 
   it('hides the Books/Television/Characters/Markers sections for a brand new, unsaved map', () => {
