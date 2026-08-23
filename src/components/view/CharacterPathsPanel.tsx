@@ -83,7 +83,7 @@ export function CharacterPathsPanel({
         <Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 600 }}>
           Character Paths
         </Typography>
-        <Tooltip title={showFullPath ? 'Show full path' : 'Current locations only'} arrow>
+        <Tooltip title={showFullPath ? 'Current locations only' : 'Show full path'} arrow>
           <IconButton
             size="small"
             aria-label={showFullPath ? 'Show full path' : 'Current locations only'}
