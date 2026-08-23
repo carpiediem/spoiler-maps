@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { loadStoredDatabase, saveDatabaseBytes } from './storage';
+import { loadStoredDatabase, saveDatabaseBytes, saveLegacyDatabaseBytesForTests } from './storage';
 
 afterEach(async () => {
   await new Promise<void>((resolve, reject) => {
@@ -14,12 +14,12 @@ describe('storage', () => {
     expect(await loadStoredDatabase()).toBeNull();
   });
 
-  it('round-trips saved bytes and their schema version', async () => {
+  it('round-trips saved bytes, with no schema version recorded alongside them', async () => {
     const bytes = new Uint8Array([1, 2, 3, 4]);
-    await saveDatabaseBytes(3, bytes);
+    await saveDatabaseBytes(bytes);
 
     const stored = await loadStoredDatabase();
-    expect(stored?.schemaVersion).toBe(3);
+    expect(stored?.schemaVersion).toBeUndefined();
     // Compared as a plain array: fake-indexeddb's structured clone can wrap
     // the returned bytes in a differently-shaped Uint8Array (e.g. a Buffer
     // with padding in its underlying ArrayBuffer), which trips up toEqual's
@@ -27,19 +27,27 @@ describe('storage', () => {
     expect(Array.from(stored!.bytes)).toEqual(Array.from(bytes));
   });
 
-  it('returns the stored schema version even when it differs from what was last requested', async () => {
-    await saveDatabaseBytes(1, new Uint8Array([1, 2, 3]));
+  it('overwrites a previously saved database', async () => {
+    await saveDatabaseBytes(new Uint8Array([1]));
+    await saveDatabaseBytes(new Uint8Array([9, 9]));
+
+    const stored = await loadStoredDatabase();
+    expect(Array.from(stored!.bytes)).toEqual([9, 9]);
+  });
+
+  it('round-trips a legacy record’s sibling schema version, for backward compatibility', async () => {
+    await saveLegacyDatabaseBytesForTests(1, new Uint8Array([1, 2, 3]));
 
     const stored = await loadStoredDatabase();
     expect(stored?.schemaVersion).toBe(1);
   });
 
-  it('overwrites a previously saved database', async () => {
-    await saveDatabaseBytes(1, new Uint8Array([1]));
-    await saveDatabaseBytes(2, new Uint8Array([9, 9]));
+  it('overwrites a legacy record entirely when a later save omits the schema version', async () => {
+    await saveLegacyDatabaseBytesForTests(1, new Uint8Array([1]));
+    await saveDatabaseBytes(new Uint8Array([9, 9]));
 
     const stored = await loadStoredDatabase();
-    expect(stored?.schemaVersion).toBe(2);
+    expect(stored?.schemaVersion).toBeUndefined();
     expect(Array.from(stored!.bytes)).toEqual([9, 9]);
   });
 

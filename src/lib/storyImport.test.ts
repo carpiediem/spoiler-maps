@@ -42,6 +42,7 @@ afterEach(async () => {
 
 function minimalDocument(overrides: Partial<StoryDocument> = {}): StoryDocument {
   return {
+    formatVersion: 1,
     name: 'A Song of Ice and Fire',
     initialCenter: { lat: 1, lng: 2 },
     initialZoom: 4,
@@ -65,6 +66,43 @@ minZoom: 0
 maxZoom: 19
 `;
     expect(parseStoryDocument(yamlText)).toEqual(minimalDocument());
+  });
+
+  it('defaults formatVersion to 1 when the field is absent, for files exported before it existed', () => {
+    const yamlText = `
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+`;
+    expect(parseStoryDocument(yamlText).formatVersion).toBe(1);
+  });
+
+  it('accepts an explicit formatVersion no newer than this app understands', () => {
+    const yamlText = `
+formatVersion: 1
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+`;
+    expect(parseStoryDocument(yamlText)).toEqual(minimalDocument());
+  });
+
+  it('rejects a formatVersion newer than this app understands', () => {
+    const yamlText = `
+formatVersion: 2
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+`;
+    expect(() => parseStoryDocument(yamlText)).toThrow(
+      /exported by a newer version of Spoiler Maps/,
+    );
   });
 
   it('throws a clear error for invalid YAML syntax', () => {

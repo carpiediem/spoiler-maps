@@ -14,13 +14,14 @@ import {
   type EpisodeRange,
   type Story,
 } from '../db';
-import type {
-  StoryDocument,
-  StoryDocumentBook,
-  StoryDocumentCharacter,
-  StoryDocumentMarkerSet,
-  StoryDocumentRangeTuple,
-  StoryDocumentSeason,
+import {
+  STORY_DOCUMENT_FORMAT_VERSION,
+  type StoryDocument,
+  type StoryDocumentBook,
+  type StoryDocumentCharacter,
+  type StoryDocumentMarkerSet,
+  type StoryDocumentRangeTuple,
+  type StoryDocumentSeason,
 } from './storyDocument';
 
 class StoryDocumentError extends Error {}
@@ -85,6 +86,13 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
     'The document must be a YAML mapping.',
   );
   const root = raw as Record<string, unknown>;
+
+  const formatVersion =
+    root.formatVersion === undefined ? 1 : assertNumber(root.formatVersion, 'formatVersion');
+  assert(
+    formatVersion <= STORY_DOCUMENT_FORMAT_VERSION,
+    `This file was exported by a newer version of Spoiler Maps (format ${formatVersion}) and can't be opened here (this version understands up to format ${STORY_DOCUMENT_FORMAT_VERSION}). Try updating the app.`,
+  );
 
   const books = assertArray(root.books ?? [], 'books').map((rawBook, bookIndex) => {
     assert(rawBook && typeof rawBook === 'object', `books[${bookIndex}] must be a mapping.`);
@@ -269,6 +277,7 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
   );
 
   return {
+    formatVersion,
     name: assertString(root.name, 'name'),
     tileUrlTemplate: assertOptionalString(root.tileUrlTemplate, 'tileUrlTemplate'),
     tileLayerAuthor: assertOptionalString(root.tileLayerAuthor, 'tileLayerAuthor'),

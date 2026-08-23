@@ -8,6 +8,7 @@ import {
 
 function minimalDocument(overrides: Partial<StoryDocument> = {}): StoryDocument {
   return {
+    formatVersion: 1,
     name: 'Test',
     initialCenter: { lat: 0, lng: 0 },
     initialZoom: 4,

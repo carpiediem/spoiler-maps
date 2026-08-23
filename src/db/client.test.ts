@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createRawDatabaseForTests, getDatabase, persist, resetDatabaseForTests } from './client';
 import { MIGRATIONS } from './schema';
-import { saveDatabaseBytes } from './storage';
+import { saveLegacyDatabaseBytesForTests } from './storage';
 
 async function deleteStoredDatabase(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
@@ -87,7 +87,7 @@ describe('migrations', () => {
       `INSERT INTO stories (name, tile_url_template, initial_center_lat, initial_center_lng, initial_zoom)
        VALUES ('Old Story', 'https://tile.example.com/{z}/{x}/{y}.png', 1, 2, 3);`,
     );
-    await saveDatabaseBytes(1, oldDb.export());
+    await saveLegacyDatabaseBytesForTests(1, oldDb.export());
     oldDb.close();
 
     resetDatabaseForTests();
@@ -110,5 +110,45 @@ describe('migrations', () => {
       .values.map((row) => row[0]);
     expect(columns).not.toContain('chapter_range_book_id');
     expect(columns).not.toContain('episode_range_season_id');
+  });
+
+  it('records the schema version in PRAGMA user_version after creating a database', async () => {
+    const db = await getDatabase();
+
+    const userVersion = db.exec('PRAGMA user_version;')[0]!.values[0]![0];
+    expect(userVersion).toBe(MIGRATIONS[MIGRATIONS.length - 1]!.version);
+  });
+
+  it('survives a migration whose column was already applied without being recorded', async () => {
+    // Simulate the drift bug this fix was written for: bytes that already
+    // have the last migration's ADD COLUMN applied, but with a legacy
+    // schemaVersion recorded as one version behind — so that migration
+    // reruns and hits "duplicate column name" instead of crashing.
+    const lastMigration = MIGRATIONS[MIGRATIONS.length - 1]!;
+    const oldDb = await createRawDatabaseForTests();
+    for (const migration of MIGRATIONS) {
+      oldDb.run(migration.sql);
+    }
+    await saveLegacyDatabaseBytesForTests(lastMigration.version - 1, oldDb.export());
+    oldDb.close();
+
+    resetDatabaseForTests();
+
+    await expect(getDatabase()).resolves.toBeDefined();
+  });
+
+  it('rethrows a migration failure unrelated to an already-applied column', async () => {
+    // A completely empty database, recorded as if migration 1 (which
+    // creates every table, including the one migration 2 alters) had
+    // already run: migration 2 then fails with "no such table", a
+    // different error than "duplicate column name", which shouldn't be
+    // silently swallowed.
+    const oldDb = await createRawDatabaseForTests();
+    await saveLegacyDatabaseBytesForTests(1, oldDb.export());
+    oldDb.close();
+
+    resetDatabaseForTests();
+
+    await expect(getDatabase()).rejects.toThrow(/no such table/);
   });
 });

@@ -26,6 +26,19 @@ async function resolveWasmLocation(): Promise<string> {
   return sqlWasmUrl;
 }
 
+/** Reads the schema version embedded in the database file itself. 0 for a database that's never had it set (including a brand-new one). */
+function getUserVersion(db: SqlDatabase): number {
+  const result = db.exec('PRAGMA user_version;');
+  /* v8 ignore next -- PRAGMA user_version always returns exactly one row/column. */
+  return (result[0]?.values[0]?.[0] as number | undefined) ?? 0;
+}
+
+// PRAGMA doesn't support bound parameters; safe to interpolate since this is
+// always called with SCHEMA_VERSION, never external input.
+function setUserVersion(db: SqlDatabase, version: number): void {
+  db.run(`PRAGMA user_version = ${version};`);
+}
+
 async function createDatabase(): Promise<SqlDatabase> {
   const wasmLocation = await resolveWasmLocation();
   const SQL = await initSqlJs({ locateFile: () => wasmLocation });
@@ -34,15 +47,34 @@ async function createDatabase(): Promise<SqlDatabase> {
   const db = stored ? new SQL.Database(stored.bytes) : new SQL.Database();
   db.run('PRAGMA foreign_keys = ON;');
 
-  // Applies just the migrations the stored database hasn't seen yet (all of
-  // them, on a fresh database), upgrading it in place instead of
-  // discarding whatever was already there.
-  const fromVersion = stored?.schemaVersion ?? 0;
+  // The schema version lives inside the database file itself (PRAGMA
+  // user_version, set below), in the same blob as the schema it describes,
+  // so the two can never drift apart the way two separately-persisted
+  // values could — which is exactly what once let an already-applied
+  // migration run again and crash with "duplicate column name". stored's
+  // own schemaVersion field is only a fallback for data persisted before
+  // user_version was adopted; once read here, it's superseded below.
+  const fromVersion = Math.max(getUserVersion(db), stored?.schemaVersion ?? 0);
   for (const migration of MIGRATIONS) {
     if (migration.version > fromVersion && migration.version <= SCHEMA_VERSION) {
-      db.run(migration.sql);
+      try {
+        db.run(migration.sql);
+      } catch (error) {
+        // Best-effort recovery for data that already drifted out of sync
+        // before this fix, where a migration's columns already exist even
+        // though its version wasn't recorded as applied — treat that
+        // specific failure as "already done" and move on, rather than
+        // leaving the app permanently unable to start.
+        /* v8 ignore next -- sql.js's db.run only ever throws Error instances; the String(error) fallback exists only in case that contract ever changes. */
+        const message = error instanceof Error ? error.message : String(error);
+        if (!message.includes('duplicate column name')) throw error;
+        console.warn(
+          `Skipping migration ${migration.version}: its SQL failed with "${message}", suggesting it already ran previously without being recorded.`,
+        );
+      }
     }
   }
+  setUserVersion(db, SCHEMA_VERSION);
 
   return db;
 }
@@ -67,7 +99,7 @@ export async function persist(): Promise<void> {
   // must be reapplied or foreign key / cascade-delete enforcement silently
   // turns off for the rest of the connection's lifetime.
   db.run('PRAGMA foreign_keys = ON;');
-  await saveDatabaseBytes(SCHEMA_VERSION, bytes);
+  await saveDatabaseBytes(bytes);
 }
 
 /**
