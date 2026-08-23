@@ -8,7 +8,6 @@ import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
 import type { TimelineMode } from './MapTimelineControl';
 import { DeleteConfirmDialog } from './editor-sidebar/DeleteConfirmDialog';
-import { DescriptionPanel } from './editor-sidebar/DescriptionPanel';
 import { storyToFormValues, type FormValues } from './editor-sidebar/formValues';
 import { MapSection } from './editor-sidebar/MapSection';
 import { MarkersSection } from './editor-sidebar/MarkersSection';
@@ -171,9 +170,15 @@ export function EditorSidebar({
 
   useEffect(() => {
     if (syncedStoryIdRef.current === selectedStoryId) return;
-    syncedStoryIdRef.current = selectedStoryId;
 
     const story = stories.find((candidate) => candidate.id === selectedStoryId) ?? null;
+    // A direct navigation to /edit/<id> renders with selectedStoryId already
+    // set while `stories` is still the initial empty array (its fetch is
+    // still in flight) — don't lock in a sync against a not-yet-loaded list,
+    // or the form would stay stuck on empty defaults once the list arrives.
+    if (selectedStoryId !== null && story === null && stories.length === 0) return;
+
+    syncedStoryIdRef.current = selectedStoryId;
     reset(storyToFormValues(story));
     setExpandedSection('map');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -259,13 +264,6 @@ export function EditorSidebar({
             onExportStory={onExportStory}
           />
 
-          {selectedStoryId !== null && (
-            <DescriptionPanel
-              description={selectedStory?.description ?? null}
-              onSave={onSaveDescription}
-            />
-          )}
-
           <Box component="form" onSubmit={handleSubmit(onValid)} sx={{ mt: 2 }}>
             <SidebarSection
               id="map-section"
@@ -280,6 +278,8 @@ export function EditorSidebar({
                 isDirty={isDirty}
                 mapPosition={mapPosition}
                 onCaptureMapPosition={onCaptureMapPosition}
+                description={selectedStoryId !== null ? (selectedStory?.description ?? null) : null}
+                onSaveDescription={selectedStoryId !== null ? onSaveDescription : null}
               />
             </SidebarSection>
 

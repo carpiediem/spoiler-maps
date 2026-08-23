@@ -31,6 +31,8 @@ import type { LatLng } from '../../db';
 import { PALETTE_OPTIONS } from '../../lib/palettes';
 import { resolveTileUrlTemplate } from '../../lib/tileUrl';
 import { detectMaxZoom } from '../../lib/zoomLimitDetection';
+import { DescriptionPanel } from './DescriptionPanel';
+import { StaticField } from './StaticField';
 import { TileUrlHelpDialog } from './TileUrlHelpDialog';
 import type { FormValues } from './formValues';
 
@@ -67,6 +69,9 @@ interface MapSectionProps {
   isDirty: boolean;
   mapPosition: { center: LatLng; zoom: number } | null;
   onCaptureMapPosition: () => { center: LatLng; zoom: number } | null;
+  /** Null until a story is selected — the description panel only makes sense for an existing story. */
+  description: string | null;
+  onSaveDescription: ((description: string) => Promise<void>) | null;
 }
 
 export function MapSection({
@@ -76,6 +81,8 @@ export function MapSection({
   isDirty,
   mapPosition,
   onCaptureMapPosition,
+  description,
+  onSaveDescription,
 }: MapSectionProps) {
   const initialCenter = useWatch({ control, name: 'initialCenter' });
   const initialZoom = useWatch({ control, name: 'initialZoom' });
@@ -153,6 +160,47 @@ export function MapSection({
           />
         )}
       />
+
+      {onSaveDescription && (
+        <DescriptionPanel description={description} onSave={onSaveDescription} />
+      )}
+
+      <FormControl size="small" fullWidth>
+        <InputLabel id="palette-select-label">Palette</InputLabel>
+        <Controller
+          name="paletteKey"
+          control={control}
+          render={({ field }) => (
+            <Select
+              {...field}
+              labelId="palette-select-label"
+              label="Palette"
+              onChange={(event: SelectChangeEvent) => field.onChange(event.target.value)}
+              renderValue={(value) => {
+                const option = PALETTE_OPTIONS.find((candidate) => candidate.key === value);
+                return (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {option && <PaletteSwatches colors={option.swatchColors} />}
+                    {option ? option.label : 'Default'}
+                  </Box>
+                );
+              }}
+            >
+              <MenuItem value={DEFAULT_PALETTE_VALUE}>
+                <em>Default</em>
+              </MenuItem>
+              {PALETTE_OPTIONS.map((option) => (
+                <MenuItem key={option.key} value={option.key}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PaletteSwatches colors={option.swatchColors} />
+                    {option.label}
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          )}
+        />
+      </FormControl>
 
       <Controller
         name="tileUrlValue"
@@ -301,14 +349,7 @@ export function MapSection({
         </Stack>
       )}
 
-      <FormControl fullWidth variant="outlined" size="small">
-        <InputLabel
-          shrink
-          htmlFor="initial-position-value"
-          sx={{ position: 'static', transform: 'none', ml: '14px', fontSize: '0.75rem' }}
-        >
-          Initial Position
-        </InputLabel>
+      <StaticField label="Initial Position" htmlFor="initial-position-value">
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography id="initial-position-value" variant="body2" sx={{ ml: '14px' }}>
             {initialCenter.lat.toFixed(4)}, {initialCenter.lng.toFixed(4)} · Zoom {initialZoom}
@@ -324,44 +365,7 @@ export function MapSection({
             </IconButton>
           </Tooltip>
         </Stack>
-      </FormControl>
-
-      <FormControl size="small" fullWidth>
-        <InputLabel id="palette-select-label">Palette</InputLabel>
-        <Controller
-          name="paletteKey"
-          control={control}
-          render={({ field }) => (
-            <Select
-              {...field}
-              labelId="palette-select-label"
-              label="Palette"
-              onChange={(event: SelectChangeEvent) => field.onChange(event.target.value)}
-              renderValue={(value) => {
-                const option = PALETTE_OPTIONS.find((candidate) => candidate.key === value);
-                return (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {option && <PaletteSwatches colors={option.swatchColors} />}
-                    {option ? option.label : 'Default'}
-                  </Box>
-                );
-              }}
-            >
-              <MenuItem value={DEFAULT_PALETTE_VALUE}>
-                <em>Default</em>
-              </MenuItem>
-              {PALETTE_OPTIONS.map((option) => (
-                <MenuItem key={option.key} value={option.key}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PaletteSwatches colors={option.swatchColors} />
-                    {option.label}
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          )}
-        />
-      </FormControl>
+      </StaticField>
 
       {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 

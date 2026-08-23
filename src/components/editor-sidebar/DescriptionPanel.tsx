@@ -2,6 +2,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
 import { DescriptionEditorDialog } from './DescriptionEditorDialog';
+import { StaticField } from './StaticField';
 
 interface DescriptionPanelProps {
   description: string | null;
@@ -13,26 +14,32 @@ export function DescriptionPanel({ description, onSave }: DescriptionPanelProps)
   const [isEditing, setIsEditing] = useState(false);
 
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', mt: 2 }}>
-      <Box
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          display: '-webkit-box',
-          WebkitLineClamp: 3,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}
-      >
-        <Typography variant="body2" color={description ? 'text.primary' : 'text.secondary'}>
-          {description || 'No description yet.'}
-        </Typography>
-      </Box>
-      <Tooltip title="Edit description" arrow>
-        <IconButton size="small" aria-label="Edit description" onClick={() => setIsEditing(true)}>
-          <EditIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
+    <StaticField label="Description" htmlFor="description-value">
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          <Typography
+            id="description-value"
+            variant="body2"
+            color={description ? 'text.primary' : 'text.secondary'}
+          >
+            {description || 'No description yet.'}
+          </Typography>
+        </Box>
+        <Tooltip title="Edit description" arrow>
+          <IconButton size="small" aria-label="Edit description" onClick={() => setIsEditing(true)}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Stack>
 
       <DescriptionEditorDialog
         open={isEditing}
@@ -40,6 +47,6 @@ export function DescriptionPanel({ description, onSave }: DescriptionPanelProps)
         description={description}
         onSave={onSave}
       />
-    </Stack>
+    </StaticField>
   );
 }

@@ -120,6 +120,38 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: /^renamed story$/i })).toBeInTheDocument();
   });
 
+  it('populates the form when /edit/<id> is loaded directly, not just via in-app navigation', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/asoiaf/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+    resetDatabaseForTests();
+
+    // Renders straight onto /edit/<id> — selectedStoryId is already set on
+    // the very first render, before listStories() has resolved and
+    // populated `stories`. Regression test for a bug where the form's
+    // sync effect locked onto that first (empty) render and never
+    // re-synced once the real story list arrived.
+    render(
+      <MemoryRouter initialEntries={[`/edit/${story.id}`]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByDisplayValue('A Song of Ice and Fire')).toBeInTheDocument();
+    expect(screen.getByLabelText(/tile layer url template/i)).toHaveValue(
+      'https://tile.example.com/asoiaf/{z}/{x}/{y}.png',
+    );
+  });
+
   it('redirects a bare /edit to the remembered last-viewed story, when it still exists', async () => {
     await createStory({
       name: 'A Song of Ice and Fire',
