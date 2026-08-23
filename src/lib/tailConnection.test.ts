@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFadedTailSegments, buildTailPoints, hasTailToDraw } from './tailConnection';
+import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from './tailConnection';
 
 describe('buildTailPoints', () => {
   it('starts with the position itself, then its own tail waypoints', () => {
@@ -65,50 +65,34 @@ describe('hasTailToDraw', () => {
   });
 });
 
-describe('buildFadedTailSegments', () => {
-  it('produces nothing for zero or one point', () => {
-    expect(buildFadedTailSegments([], 1)).toEqual([]);
-    expect(buildFadedTailSegments([{ lat: 1, lng: 1 }], 1)).toEqual([]);
+describe('applyTailOpacityGradient', () => {
+  it('produces nothing for an empty list', () => {
+    expect(applyTailOpacityGradient([])).toEqual([]);
   });
 
-  it('produces one full-opacity segment for two points', () => {
-    const points = [
-      { lat: 1, lng: 1 },
-      { lat: 2, lng: 2 },
-    ];
-
-    expect(buildFadedTailSegments(points, 0.8)).toEqual([
-      { positions: [points[0], points[1]], opacity: 0.8 },
-    ]);
+  it('draws a single tail at full opacity', () => {
+    expect(applyTailOpacityGradient([{ opacity: 0 }])).toEqual([{ opacity: 1 }]);
   });
 
-  it('fades each successive segment, from full opacity down to 30% of it at the far end', () => {
-    const points = [
-      { lat: 1, lng: 1 },
-      { lat: 2, lng: 2 },
-      { lat: 3, lng: 3 },
-      { lat: 4, lng: 4 },
-    ];
+  it('fades linearly from half opacity for the first (oldest) tail to full for the last (most recent)', () => {
+    const tails = [{ opacity: 0 }, { opacity: 0 }, { opacity: 0 }];
 
-    const segments = buildFadedTailSegments(points, 1);
+    const result = applyTailOpacityGradient(tails);
 
-    expect(segments).toHaveLength(3);
-    expect(segments[0]!.opacity).toBe(1);
-    expect(segments[2]!.opacity).toBeCloseTo(0.3);
-    expect(segments[1]!.opacity).toBeGreaterThan(segments[2]!.opacity);
-    expect(segments[1]!.opacity).toBeLessThan(segments[0]!.opacity);
+    expect(result[0]!.opacity).toBe(0.5);
+    expect(result[1]!.opacity).toBeCloseTo(0.75);
+    expect(result[2]!.opacity).toBe(1);
   });
 
-  it('scales the fade by the tail’s own base opacity', () => {
-    const points = [
-      { lat: 1, lng: 1 },
-      { lat: 2, lng: 2 },
-      { lat: 3, lng: 3 },
+  it('preserves the other fields on each tail', () => {
+    const tails = [
+      { characterId: 1, points: [], color: '#ff0000', opacity: 0 },
+      { characterId: 1, points: [], color: '#ff0000', opacity: 0 },
     ];
 
-    const segments = buildFadedTailSegments(points, 0.5);
+    const result = applyTailOpacityGradient(tails);
 
-    expect(segments[0]!.opacity).toBe(0.5);
-    expect(segments[1]!.opacity).toBeCloseTo(0.15);
+    expect(result[0]).toMatchObject({ characterId: 1, color: '#ff0000', opacity: 0.5 });
+    expect(result[1]).toMatchObject({ characterId: 1, color: '#ff0000', opacity: 1 });
   });
 });
