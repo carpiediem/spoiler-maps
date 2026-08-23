@@ -19,10 +19,17 @@ import type { Polyline as LeafletPolyline } from 'leaflet';
  */
 export function attachTailFlowClass(instance: LeafletPolyline | null) {
   if (!instance) return;
-  const element = instance.getElement();
-  if (element) {
-    element.classList.add('character-tail-flow');
-  } else {
-    instance.once('add', () => instance.getElement()?.classList.add('character-tail-flow'));
+
+  function applyClass() {
+    instance!.getElement()?.classList.add('character-tail-flow');
   }
+
+  applyClass();
+  // Not once(): Leaflet's Path.onAdd recreates the underlying <path> element
+  // from scratch on every add, not just the first — and react-leaflet's own
+  // layer-attachment effect can re-run (remove then re-add the same Leaflet
+  // instance to the map) without this ref firing again, since the instance
+  // itself doesn't change identity. A persistent listener re-applies the
+  // class on each such recreation instead of only the first.
+  instance.on('add', applyClass);
 }

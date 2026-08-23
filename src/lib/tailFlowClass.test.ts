@@ -11,33 +11,42 @@ describe('attachTailFlowClass', () => {
     const element = document.createElement('div');
     const instance = {
       getElement: () => element,
-      once: vi.fn(),
+      on: vi.fn(),
     } as unknown as LeafletPolyline;
 
     attachTailFlowClass(instance);
 
     expect(element.classList.contains('character-tail-flow')).toBe(true);
-    expect(instance.once).not.toHaveBeenCalled();
   });
 
-  it('waits for Leaflet’s own "add" event when the element does not exist yet', () => {
-    const element = document.createElement('div');
-    let elementReady = false;
+  it('does nothing yet if the element doesn’t exist when first called', () => {
+    const instance = {
+      getElement: () => undefined,
+      on: vi.fn(),
+    } as unknown as LeafletPolyline;
+
+    expect(() => attachTailFlowClass(instance)).not.toThrow();
+  });
+
+  it('registers a persistent "add" listener (not once), re-applying the class every time Leaflet fires it', () => {
+    let element = document.createElement('div');
     let addCallback: (() => void) | undefined;
     const instance = {
-      getElement: () => (elementReady ? element : undefined),
-      once: vi.fn((event: string, callback: () => void) => {
+      getElement: () => element,
+      on: vi.fn((event: string, callback: () => void) => {
         expect(event).toBe('add');
         addCallback = callback;
       }),
     } as unknown as LeafletPolyline;
 
     attachTailFlowClass(instance);
+    expect(element.classList.contains('character-tail-flow')).toBe(true);
+    expect(instance.on).toHaveBeenCalledTimes(1);
 
-    expect(element.classList.contains('character-tail-flow')).toBe(false);
-    expect(instance.once).toHaveBeenCalledTimes(1);
-
-    elementReady = true;
+    // Leaflet's Path.onAdd recreates the underlying <path> element from
+    // scratch on every add, so a fresh (classless) element stands in here —
+    // the listener should reapply the class to it too, not just once.
+    element = document.createElement('div');
     addCallback?.();
 
     expect(element.classList.contains('character-tail-flow')).toBe(true);
