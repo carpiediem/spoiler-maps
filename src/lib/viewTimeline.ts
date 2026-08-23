@@ -62,21 +62,28 @@ export function buildDocumentEpisodeOptions(document: StoryDocument): FlatOption
  * app's convention) — so a 0-based start of `2` (the third chapter) is
  * reached once `currentIndex` is `3` or more, hence the strict `<` below.
  */
-function isRangeReached(range: StoryDocumentRangeTuple | undefined, currentIndex: number): boolean {
-  const start = range?.[0];
-  return start === null || start === undefined || start < currentIndex;
+function isRangeReached(range: StoryDocumentRangeTuple, currentIndex: number): boolean {
+  const start = range[0];
+  return start === null || start < currentIndex;
 }
 
 /**
  * The view-screen equivalent of makeTimelineVisibilityChecker: true once a
  * position's start chapter/episode (for the active medium) has been reached
  * by the timeline's current (1-based) scrub position, or when it has no
- * lower bound for that medium.
+ * range at all for that medium. A position restricted only by the *other*
+ * medium (e.g. an episode range but no chapter range at all) never shows
+ * while scrubbing the active one — only a position with no range for
+ * either medium is unconditionally visible in both.
  */
 export function isPositionVisible(
   position: StoryDocumentPosition,
   mode: TimelineMode,
   currentIndex: number,
 ): boolean {
-  return isRangeReached(mode === 'book' ? position.chapters : position.episodes, currentIndex);
+  const activeRange = mode === 'book' ? position.chapters : position.episodes;
+  const otherRange = mode === 'book' ? position.episodes : position.chapters;
+
+  if (activeRange === undefined) return otherRange === undefined;
+  return isRangeReached(activeRange, currentIndex);
 }

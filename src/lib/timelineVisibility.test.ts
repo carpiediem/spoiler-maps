@@ -72,6 +72,38 @@ describe('makeTimelineVisibilityChecker', () => {
     expect(isVisible(position)).toBe(true);
   });
 
+  it('is hidden in book mode when the position is restricted only by an episode range', () => {
+    const isVisible = makeTimelineVisibilityChecker('book', 2, chapterOptions, episodeOptions);
+    const position = makePosition({
+      chapterRange: null,
+      episodeRange: { startEpisodeId: 10, endEpisodeId: null },
+    });
+    expect(isVisible(position)).toBe(false);
+  });
+
+  it('is hidden in tv mode when the position is restricted only by a chapter range', () => {
+    const isVisible = makeTimelineVisibilityChecker('tv', 2, chapterOptions, episodeOptions);
+    const position = makePosition({
+      chapterRange: { startChapterId: 1, endChapterId: null },
+      episodeRange: null,
+    });
+    expect(isVisible(position)).toBe(false);
+  });
+
+  it('is visible in both modes when neither range is set', () => {
+    const isVisibleInBook = makeTimelineVisibilityChecker(
+      'book',
+      1,
+      chapterOptions,
+      episodeOptions,
+    );
+    const isVisibleInTv = makeTimelineVisibilityChecker('tv', 1, chapterOptions, episodeOptions);
+    const position = makePosition({ chapterRange: null, episodeRange: null });
+
+    expect(isVisibleInBook(position)).toBe(true);
+    expect(isVisibleInTv(position)).toBe(true);
+  });
+
   it('checks the episode range instead of the chapter range in tv mode', () => {
     const isVisible = makeTimelineVisibilityChecker('tv', 1, chapterOptions, episodeOptions);
     const position = makePosition({
