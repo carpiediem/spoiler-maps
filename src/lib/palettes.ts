@@ -98,6 +98,16 @@ export const PALETTES: Record<string, PaletteDefinition> = {
   },
 };
 
-export const PALETTE_OPTIONS: { key: string; label: string }[] = Object.entries(PALETTES).map(
-  ([key, { label }]) => ({ key, label }),
-);
+export const PALETTE_OPTIONS: { key: string; label: string; swatchColors: string[] }[] =
+  Object.entries(PALETTES).map(([key, { label, palette }]) => ({
+    key,
+    label,
+    swatchColors: [
+      palette.primary,
+      palette.secondary,
+      palette.info,
+      palette.error,
+      palette.warning,
+      palette.success,
+    ].map((color) => (color as { main: string }).main),
+  }));

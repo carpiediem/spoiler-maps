@@ -36,6 +36,26 @@ import type { FormValues } from './formValues';
 
 const DEFAULT_PALETTE_VALUE = '';
 
+function PaletteSwatches({ colors }: { colors: string[] }) {
+  return (
+    <Box sx={{ display: 'flex', flexShrink: 0, gap: '4px' }}>
+      {colors.map((color, index) => (
+        <Box
+          key={index}
+          sx={{
+            width: 12,
+            height: 12,
+            borderRadius: '50%',
+            backgroundColor: color,
+            border: 1,
+            borderColor: 'divider',
+          }}
+        />
+      ))}
+    </Box>
+  );
+}
+
 // How long to wait, after the tile URL field stops changing, before probing
 // it for zoom limits — avoids firing off a probe per keystroke.
 const ZOOM_DETECTION_DEBOUNCE_MS = 600;
@@ -317,13 +337,25 @@ export function MapSection({
               labelId="palette-select-label"
               label="Palette"
               onChange={(event: SelectChangeEvent) => field.onChange(event.target.value)}
+              renderValue={(value) => {
+                const option = PALETTE_OPTIONS.find((candidate) => candidate.key === value);
+                return (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {option && <PaletteSwatches colors={option.swatchColors} />}
+                    {option ? option.label : 'Default'}
+                  </Box>
+                );
+              }}
             >
               <MenuItem value={DEFAULT_PALETTE_VALUE}>
                 <em>Default</em>
               </MenuItem>
               {PALETTE_OPTIONS.map((option) => (
                 <MenuItem key={option.key} value={option.key}>
-                  {option.label}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PaletteSwatches colors={option.swatchColors} />
+                    {option.label}
+                  </Box>
                 </MenuItem>
               ))}
             </Select>
