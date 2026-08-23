@@ -34,6 +34,20 @@ export function SidebarSection({
       disableGutters
       elevation={0}
       square
+      slotProps={{
+        // The heading (h3) slot, not AccordionSummary itself, is what wraps
+        // the header at the DOM level — sticking that (with an opaque
+        // background, so scrolled content doesn't show through) is what
+        // keeps the whole header visually pinned, not just the button.
+        heading: {
+          sx: {
+            position: 'sticky',
+            top: 0,
+            zIndex: 1,
+            backgroundColor: 'grey.100',
+          },
+        },
+      }}
       sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
     >
       <AccordionSummary
@@ -41,13 +55,9 @@ export function SidebarSection({
         aria-controls={`${id}-content`}
         id={`${id}-header`}
         sx={{
-          backgroundColor: 'rgba(0, 0, 0, .03)',
           px: 1,
           minHeight: 40,
           '&.Mui-expanded': { minHeight: 40 },
-          position: 'sticky',
-          top: 0,
-          zIndex: 1,
         }}
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>

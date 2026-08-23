@@ -34,15 +34,17 @@ describe('SidebarSection', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 
-  it('sticks the header to the top of its scroll container', () => {
+  it('sticks the header’s h3 wrapper, with an opaque background, to the top of its scroll container', () => {
     render(
       <SidebarSection id="books" title="Books" expanded onChange={vi.fn()}>
         content
       </SidebarSection>,
     );
 
-    const header = document.getElementById('books-header')!;
-    expect(getComputedStyle(header).position).toBe('sticky');
-    expect(getComputedStyle(header).top).toBe('0px');
+    const heading = document.getElementById('books-header')!.closest('h3')!;
+    expect(getComputedStyle(heading).position).toBe('sticky');
+    expect(getComputedStyle(heading).top).toBe('0px');
+    expect(getComputedStyle(heading).backgroundColor).not.toBe('');
+    expect(getComputedStyle(heading).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
   });
 });
