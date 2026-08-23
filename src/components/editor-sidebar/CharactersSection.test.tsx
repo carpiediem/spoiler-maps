@@ -732,7 +732,7 @@ describe('CharactersSection', () => {
     );
   });
 
-  it('fades the expanded character’s tails from half opacity (oldest) to full (most recent)', async () => {
+  it('fades the expanded character’s tails from 10% opacity (oldest) to full (most recent)', async () => {
     const storyId = await seedStoryId();
     const character = await createCharacter({
       storyId,
@@ -788,7 +788,7 @@ describe('CharactersSection', () => {
             { lat: 0.5, lng: 0.5 },
           ],
           color: '#ff0000',
-          opacity: 0.5,
+          opacity: 0.1,
         },
         {
           characterId: character.id,
@@ -1235,7 +1235,7 @@ describe('CharactersSection', () => {
           { lat: 0.5, lng: 0.5 },
         ],
         color: '#ff0000',
-        opacity: 0.5,
+        opacity: 0.1,
       },
       {
         characterId: jon.id,
