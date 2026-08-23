@@ -78,7 +78,7 @@ export function ViewScreen() {
   const loadState = useLoadedDocument(storyId, dataUrl);
 
   const [checkedIndices, setCheckedIndices] = useState<Set<number>>(new Set());
-  const [showFullPath, setShowFullPath] = useState(false);
+  const [showFullPath, setShowFullPath] = useState(true);
   const [timelineMode, setTimelineMode] = useState<TimelineMode>('book');
   const [timelineIndex, setTimelineIndex] = useState(1);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);

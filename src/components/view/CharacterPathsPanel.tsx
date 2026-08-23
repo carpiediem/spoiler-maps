@@ -86,7 +86,7 @@ export function CharacterPathsPanel({
         <Tooltip title={showFullPath ? 'Current locations only' : 'Show full path'} arrow>
           <IconButton
             size="small"
-            aria-label={showFullPath ? 'Show full path' : 'Current locations only'}
+            aria-label={showFullPath ? 'Current locations only' : 'Show full path'}
             onClick={() => onShowFullPathChange(!showFullPath)}
           >
             {showFullPath ? (

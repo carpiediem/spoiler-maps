@@ -160,7 +160,7 @@ describe('ViewScreen', () => {
     });
   });
 
-  it('draws a tail once "Show full path" is toggled on', async () => {
+  it('shows full paths by default, hiding tails once toggled to "Current locations only"', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
@@ -179,7 +179,7 @@ describe('ViewScreen', () => {
     await user.click(screen.getByRole('button', { name: /current locations only/i }));
 
     await waitFor(() => {
-      expect(container.querySelectorAll('path.leaflet-interactive').length).toBeGreaterThan(
+      expect(container.querySelectorAll('path.leaflet-interactive').length).toBeLessThan(
         pathCountBefore,
       );
     });
