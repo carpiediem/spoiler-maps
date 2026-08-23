@@ -94,7 +94,10 @@ function extractOutline(filePath) {
 }
 
 function escapeMd(text) {
-  return text.replace(/([*_`[\]])/g, '\\$1');
+  // Backslash first, so an existing backslash in the title (e.g. right
+  // before one of the other special characters) doesn't itself absorb the
+  // escaping we're about to add for that character.
+  return text.replace(/\\/g, '\\\\').replace(/([*_`[\]])/g, '\\$1');
 }
 
 function renderNode(node, depth) {
