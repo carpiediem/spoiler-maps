@@ -30,6 +30,10 @@ interface MapTimelineControlProps {
   onChange: (mode: TimelineMode, index: number) => void;
   /** An optional label shown above the panel, e.g. "Show spoilers through:" for the view screen. */
   heading?: string;
+  /** Starts the slider here instead of defaulting to book mode's last entry, e.g. from a #chapter-N URL fragment. Applied once, the first time the named medium's options are non-empty — chapterOptions/episodeOptions may still be loading (e.g. from the database) when this component first mounts. */
+  initialMode?: TimelineMode;
+  /** Paired with initialMode: the flat 1-based index to start on, clamped to the named medium's actual range once known. */
+  initialIndex?: number;
 }
 
 /**
@@ -46,10 +50,13 @@ export function MapTimelineControl({
   hasSeasons,
   onChange,
   heading,
+  initialMode,
+  initialIndex,
 }: MapTimelineControlProps) {
   // Starts in book mode unless the story has only TV seasons; null (the
   // no-override case) keeps tracking that default live as the story's
-  // books/seasons finish loading, until the user picks a mode themselves.
+  // books/seasons finish loading, until the user picks a mode themselves
+  // (or initialMode applies, below).
   const [modeOverride, setModeOverride] = useState<TimelineMode | null>(null);
   const defaultMode: TimelineMode = hasSeasons && !hasBooks ? 'tv' : 'book';
   const mode = modeOverride ?? defaultMode;
@@ -68,6 +75,31 @@ export function MapTimelineControl({
     if (activeOptions.length === 0) return;
     onChange(mode, index);
   }, [mode, index, activeOptions.length, onChange]);
+
+  // Applies initialMode/initialIndex exactly once, but only once the named
+  // medium's own options are non-empty — for the editor, chapterOptions/
+  // episodeOptions load from the database asynchronously and are still
+  // empty on this component's first render, so clamping against them at
+  // mount time (like a manual scrub does) would immediately clamp a
+  // #chapter-20 request down to nothing. The view screen's document is
+  // already fully loaded before this component ever mounts, so there this
+  // just applies on the very next render. Adjusting state directly during
+  // render (React's documented pattern for this — see
+  // https://react.dev/learn/you-might-not-need-an-effect) rather than in a
+  // useEffect, since initialIndex/initialTargetOptions.length are already
+  // known synchronously; no need for the extra render an effect would cost.
+  const [appliedInitial, setAppliedInitial] = useState(initialIndex === undefined);
+  const initialTargetMode = initialMode ?? defaultMode;
+  const initialTargetOptions = initialTargetMode === 'book' ? chapterOptions : episodeOptions;
+
+  if (!appliedInitial && initialIndex !== undefined && initialTargetOptions.length > 0) {
+    setAppliedInitial(true);
+    if (initialMode !== undefined) setModeOverride(initialMode);
+    setIndexOverride({
+      key: `${initialTargetMode}:${initialTargetOptions.length}`,
+      index: Math.min(initialTargetOptions.length, Math.max(1, initialIndex)),
+    });
+  }
 
   // Tracks the setInterval id for an arrow key currently held down, so
   // scrubbing continues at a steady rate until that key is released,

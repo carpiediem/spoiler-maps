@@ -1,6 +1,6 @@
 import type { Map as LeafletMap } from 'leaflet';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { EditorSidebar } from '../components/EditorSidebar';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
 import { MapView } from '../components/MapView';
@@ -17,6 +17,7 @@ import { buildTileAttribution } from '../lib/attribution';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import { downloadTextFile } from '../lib/downloadTextFile';
 import { getLastViewedStoryId, setLastViewedStoryId } from '../lib/lastViewedStory';
+import { parseTimelineHash } from '../lib/timelineHash';
 import {
   DEFAULT_CENTER,
   DEFAULT_MAX_ZOOM,
@@ -72,6 +73,11 @@ export function EditScreen() {
   // character positions CharactersSection surfaces as map pins.
   const [timelineMode, setTimelineMode] = useState<TimelineMode>('book');
   const [timelineIndex, setTimelineIndex] = useState(1);
+  // Seeded once from a #chapter-N or #episode-N URL fragment, so a shared
+  // link can start the timeline past its default (the story's last
+  // chapter/episode) here too, same as the view screen.
+  const location = useLocation();
+  const [initialTimeline] = useState(() => parseTimelineHash(location.hash));
   const mapRef = useRef<LeafletMap | null>(null);
   const rangeOptions = useRangeOptions(selectedStoryId);
 
@@ -289,6 +295,8 @@ export function EditScreen() {
         <MapTimelineControl
           key={`timeline-${selectedStoryId ?? 'new'}`}
           {...rangeOptions}
+          initialMode={initialTimeline?.mode}
+          initialIndex={initialTimeline?.index}
           onChange={handleTimelineChange}
         />
       </main>

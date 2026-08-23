@@ -1,6 +1,6 @@
 import { Alert, Box, CircularProgress } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { CharacterPathsPanel } from '../components/view/CharacterPathsPanel';
 import { WelcomeDialog } from '../components/view/WelcomeDialog';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
@@ -9,6 +9,7 @@ import { buildTileAttribution } from '../lib/attribution';
 import { buildStoryDocument } from '../lib/storyExport';
 import { parseStoryDocument } from '../lib/storyImport';
 import type { StoryDocument } from '../lib/storyDocument';
+import { parseTimelineHash } from '../lib/timelineHash';
 import { buildDocumentChapterOptions, buildDocumentEpisodeOptions } from '../lib/viewTimeline';
 import { buildViewPinsAndTails } from '../lib/viewCharacterPins';
 import './EditScreen.css';
@@ -71,6 +72,7 @@ function useLoadedDocument(storyId: number | null, dataUrl: string | null): Load
 export function ViewScreen() {
   const { storyId: storyIdParam } = useParams<{ storyId: string }>();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const dataUrl = searchParams.get('d');
   const parsedStoryId = storyIdParam ? Number(storyIdParam) : null;
   const storyId = parsedStoryId !== null && Number.isFinite(parsedStoryId) ? parsedStoryId : null;
@@ -81,6 +83,12 @@ export function ViewScreen() {
   const [showFullPath, setShowFullPath] = useState(true);
   const [timelineMode, setTimelineMode] = useState<TimelineMode>('book');
   const [timelineIndex, setTimelineIndex] = useState(1);
+  // Seeded once from a #chapter-N or #episode-N URL fragment at first
+  // render, so a shared link can start the spoiler slider past the
+  // default (the story's last chapter/episode). Read from the router's own
+  // location (not window.location) so it works under MemoryRouter in tests
+  // too, not just a real BrowserRouter.
+  const [initialTimeline] = useState(() => parseTimelineHash(location.hash));
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);
 
   const document = loadState.status === 'ready' ? loadState.document : null;
@@ -164,6 +172,8 @@ export function ViewScreen() {
           hasBooks={chapterOptions.length > 0}
           hasSeasons={episodeOptions.length > 0}
           heading="Show spoilers through:"
+          initialMode={initialTimeline?.mode}
+          initialIndex={initialTimeline?.index}
           onChange={(mode, index) => {
             setTimelineMode(mode);
             setTimelineIndex(index);

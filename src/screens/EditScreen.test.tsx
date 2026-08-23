@@ -439,6 +439,36 @@ describe('App', () => {
     expect(await screen.findByText('AGOT: Prologue')).toBeInTheDocument();
   });
 
+  it('starts the timeline slider from a #chapter-N URL fragment instead of the last chapter', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+    });
+    const book = await createBook({
+      storyId: story.id,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
+    await createChapter({ bookId: book.id, name: 'Bran', url: null, sortOrder: 1 });
+
+    render(
+      <MemoryRouter initialEntries={[`/edit/${story.id}#chapter-1`]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('AGOT: Prologue')).toBeInTheDocument();
+  });
+
   it('imports a YAML file as a brand-new story, selecting it once done', async () => {
     const user = userEvent.setup();
     render(
