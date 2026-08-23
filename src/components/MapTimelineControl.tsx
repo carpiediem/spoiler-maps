@@ -13,10 +13,13 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { FlatOption } from './editor-sidebar/characters/rangeOptions';
 
 export type TimelineMode = 'book' | 'tv';
+
+// How often, in ms, the slider advances while an arrow key is held down.
+const HELD_KEY_STEP_INTERVAL_MS = 150;
 
 interface MapTimelineControlProps {
   chapterOptions: FlatOption[];
@@ -66,6 +69,17 @@ export function MapTimelineControl({
     onChange(mode, index);
   }, [mode, index, activeOptions.length, onChange]);
 
+  // Tracks the setInterval id for an arrow key currently held down, so
+  // scrubbing continues at a steady rate until that key is released,
+  // regardless of which control within the panel has focus.
+  const heldStepIntervalRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (heldStepIntervalRef.current !== null) window.clearInterval(heldStepIntervalRef.current);
+    };
+  }, []);
+
   if (!hasBooks && !hasSeasons) return null;
 
   function handleModeChange(_event: unknown, next: TimelineMode | null) {
@@ -76,8 +90,43 @@ export function MapTimelineControl({
     setIndexOverride({ key: optionsKey, index: Math.min(activeOptions.length, Math.max(1, next)) });
   }
 
+  // Uses a functional update (rather than `setIndex(index + delta)`) so
+  // repeated calls from a held-key interval each advance from the latest
+  // index instead of the one captured when the key was first pressed.
   function step(delta: number) {
-    setIndex(index + delta);
+    setIndexOverride((prev) => {
+      const current = prev?.key === optionsKey ? prev.index : Math.max(activeOptions.length, 1);
+      return {
+        key: optionsKey,
+        index: Math.min(activeOptions.length, Math.max(1, current + delta)),
+      };
+    });
+  }
+
+  // Captured (rather than bubbled) so this runs before, and can suppress,
+  // the Slider's own native arrow-key handling — otherwise a press while
+  // the slider itself is focused would step twice: once from MUI's built-in
+  // behavior and once from here.
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.repeat) return;
+
+    if (heldStepIntervalRef.current !== null) window.clearInterval(heldStepIntervalRef.current);
+
+    const delta = event.key === 'ArrowLeft' ? -1 : 1;
+    step(delta);
+    heldStepIntervalRef.current = window.setInterval(() => step(delta), HELD_KEY_STEP_INTERVAL_MS);
+  }
+
+  function handleKeyUp(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.stopPropagation();
+    if (heldStepIntervalRef.current !== null) {
+      window.clearInterval(heldStepIntervalRef.current);
+      heldStepIntervalRef.current = null;
+    }
   }
 
   const unitLabel = mode === 'book' ? 'Chapter' : 'Episode';
@@ -90,6 +139,8 @@ export function MapTimelineControl({
   return (
     <Paper
       elevation={2}
+      onKeyDownCapture={handleKeyDown}
+      onKeyUpCapture={handleKeyUp}
       sx={{
         position: 'absolute',
         top: 10,

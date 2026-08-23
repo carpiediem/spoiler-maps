@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { FlatOption } from './editor-sidebar/characters/rangeOptions';
@@ -153,7 +153,7 @@ describe('MapTimelineControl', () => {
     expect(next).toBeDisabled();
   });
 
-  it('moves the scrub position via the slider', async () => {
+  it('moves the scrub position via the arrow keys while the slider itself is focused', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(
@@ -172,6 +172,29 @@ describe('MapTimelineControl', () => {
 
     expect(await screen.findByText('AGOT: Prologue')).toBeInTheDocument();
     await waitFor(() => expect(onChange).toHaveBeenLastCalledWith('book', 1));
+  });
+
+  it('moves the scrub position via the slider’s own value change (e.g. a drag), not just arrow keys', () => {
+    const onChange = vi.fn();
+    render(
+      <MapTimelineControl
+        chapterOptions={chapterOptions('Prologue', 'Bran')}
+        episodeOptions={[]}
+        hasBooks
+        hasSeasons={false}
+        onChange={onChange}
+      />,
+    );
+
+    const slider = screen.getByRole('slider');
+    slider.focus();
+    // The Home key isn't intercepted by the panel's own arrow-key handling,
+    // so it reaches the Slider's native keyboard handling and fires its
+    // onChange the same way a mouse/touch drag would.
+    fireEvent.keyDown(slider, { key: 'Home' });
+
+    expect(screen.getByText('AGOT: Prologue')).toBeInTheDocument();
+    expect(onChange).toHaveBeenLastCalledWith('book', 1);
   });
 
   it('hyperlinks the label when the current chapter has a URL', () => {
@@ -219,5 +242,175 @@ describe('MapTimelineControl', () => {
     );
 
     expect(screen.getByText('Show spoilers through:')).toBeInTheDocument();
+  });
+
+  it('steps via the arrow keys when a non-slider control within the panel has focus', () => {
+    render(
+      <MapTimelineControl
+        chapterOptions={chapterOptions('Prologue', 'Bran', 'Catelyn')}
+        episodeOptions={[]}
+        hasBooks
+        hasSeasons={false}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('AGOT: Catelyn')).toBeInTheDocument();
+
+    const previous = screen.getByRole('button', { name: 'Previous Chapter' });
+    previous.focus();
+    fireEvent.keyDown(previous, { key: 'ArrowLeft' });
+
+    expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
+  });
+
+  it('does not double-step when the slider itself has focus', () => {
+    render(
+      <MapTimelineControl
+        chapterOptions={chapterOptions('Prologue', 'Bran', 'Catelyn')}
+        episodeOptions={[]}
+        hasBooks
+        hasSeasons={false}
+        onChange={vi.fn()}
+      />,
+    );
+
+    const slider = screen.getByRole('slider');
+    slider.focus();
+    fireEvent.keyDown(slider, { key: 'ArrowLeft' });
+
+    expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
+  });
+
+  it('keeps stepping at a steady rate while an arrow key is held, stopping on key up', () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <MapTimelineControl
+          chapterOptions={chapterOptions('Prologue', 'Bran', 'Catelyn', 'Eddard', 'Daenerys')}
+          episodeOptions={[]}
+          hasBooks
+          hasSeasons={false}
+          onChange={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText('AGOT: Daenerys')).toBeInTheDocument();
+
+      const previous = screen.getByRole('button', { name: 'Previous Chapter' });
+      previous.focus();
+      fireEvent.keyDown(previous, { key: 'ArrowLeft' });
+      expect(screen.getByText('AGOT: Eddard')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(150);
+      });
+      expect(screen.getByText('AGOT: Catelyn')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(150);
+      });
+      expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
+
+      fireEvent.keyUp(previous, { key: 'ArrowLeft' });
+      // A stray second keyUp for the same key, with no interval left to
+      // clear, should be a no-op rather than throwing.
+      fireEvent.keyUp(previous, { key: 'ArrowLeft' });
+
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('clears the previous interval when a new arrow key is pressed before the old one is released', () => {
+    vi.useFakeTimers();
+    const clearIntervalSpy = vi.spyOn(window, 'clearInterval');
+    try {
+      render(
+        <MapTimelineControl
+          chapterOptions={chapterOptions('Prologue', 'Bran', 'Catelyn')}
+          episodeOptions={[]}
+          hasBooks
+          hasSeasons={false}
+          onChange={vi.fn()}
+        />,
+      );
+
+      const previous = screen.getByRole('button', { name: 'Previous Chapter' });
+      previous.focus();
+      // No keyUp in between — simulates holding ArrowLeft, then switching
+      // to ArrowRight without releasing it first.
+      fireEvent.keyDown(previous, { key: 'ArrowLeft' });
+      expect(clearIntervalSpy).not.toHaveBeenCalled();
+
+      fireEvent.keyDown(previous, { key: 'ArrowRight' });
+      expect(clearIntervalSpy).toHaveBeenCalledTimes(1);
+
+      fireEvent.keyUp(previous, { key: 'ArrowRight' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ignores keyUp for an unrelated key, leaving a held arrow key’s interval running', () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <MapTimelineControl
+          chapterOptions={chapterOptions('Prologue', 'Bran', 'Catelyn')}
+          episodeOptions={[]}
+          hasBooks
+          hasSeasons={false}
+          onChange={vi.fn()}
+        />,
+      );
+
+      const previous = screen.getByRole('button', { name: 'Previous Chapter' });
+      previous.focus();
+      fireEvent.keyDown(previous, { key: 'ArrowLeft' });
+      expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
+
+      fireEvent.keyUp(previous, { key: 'Shift' });
+
+      act(() => {
+        vi.advanceTimersByTime(150);
+      });
+      expect(screen.getByText('AGOT: Prologue')).toBeInTheDocument();
+
+      fireEvent.keyUp(previous, { key: 'ArrowLeft' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ignores browser-repeated keydown events, relying on its own interval instead', () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <MapTimelineControl
+          chapterOptions={chapterOptions('Prologue', 'Bran', 'Catelyn')}
+          episodeOptions={[]}
+          hasBooks
+          hasSeasons={false}
+          onChange={vi.fn()}
+        />,
+      );
+
+      const previous = screen.getByRole('button', { name: 'Previous Chapter' });
+      previous.focus();
+      fireEvent.keyDown(previous, { key: 'ArrowLeft' });
+      fireEvent.keyDown(previous, { key: 'ArrowLeft', repeat: true });
+      fireEvent.keyDown(previous, { key: 'ArrowLeft', repeat: true });
+
+      expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
+
+      fireEvent.keyUp(previous, { key: 'ArrowLeft' });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
