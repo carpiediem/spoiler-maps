@@ -150,6 +150,30 @@ describe('ViewScreen', () => {
     expect(await screen.findByText('Jon Snow')).toBeInTheDocument();
   });
 
+  it('shows a DescriptionDialog with the story name and description instead of the WelcomeDialog, when set', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 5, lng: 5 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: 'Winter is coming.',
+      paletteKey: null,
+    });
+    resetDatabaseForTests();
+
+    renderAt(`/view/${story.id}`);
+
+    expect(
+      await screen.findByRole('heading', { name: 'A Song of Ice and Fire' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Winter is coming.')).toBeInTheDocument();
+    expect(screen.queryByText('Welcome!')).not.toBeInTheDocument();
+  });
+
   it('shows a pin once a character is checked, respecting the spoiler slider', async () => {
     vi.stubGlobal(
       'fetch',

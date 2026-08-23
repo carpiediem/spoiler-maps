@@ -2,6 +2,7 @@ import { Alert, Box, CircularProgress, ThemeProvider } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { CharacterPathsPanel } from '../components/view/CharacterPathsPanel';
+import { DescriptionDialog } from '../components/view/DescriptionDialog';
 import { WelcomeDialog } from '../components/view/WelcomeDialog';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
 import { MapView } from '../components/MapView';
@@ -197,7 +198,16 @@ export function ViewScreen() {
           showFullPath={showFullPath}
           onShowFullPathChange={setShowFullPath}
         />
-        <WelcomeDialog open={isWelcomeOpen} onClose={handleCloseWelcome} />
+        {document!.description ? (
+          <DescriptionDialog
+            open={isWelcomeOpen}
+            onClose={handleCloseWelcome}
+            storyName={document!.name}
+            description={document!.description}
+          />
+        ) : (
+          <WelcomeDialog open={isWelcomeOpen} onClose={handleCloseWelcome} />
+        )}
       </div>
     </ThemeProvider>
   );
