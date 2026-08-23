@@ -15,8 +15,10 @@ import type { LatLng } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import { buildPinIcon, buildSkullIcon } from '../lib/pinIcon';
+import { buildFadedTailSegments } from '../lib/tailConnection';
 import { detectTileUrlTemplateKind } from '../lib/tileUrl';
 import { QuadkeyTileLayer } from './QuadkeyTileLayer';
+import './MapView.css';
 
 const DEFAULT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const DEFAULT_ATTRIBUTION =
@@ -208,17 +210,20 @@ export function MapView({
           ))}
         </>
       )}
-      {characterTails?.map((tail, tailIndex) => (
-        <Polyline
-          key={`${tail.characterId}-${tailIndex}`}
-          positions={tail.points.map((point) => [point.lat, point.lng])}
-          pathOptions={{
-            color: tail.color ?? DEFAULT_CHARACTER_COLOR,
-            weight: CHARACTER_TAIL_WEIGHT,
-            opacity: tail.opacity,
-          }}
-        />
-      ))}
+      {characterTails?.flatMap((tail, tailIndex) =>
+        buildFadedTailSegments(tail.points, tail.opacity).map((segment, segmentIndex) => (
+          <Polyline
+            key={`${tail.characterId}-${tailIndex}-${segmentIndex}`}
+            positions={segment.positions.map((point) => [point.lat, point.lng])}
+            pathOptions={{
+              color: tail.color ?? DEFAULT_CHARACTER_COLOR,
+              weight: CHARACTER_TAIL_WEIGHT,
+              opacity: segment.opacity,
+              className: 'character-tail-flow',
+            }}
+          />
+        )),
+      )}
       {characterPositionPins?.map((pin) => {
         const color = pin.color ?? DEFAULT_CHARACTER_COLOR;
         const isEditingThisPin =

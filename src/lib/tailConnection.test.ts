@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTailPoints, hasTailToDraw } from './tailConnection';
+import { buildFadedTailSegments, buildTailPoints, hasTailToDraw } from './tailConnection';
 
 describe('buildTailPoints', () => {
   it('starts with the position itself, then its own tail waypoints', () => {
@@ -62,5 +62,53 @@ describe('hasTailToDraw', () => {
 
   it('is true when there is a preceding position, even with no tail of its own', () => {
     expect(hasTailToDraw({ tail: null }, { position: { lat: 1, lng: 1 } })).toBe(true);
+  });
+});
+
+describe('buildFadedTailSegments', () => {
+  it('produces nothing for zero or one point', () => {
+    expect(buildFadedTailSegments([], 1)).toEqual([]);
+    expect(buildFadedTailSegments([{ lat: 1, lng: 1 }], 1)).toEqual([]);
+  });
+
+  it('produces one full-opacity segment for two points', () => {
+    const points = [
+      { lat: 1, lng: 1 },
+      { lat: 2, lng: 2 },
+    ];
+
+    expect(buildFadedTailSegments(points, 0.8)).toEqual([
+      { positions: [points[0], points[1]], opacity: 0.8 },
+    ]);
+  });
+
+  it('fades each successive segment, from full opacity down to 30% of it at the far end', () => {
+    const points = [
+      { lat: 1, lng: 1 },
+      { lat: 2, lng: 2 },
+      { lat: 3, lng: 3 },
+      { lat: 4, lng: 4 },
+    ];
+
+    const segments = buildFadedTailSegments(points, 1);
+
+    expect(segments).toHaveLength(3);
+    expect(segments[0]!.opacity).toBe(1);
+    expect(segments[2]!.opacity).toBeCloseTo(0.3);
+    expect(segments[1]!.opacity).toBeGreaterThan(segments[2]!.opacity);
+    expect(segments[1]!.opacity).toBeLessThan(segments[0]!.opacity);
+  });
+
+  it('scales the fade by the tail’s own base opacity', () => {
+    const points = [
+      { lat: 1, lng: 1 },
+      { lat: 2, lng: 2 },
+      { lat: 3, lng: 3 },
+    ];
+
+    const segments = buildFadedTailSegments(points, 0.5);
+
+    expect(segments[0]!.opacity).toBe(0.5);
+    expect(segments[1]!.opacity).toBeCloseTo(0.15);
   });
 });
