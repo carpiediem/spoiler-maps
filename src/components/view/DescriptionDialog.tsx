@@ -1,9 +1,12 @@
 import { Button, Dialog, DialogActions, DialogContentText, DialogTitle } from '@mui/material';
+import { useMemo } from 'react';
+import { renderMarkdownToHtml } from '../../lib/renderMarkdown';
 
 interface DescriptionDialogProps {
   open: boolean;
   onClose: () => void;
   storyName: string;
+  /** Markdown, as stored in the db/YAML — rendered to HTML here. */
   description: string;
 }
 
@@ -14,11 +17,21 @@ export function DescriptionDialog({
   storyName,
   description,
 }: DescriptionDialogProps) {
+  const html = useMemo(() => renderMarkdownToHtml(description), [description]);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{storyName}</DialogTitle>
-      <DialogContentText sx={{ px: 3, pb: 1, whiteSpace: 'pre-wrap' }}>
-        {description}
+      <DialogContentText
+        component="div"
+        sx={{
+          px: 3,
+          pb: 1,
+          '& > div > :first-child': { mt: 0 },
+          '& > div > :last-child': { mb: 0 },
+        }}
+      >
+        <div dangerouslySetInnerHTML={{ __html: html }} />
       </DialogContentText>
       <DialogActions>
         <Button onClick={onClose} autoFocus>
