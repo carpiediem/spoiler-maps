@@ -99,4 +99,23 @@ describe('isPositionVisible', () => {
     expect(isPositionVisible(position, 'book', 1)).toBe(false);
     expect(isPositionVisible(position, 'tv', 1)).toBe(true);
   });
+
+  it('is hidden in book mode when the position is restricted only by an episode range', () => {
+    const position: StoryDocumentPosition = { lat: 0, lng: 0, episodes: [0, null] };
+
+    expect(isPositionVisible(position, 'book', 1)).toBe(false);
+  });
+
+  it('is hidden in tv mode when the position is restricted only by a chapter range', () => {
+    const position: StoryDocumentPosition = { lat: 0, lng: 0, chapters: [0, null] };
+
+    expect(isPositionVisible(position, 'tv', 1)).toBe(false);
+  });
+
+  it('is visible in both mediums when neither range is set at all', () => {
+    const position: StoryDocumentPosition = { lat: 0, lng: 0 };
+
+    expect(isPositionVisible(position, 'book', 1)).toBe(true);
+    expect(isPositionVisible(position, 'tv', 1)).toBe(true);
+  });
 });
