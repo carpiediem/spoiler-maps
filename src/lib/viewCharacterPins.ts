@@ -59,7 +59,7 @@ export function buildViewPinsAndTails(
       reachedPositionIndices[reachedPositionIndices.length - 1]!.positionIndex;
     const color = character.color ?? null;
 
-    reachedPositionIndices.forEach(({ position, positionIndex }) => {
+    reachedPositionIndices.forEach(({ position, positionIndex }, reachedIndex) => {
       const syntheticId = characterIndex * 100_000 + positionIndex;
       const isLast = positionIndex === lastReachedIndex;
 
@@ -72,7 +72,11 @@ export function buildViewPinsAndTails(
         style: isLast ? 'pin' : 'dot',
       });
 
-      const precedingPosition = character.positions[positionIndex - 1];
+      // The preceding *visible* position, not just the preceding one in the
+      // character's full list — a position hidden by the timeline scrub or
+      // gated to the other medium shouldn't be a tail's endpoint.
+      const precedingPosition =
+        reachedIndex > 0 ? reachedPositionIndices[reachedIndex - 1]!.position : undefined;
       const precedingLatLng = precedingPosition && toLatLngPosition(precedingPosition);
       if (showFullPath && hasTailToDraw(position, precedingLatLng)) {
         tails.push({

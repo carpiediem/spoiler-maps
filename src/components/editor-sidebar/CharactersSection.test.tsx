@@ -6,7 +6,9 @@ import {
   createChapter,
   createCharacter,
   createCharacterPosition,
+  createEpisode,
   createStory,
+  createTvSeason,
   listCharactersForStory,
 } from '../../db';
 import { resetDatabaseForTests } from '../../db/client';
@@ -802,6 +804,92 @@ describe('CharactersSection', () => {
     );
   });
 
+  it('connects a tail to the nearest preceding visible position for the expanded character, skipping a hidden one in between', async () => {
+    const storyId = await seedStoryId();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Bran',
+      url: null,
+      sortOrder: 1,
+    });
+    await createChapter({ bookId: book.id, name: 'Catelyn', url: null, sortOrder: 2 });
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+      sortOrder: 0,
+      url: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: { startChapterId: chapter2.id, endChapterId: null },
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 3, lng: 3 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisibleTailsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={onVisibleTailsChange}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+
+    await waitFor(() =>
+      expect(onVisibleTailsChange).toHaveBeenLastCalledWith([
+        {
+          characterId: character.id,
+          points: [
+            { lat: 3, lng: 3 },
+            { lat: 1, lng: 1 },
+          ],
+          color: '#ff0000',
+          opacity: 1,
+        },
+      ]),
+    );
+  });
+
   it('draws a straight tail to the preceding position even when a position has no tail of its own', async () => {
     const storyId = await seedStoryId();
     const character = await createCharacter({
@@ -1443,6 +1531,92 @@ describe('CharactersSection', () => {
           positionIndex: 1,
           color: '#ff0000',
           style: 'pin',
+        },
+      ]),
+    );
+  });
+
+  it('connects a visible-but-collapsed character’s tail to the nearest preceding visible position, skipping a hidden one', async () => {
+    const storyId = await seedStoryId();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+      sortOrder: 23,
+      url: null,
+    });
+    const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
+    const episode = await createEpisode({
+      seasonId: season.id,
+      name: 'Winter Is Coming',
+      url: null,
+      sortOrder: 0,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: { startEpisodeId: episode.id, endEpisodeId: null },
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 3, lng: 3 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisibleTailsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={onVisibleTailsChange}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: /show on map/i }));
+
+    await waitFor(() =>
+      expect(onVisibleTailsChange).toHaveBeenLastCalledWith([
+        {
+          characterId: character.id,
+          points: [
+            { lat: 3, lng: 3 },
+            { lat: 1, lng: 1 },
+          ],
+          color: '#ff0000',
+          opacity: 0.75,
         },
       ]),
     );

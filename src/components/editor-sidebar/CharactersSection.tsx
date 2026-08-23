@@ -112,6 +112,7 @@ export function CharactersSection({
       const positions = positionsByCharacterId[expandedCharacterId];
       const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
       const color = character?.color ?? null;
+      let precedingPosition: CharacterPosition | undefined;
       positions?.forEach((position, positionIndex) => {
         if (!isPositionVisible(position)) return;
 
@@ -123,7 +124,6 @@ export function CharactersSection({
           color,
         });
 
-        const precedingPosition = positions?.[positionIndex - 1];
         if (hasTailToDraw(position, precedingPosition)) {
           tails.push({
             characterId: expandedCharacterId,
@@ -132,6 +132,7 @@ export function CharactersSection({
             opacity: 1,
           });
         }
+        precedingPosition = position;
       });
     }
 
@@ -154,6 +155,7 @@ export function CharactersSection({
         -1,
       );
 
+      let precedingPosition: CharacterPosition | undefined;
       positions.forEach((position, positionIndex) => {
         if (!isPositionVisible(position)) return;
         const isLast = positionIndex === lastVisiblePositionIndex;
@@ -167,7 +169,6 @@ export function CharactersSection({
           style: isLast ? 'pin' : 'dot',
         });
 
-        const precedingPosition = positions[positionIndex - 1];
         if (hasTailToDraw(position, precedingPosition)) {
           tails.push({
             characterId,
@@ -176,6 +177,7 @@ export function CharactersSection({
             opacity: 0.75,
           });
         }
+        precedingPosition = position;
       });
     });
 
