@@ -148,6 +148,64 @@ describe('buildViewPinsAndTails', () => {
     expect(tails).toEqual([]);
   });
 
+  it('connects a tail to the nearest preceding visible position, skipping a hidden one in between', () => {
+    const document = minimalDocument({
+      characters: [
+        {
+          name: 'Jon Snow',
+          positions: [
+            { lat: 1, lng: 1 },
+            { lat: 2, lng: 2, chapters: [5, null] },
+            { lat: 3, lng: 3 },
+          ],
+        },
+      ],
+    });
+
+    const { tails } = buildViewPinsAndTails(document, new Set([0]), true, 'book', 1);
+
+    expect(tails).toEqual([
+      {
+        characterId: 0,
+        points: [
+          { lat: 3, lng: 3 },
+          { lat: 1, lng: 1 },
+        ],
+        color: null,
+        opacity: 1,
+      },
+    ]);
+  });
+
+  it('in book mode, skips a position gated only by an episode range when finding the preceding position for a tail', () => {
+    const document = minimalDocument({
+      characters: [
+        {
+          name: 'Jon Snow',
+          positions: [
+            { lat: 1, lng: 1 },
+            { lat: 2, lng: 2, episodes: [0, null] },
+            { lat: 3, lng: 3 },
+          ],
+        },
+      ],
+    });
+
+    const { tails } = buildViewPinsAndTails(document, new Set([0]), true, 'book', 1);
+
+    expect(tails).toEqual([
+      {
+        characterId: 0,
+        points: [
+          { lat: 3, lng: 3 },
+          { lat: 1, lng: 1 },
+        ],
+        color: null,
+        opacity: 1,
+      },
+    ]);
+  });
+
   it('only includes checked characters, keyed by their array index', () => {
     const document = minimalDocument({
       characters: [
