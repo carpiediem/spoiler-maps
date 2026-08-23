@@ -63,6 +63,7 @@ This repo uses a few GitHub Actions workflows under [.github/workflows](.github/
 - **[CD](.github/workflows/cd.yml)** — runs on every push to `main` (and can be triggered manually). Builds the app and deploys it to [GitHub Pages](https://carpiediem.github.io/spoiler-maps/).
 - **[CodeQL](.github/workflows/codeql-analysis.yml)** — runs on push and pull requests to `main`, plus a weekly schedule. Scans the JavaScript/TypeScript source for security vulnerabilities.
 - **[Accessibility Scanner](.github/workflows/a11y-scan.yml)** — manually triggered from the Actions tab. Scans the live deployed site and files GitHub issues for any accessibility violations it finds.
+- **[Test Outline](.github/workflows/test-outline.yml)** — runs on every push to `main` that touches a test file or the generator script. Regenerates [docs/test-suite-outline.md](docs/test-suite-outline.md) and commits it back if anything changed.
 
 ## Contributing
 

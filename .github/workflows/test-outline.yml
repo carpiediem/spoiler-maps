@@ -1,0 +1,40 @@
+name: Test Outline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**/*.test.ts'
+      - 'src/**/*.test.tsx'
+      - 'scripts/generate-test-outline.cjs'
+
+permissions:
+  contents: write
+
+jobs:
+  update-outline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Regenerate docs/test-suite-outline.md
+        run: npm run docs:test-outline
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- docs/test-suite-outline.md; then
+            echo "No changes to docs/test-suite-outline.md"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/test-suite-outline.md
+          git commit -m "Update test suite outline [skip ci]"
+          git push
