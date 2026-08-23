@@ -1,4 +1,5 @@
 import { Box, Button, Paper } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import type { CharacterPosition, LatLng, Story } from '../db';
@@ -244,6 +245,7 @@ export function EditorSidebar({
           width: '200%',
           transform: activePosition ? 'translateX(-50%)' : 'translateX(0%)',
           transition: 'transform 0.3s ease-in-out',
+          backgroundColor: (theme) => alpha(theme.palette.info.light, 0.08),
         }}
       >
         <Box
