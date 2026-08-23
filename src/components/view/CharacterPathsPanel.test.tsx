@@ -183,9 +183,28 @@ describe('CharacterPathsPanel', () => {
       />,
     );
 
-    const toggle = screen.getByRole('button', { name: /current locations only/i });
+    const toggle = screen.getByRole('button', { name: /show full path/i });
     await user.click(toggle);
 
     expect(onShowFullPathChange).toHaveBeenCalledWith(true);
+  });
+
+  it('labels the toggle "Current locations only" once full paths are already shown', async () => {
+    const onShowFullPathChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharacterPathsPanel
+        characters={characters}
+        checkedIndices={new Set()}
+        onCheckedIndicesChange={vi.fn()}
+        showFullPath
+        onShowFullPathChange={onShowFullPathChange}
+      />,
+    );
+
+    const toggle = screen.getByRole('button', { name: /current locations only/i });
+    await user.click(toggle);
+
+    expect(onShowFullPathChange).toHaveBeenCalledWith(false);
   });
 });
