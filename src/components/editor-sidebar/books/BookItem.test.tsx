@@ -41,6 +41,8 @@ async function seedBook(overrides: Partial<Parameters<typeof createBook>[0]> = {
     initialZoom: 4,
     minZoom: 0,
     maxZoom: 19,
+    description: null,
+    paletteKey: null,
   });
   return createBook({
     storyId: story.id,

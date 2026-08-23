@@ -15,6 +15,10 @@ export interface Story {
   /** Limits how far Leaflet's zoom control will let the map zoom out/in. */
   minZoom: number;
   maxZoom: number;
+  /** A rich-text synopsis, stored as Markdown. */
+  description: string | null;
+  /** References a key in palettes.ts; null/unrecognized falls back to the default theme. */
+  paletteKey: string | null;
 }
 
 export interface Book {

@@ -42,6 +42,8 @@ async function seedSeason(
     initialZoom: 4,
     minZoom: 0,
     maxZoom: 19,
+    description: null,
+    paletteKey: null,
   });
   return createTvSeason({ storyId: story.id, url: null, sortOrder: 0, ...overrides });
 }

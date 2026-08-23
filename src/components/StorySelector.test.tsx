@@ -16,6 +16,8 @@ function makeStory(overrides: Partial<Story>): Story {
     initialZoom: 4,
     minZoom: 0,
     maxZoom: 19,
+    description: null,
+    paletteKey: null,
     ...overrides,
   };
 }

@@ -41,6 +41,8 @@ async function seedBookId(): Promise<number> {
     initialZoom: 4,
     minZoom: 0,
     maxZoom: 19,
+    description: null,
+    paletteKey: null,
   });
   const book = await createBook({
     storyId: story.id,

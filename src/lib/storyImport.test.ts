@@ -419,6 +419,8 @@ describe('round trip', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: '# Winter is Coming\n\nA tale of ice and fire.',
+      paletteKey: 'lush-forest',
     });
     const book = await createBook({
       storyId: story.id,

@@ -40,6 +40,8 @@ async function seedStoryId(): Promise<number> {
     initialZoom: 4,
     minZoom: 0,
     maxZoom: 19,
+    description: null,
+    paletteKey: null,
   });
   return story.id;
 }
@@ -59,6 +61,8 @@ describe('buildStoryDocument', () => {
       initialZoom: 5,
       minZoom: 1,
       maxZoom: 18,
+      description: null,
+      paletteKey: null,
     });
 
     const document = await buildStoryDocument(story.id);
@@ -85,6 +89,42 @@ describe('buildStoryDocument', () => {
     expect(document.tileUrlTemplate).toBe('https://tile.example.com/{z}/{x}/{y}.png');
     expect(document.tileLayerAuthor).toBe('Some Cartographer');
     expect(document.tileLayerAttributionUrl).toBe('https://example.com');
+  });
+
+  it('includes description and paletteKey when set, omits them when unset', async () => {
+    const withFields = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 1, lng: 2 },
+      initialZoom: 5,
+      minZoom: 1,
+      maxZoom: 18,
+      description: '# A great story\n\nWinter is coming.',
+      paletteKey: 'blue-eclipse',
+    });
+
+    const document = await buildStoryDocument(withFields.id);
+    expect(document.description).toBe('# A great story\n\nWinter is coming.');
+    expect(document.paletteKey).toBe('blue-eclipse');
+
+    const withoutFields = await createStory({
+      name: 'The Wheel of Time',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 1, lng: 2 },
+      initialZoom: 5,
+      minZoom: 1,
+      maxZoom: 18,
+      description: null,
+      paletteKey: null,
+    });
+
+    const bareDocument = await buildStoryDocument(withoutFields.id);
+    expect(bareDocument.description).toBeUndefined();
+    expect(bareDocument.paletteKey).toBeUndefined();
   });
 
   it('nests chapters under their book, omitting unset author/url', async () => {

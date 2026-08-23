@@ -71,6 +71,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     await createStory({
       name: 'The Wheel of Time',
@@ -81,6 +83,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     resetDatabaseForTests();
 
@@ -126,6 +130,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     const remembered = await createStory({
       name: 'The Wheel of Time',
@@ -136,6 +142,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     localStorage.setItem('spoiler-maps:last-viewed-story-id', String(remembered.id));
     resetDatabaseForTests();
@@ -189,6 +197,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     resetDatabaseForTests();
 
@@ -227,6 +237,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     const character = await createCharacter({
       storyId: story.id,
@@ -299,6 +311,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     const character = await createCharacter({
       storyId: story.id,
@@ -358,6 +372,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     resetDatabaseForTests();
 
@@ -420,6 +436,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     const book = await createBook({
       storyId: story.id,
@@ -449,6 +467,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     const book = await createBook({
       storyId: story.id,
@@ -505,6 +525,8 @@ describe('App', () => {
         initialZoom: 4,
         minZoom: 0,
         maxZoom: 19,
+        description: null,
+        paletteKey: null,
       });
       const user = userEvent.setup();
       render(
@@ -540,6 +562,8 @@ describe('App', () => {
         initialZoom: 4,
         minZoom: 0,
         maxZoom: 19,
+        description: null,
+        paletteKey: null,
       });
       const user = userEvent.setup();
       render(
@@ -569,6 +593,8 @@ describe('App', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     const user = userEvent.setup();
     render(

@@ -10,10 +10,13 @@ import {
   InputAdornment,
   InputBase,
   InputLabel,
+  MenuItem,
+  Select,
   Stack,
   TextField,
   Tooltip,
   Typography,
+  type SelectChangeEvent,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import {
@@ -25,10 +28,13 @@ import {
   type UseFormSetValue,
 } from 'react-hook-form';
 import type { LatLng } from '../../db';
+import { PALETTE_OPTIONS } from '../../lib/palettes';
 import { resolveTileUrlTemplate } from '../../lib/tileUrl';
 import { detectMaxZoom } from '../../lib/zoomLimitDetection';
 import { TileUrlHelpDialog } from './TileUrlHelpDialog';
 import type { FormValues } from './formValues';
+
+const DEFAULT_PALETTE_VALUE = '';
 
 // How long to wait, after the tile URL field stops changing, before probing
 // it for zoom limits — avoids firing off a probe per keystroke.
@@ -298,6 +304,31 @@ export function MapSection({
             </IconButton>
           </Tooltip>
         </Stack>
+      </FormControl>
+
+      <FormControl size="small" fullWidth>
+        <InputLabel id="palette-select-label">Palette</InputLabel>
+        <Controller
+          name="paletteKey"
+          control={control}
+          render={({ field }) => (
+            <Select
+              {...field}
+              labelId="palette-select-label"
+              label="Palette"
+              onChange={(event: SelectChangeEvent) => field.onChange(event.target.value)}
+            >
+              <MenuItem value={DEFAULT_PALETTE_VALUE}>
+                <em>Default</em>
+              </MenuItem>
+              {PALETTE_OPTIONS.map((option) => (
+                <MenuItem key={option.key} value={option.key}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          )}
+        />
       </FormControl>
 
       {errorMessage && <Alert severity="error">{errorMessage}</Alert>}

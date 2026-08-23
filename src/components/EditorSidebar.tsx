@@ -7,6 +7,7 @@ import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
 import type { TimelineMode } from './MapTimelineControl';
 import { DeleteConfirmDialog } from './editor-sidebar/DeleteConfirmDialog';
+import { DescriptionPanel } from './editor-sidebar/DescriptionPanel';
 import { storyToFormValues, type FormValues } from './editor-sidebar/formValues';
 import { MapSection } from './editor-sidebar/MapSection';
 import { MarkersSection } from './editor-sidebar/MarkersSection';
@@ -66,7 +67,10 @@ interface EditorSidebarProps {
     initialZoom: number;
     minZoom: number;
     maxZoom: number;
+    paletteKey: string | null;
   }) => void;
+  /** Saves the description immediately, independent of the main form's Save button. */
+  onSaveDescription: (description: string) => Promise<void>;
   onCaptureMapPosition: () => { center: LatLng; zoom: number } | null;
   /** The map's current live position, to tell whether it has moved from what's stored in the form. */
   mapPosition: { center: LatLng; zoom: number } | null;
@@ -116,6 +120,7 @@ export function EditorSidebar({
   onImportFile,
   onDeleteStory,
   onSave,
+  onSaveDescription,
   onCaptureMapPosition,
   mapPosition,
   draftPosition,
@@ -201,6 +206,7 @@ export function EditorSidebar({
       initialZoom: data.initialZoom,
       minZoom: data.minZoom,
       maxZoom: data.maxZoom,
+      paletteKey: data.paletteKey || null,
     });
     // Marks these values (with tileUrlValue normalized to the resolved
     // template, in case a real tile URL was extrapolated) as the new clean
@@ -250,6 +256,13 @@ export function EditorSidebar({
             onImportFile={onImportFile}
             onExportStory={onExportStory}
           />
+
+          {selectedStoryId !== null && (
+            <DescriptionPanel
+              description={selectedStory?.description ?? null}
+              onSave={onSaveDescription}
+            />
+          )}
 
           <Box component="form" onSubmit={handleSubmit(onValid)} sx={{ mt: 2 }}>
             <SidebarSection

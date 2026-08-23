@@ -15,6 +15,8 @@ export interface FormValues {
   initialZoom: number;
   minZoom: number;
   maxZoom: number;
+  /** Empty string means "no palette / default theme". */
+  paletteKey: string;
 }
 
 export function storyToFormValues(story: Story | null): FormValues {
@@ -27,5 +29,6 @@ export function storyToFormValues(story: Story | null): FormValues {
     initialZoom: story?.initialZoom ?? DEFAULT_ZOOM,
     minZoom: story?.minZoom ?? DEFAULT_MIN_ZOOM,
     maxZoom: story?.maxZoom ?? DEFAULT_MAX_ZOOM,
+    paletteKey: story?.paletteKey ?? '',
   };
 }

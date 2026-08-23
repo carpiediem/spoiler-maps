@@ -289,6 +289,8 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
     initialZoom: assertNumber(root.initialZoom, 'initialZoom'),
     minZoom: assertNumber(root.minZoom, 'minZoom'),
     maxZoom: assertNumber(root.maxZoom, 'maxZoom'),
+    description: assertOptionalString(root.description, 'description'),
+    paletteKey: assertOptionalString(root.paletteKey, 'paletteKey'),
     books,
     television,
     characters,
@@ -456,6 +458,8 @@ export async function importStoryDocument(document: StoryDocument): Promise<Stor
     initialZoom: document.initialZoom,
     minZoom: document.minZoom,
     maxZoom: document.maxZoom,
+    description: document.description ?? null,
+    paletteKey: document.paletteKey ?? null,
   });
 
   try {
