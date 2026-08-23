@@ -30,6 +30,10 @@ interface MapTimelineControlProps {
   onChange: (mode: TimelineMode, index: number) => void;
   /** An optional label shown above the panel, e.g. "Show spoilers through:" for the view screen. */
   heading?: string;
+  /** Starts the slider here instead of defaulting to book mode's last entry, e.g. from a #chapter-N URL fragment. Only read on first render. */
+  initialMode?: TimelineMode;
+  /** Paired with initialMode: the flat 1-based index to start on, clamped to the active medium's actual range. */
+  initialIndex?: number;
 }
 
 /**
@@ -46,21 +50,29 @@ export function MapTimelineControl({
   hasSeasons,
   onChange,
   heading,
+  initialMode,
+  initialIndex,
 }: MapTimelineControlProps) {
-  // Starts in book mode unless the story has only TV seasons; null (the
-  // no-override case) keeps tracking that default live as the story's
-  // books/seasons finish loading, until the user picks a mode themselves.
-  const [modeOverride, setModeOverride] = useState<TimelineMode | null>(null);
+  // Starts in book mode unless the story has only TV seasons, or initialMode
+  // says otherwise; null (the no-override case) keeps tracking that default
+  // live as the story's books/seasons finish loading, until the user picks
+  // a mode themselves.
+  const [modeOverride, setModeOverride] = useState<TimelineMode | null>(initialMode ?? null);
   const defaultMode: TimelineMode = hasSeasons && !hasBooks ? 'tv' : 'book';
   const mode = modeOverride ?? defaultMode;
 
   const activeOptions = mode === 'book' ? chapterOptions : episodeOptions;
 
-  // Starts on the last chapter/episode; re-derived (rather than reset via an
+  // Starts on the last chapter/episode, or on initialIndex when given (e.g.
+  // from a #chapter-N URL fragment); re-derived (rather than reset via an
   // effect) whenever the mode or option-list length changes, so a manual
   // scrub sticks until one of those actually changes.
   const optionsKey = `${mode}:${activeOptions.length}`;
-  const [indexOverride, setIndexOverride] = useState<{ key: string; index: number } | null>(null);
+  const [indexOverride, setIndexOverride] = useState<{ key: string; index: number } | null>(
+    initialIndex !== undefined
+      ? { key: optionsKey, index: Math.min(activeOptions.length, Math.max(1, initialIndex)) }
+      : null,
+  );
   const index =
     indexOverride?.key === optionsKey ? indexOverride.index : Math.max(activeOptions.length, 1);
 

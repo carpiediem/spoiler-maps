@@ -110,6 +110,17 @@ describe('ViewScreen', () => {
     expect(container.querySelector('.leaflet-container')).toBeInTheDocument();
   });
 
+  it('starts the timeline slider from a #chapter-N URL fragment instead of the last chapter', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
+    );
+
+    renderAt('/view?d=https://example.com/story.yaml#chapter-1');
+
+    expect(await screen.findByText('AGOT: Prologue')).toBeInTheDocument();
+  });
+
   it('renders a local story directly from the database, given a story id and no data URL', async () => {
     const story = await createStory({
       name: 'A Song of Ice and Fire',

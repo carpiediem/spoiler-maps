@@ -106,6 +106,60 @@ describe('MapTimelineControl', () => {
     );
   });
 
+  it('starts on initialMode/initialIndex instead of the default, e.g. from a #chapter-N URL fragment', async () => {
+    const onChange = vi.fn();
+    render(
+      <MapTimelineControl
+        chapterOptions={chapterOptions('Prologue', 'Bran', 'Catelyn')}
+        episodeOptions={episodeOptions('Winter Is Coming', 'The Kingsroad')}
+        hasBooks
+        hasSeasons
+        initialMode="book"
+        initialIndex={2}
+        onChange={onChange}
+      />,
+    );
+
+    expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith('book', 2));
+  });
+
+  it('starts on initialMode "tv", e.g. from a #episode-N URL fragment', async () => {
+    const onChange = vi.fn();
+    render(
+      <MapTimelineControl
+        chapterOptions={chapterOptions('Prologue', 'Bran', 'Catelyn')}
+        episodeOptions={episodeOptions('Winter Is Coming', 'The Kingsroad')}
+        hasBooks
+        hasSeasons
+        initialMode="tv"
+        initialIndex={1}
+        onChange={onChange}
+      />,
+    );
+
+    expect(screen.getByText('S01E01: Winter Is Coming')).toBeInTheDocument();
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith('tv', 1));
+  });
+
+  it('clamps an out-of-range initialIndex to the active medium’s actual length', async () => {
+    const onChange = vi.fn();
+    render(
+      <MapTimelineControl
+        chapterOptions={chapterOptions('Prologue', 'Bran')}
+        episodeOptions={[]}
+        hasBooks
+        hasSeasons={false}
+        initialMode="book"
+        initialIndex={99}
+        onChange={onChange}
+      />,
+    );
+
+    expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith('book', 2));
+  });
+
   it('switches modes, jumping to the new medium’s last entry', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
