@@ -25,6 +25,7 @@ import {
 import { DEFAULT_CHARACTER_COLOR } from '../../../lib/characterColor';
 import type { TimelineMode } from '../../MapTimelineControl';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
+import { SIDEBAR_SECTION_HEADER_HEIGHT, SIDEBAR_SECTION_HEADER_Z_INDEX } from '../SidebarSection';
 import { PositionList } from './PositionList';
 
 interface CharacterItemProps {
@@ -127,7 +128,19 @@ export function CharacterItem({
         borderRadius: 1,
       }}
     >
-      <Box sx={{ position: 'relative', opacity: isDragging ? 0.5 : 1 }}>
+      <Box
+        sx={{
+          position: 'sticky',
+          // Sticks just below the SidebarSection header (e.g. "Characters")
+          // that this list lives inside, rather than at the very top, so
+          // both stay visible while stacked.
+          top: SIDEBAR_SECTION_HEADER_HEIGHT,
+          // Below SIDEBAR_SECTION_HEADER_Z_INDEX, so the outer "Characters"
+          // header stays on top of this one when both are stuck at once.
+          zIndex: SIDEBAR_SECTION_HEADER_Z_INDEX - 1,
+          opacity: isDragging ? 0.5 : 1,
+        }}
+      >
         {/* A native title, not an MUI Tooltip: Tooltip clones an aria-label
             onto its child, which would replace this button's accessible
             name (otherwise just "Jon Snow") with "Drag to reorder". */}
@@ -139,7 +152,7 @@ export function CharacterItem({
           onDragEnd={onDragEnd}
           onDragOver={onDragOver}
           onDrop={onDrop}
-          sx={{ backgroundColor: 'rgba(0, 0, 0, .03)', px: 1, minHeight: 40 }}
+          sx={{ backgroundColor: 'grey.200', px: 1, minHeight: 40 }}
         >
           <Stack
             direction="row"

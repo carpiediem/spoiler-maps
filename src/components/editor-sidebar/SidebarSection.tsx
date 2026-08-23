@@ -9,6 +9,17 @@ import {
 } from '@mui/material';
 import type { ReactNode, SyntheticEvent } from 'react';
 
+/** This section header's rendered height, so a nested sticky header (e.g. CharacterItem's) can offset below it instead of overlapping it. */
+export const SIDEBAR_SECTION_HEADER_HEIGHT = 48;
+
+/**
+ * Sticky z-index for this outer header — above MUI's own floating input
+ * labels (z-index: 1), and above CharacterItem's own sticky header (which
+ * uses one less than this), so this one stays on top when both are stuck
+ * and stacked.
+ */
+export const SIDEBAR_SECTION_HEADER_Z_INDEX = 3;
+
 interface SidebarSectionProps {
   id: string;
   title: string;
@@ -41,10 +52,13 @@ export function SidebarSection({
         aria-controls={`${id}-content`}
         id={`${id}-header`}
         sx={{
-          backgroundColor: 'rgba(0, 0, 0, .03)',
+          backgroundColor: 'grey.100',
           px: 1,
           minHeight: 40,
           '&.Mui-expanded': { minHeight: 40 },
+          position: 'sticky',
+          top: 0,
+          zIndex: SIDEBAR_SECTION_HEADER_Z_INDEX,
         }}
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>

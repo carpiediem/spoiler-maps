@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { SidebarSection } from './SidebarSection';
+import { SIDEBAR_SECTION_HEADER_Z_INDEX, SidebarSection } from './SidebarSection';
 
 describe('SidebarSection', () => {
   it('shows no count chip when count is omitted', () => {
@@ -32,5 +32,20 @@ describe('SidebarSection', () => {
     );
 
     expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  it('sticks the header button to the top of its scroll container, with an opaque background so scrolled content can’t show through', () => {
+    render(
+      <SidebarSection id="books" title="Books" expanded onChange={vi.fn()}>
+        content
+      </SidebarSection>,
+    );
+
+    const button = document.getElementById('books-header')!;
+    expect(getComputedStyle(button).position).toBe('sticky');
+    expect(getComputedStyle(button).top).toBe('0px');
+    expect(getComputedStyle(button).zIndex).toBe(String(SIDEBAR_SECTION_HEADER_Z_INDEX));
+    expect(getComputedStyle(button).backgroundColor).not.toBe('');
+    expect(getComputedStyle(button).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
   });
 });
