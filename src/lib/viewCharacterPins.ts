@@ -1,7 +1,7 @@
 import type { CharacterPosition } from '../db';
 import { characterInitials } from './characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from './characterPositionPins';
-import { buildTailPoints, hasTailToDraw } from './tailConnection';
+import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from './tailConnection';
 import { isPositionVisible } from './viewTimeline';
 import type { TimelineMode } from '../components/MapTimelineControl';
 import type { StoryDocument, StoryDocumentPosition } from './storyDocument';
@@ -58,6 +58,7 @@ export function buildViewPinsAndTails(
     const lastReachedIndex =
       reachedPositionIndices[reachedPositionIndices.length - 1]!.positionIndex;
     const color = character.color ?? null;
+    const characterTails: CharacterTailOverlay[] = [];
 
     reachedPositionIndices.forEach(({ position, positionIndex }, reachedIndex) => {
       const syntheticId = characterIndex * 100_000 + positionIndex;
@@ -79,17 +80,19 @@ export function buildViewPinsAndTails(
         reachedIndex > 0 ? reachedPositionIndices[reachedIndex - 1]!.position : undefined;
       const precedingLatLng = precedingPosition && toLatLngPosition(precedingPosition);
       if (showFullPath && hasTailToDraw(position, precedingLatLng)) {
-        tails.push({
+        characterTails.push({
           characterId: characterIndex,
           points: buildTailPoints(
             { position: { lat: position.lat, lng: position.lng }, tail: position.tail },
             precedingLatLng,
           ),
           color,
-          opacity: 1,
+          opacity: 0,
         });
       }
     });
+
+    tails.push(...applyTailOpacityGradient(characterTails));
   });
 
   return { pins, tails };

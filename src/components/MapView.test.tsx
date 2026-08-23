@@ -485,7 +485,7 @@ describe('MapView', () => {
     expect((polylines[1].options as { opacity?: number }).opacity).toBe(0.5);
   });
 
-  it('splits a multi-point tail into fading segments, and tags them for the flow animation', () => {
+  it('renders a multi-point tail as a single polyline tagged for the flow animation', () => {
     const mapRef = createRef<LeafletMap | null>();
     render(
       <MapView
@@ -513,36 +513,10 @@ describe('MapView', () => {
       if (layer instanceof LeafletPolyline) polylines.push(layer);
     });
 
-    expect(polylines).toHaveLength(2);
-    const [nearSegment, farSegment] = polylines.map(
-      (polyline) => polyline.options as { opacity?: number; className?: string },
-    );
-    expect(nearSegment.opacity).toBe(1);
-    expect(farSegment.opacity).toBeLessThan(nearSegment.opacity!);
-    expect(nearSegment.className).toBe('character-tail-flow');
-    expect(farSegment.className).toBe('character-tail-flow');
-  });
-
-  it('renders nothing for a tail with only a single point', () => {
-    const mapRef = createRef<LeafletMap | null>();
-    render(
-      <MapView
-        tileUrl={null}
-        center={center}
-        zoom={5}
-        mapRef={mapRef}
-        characterTails={[
-          { characterId: 1, points: [{ lat: 41, lng: -101 }], color: null, opacity: 1 },
-        ]}
-      />,
-    );
-
-    const polylines: LeafletPolyline[] = [];
-    mapRef.current!.eachLayer((layer) => {
-      if (layer instanceof LeafletPolyline) polylines.push(layer);
-    });
-
-    expect(polylines).toHaveLength(0);
+    expect(polylines).toHaveLength(1);
+    const options = polylines[0]!.options as { opacity?: number; className?: string };
+    expect(options.opacity).toBe(1);
+    expect(options.className).toBe('character-tail-flow');
   });
 
   it('applies the initial zoom limits to the underlying Leaflet map', () => {

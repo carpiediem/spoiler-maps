@@ -30,34 +30,23 @@ export function hasTailToDraw(
   return Boolean(position.tail && position.tail.length > 0) || precedingPosition !== undefined;
 }
 
-/** A single two-point stretch of a tail, faded relative to how far it is from the position itself. */
-export interface TailSegment {
-  positions: [LatLng, LatLng];
-  opacity: number;
-}
-
-// How faint the far (oldest) end of a tail gets, as a fraction of its base
-// opacity — never fully invisible, just enough to read as "further back".
-const MIN_FADE_FACTOR = 0.3;
+// The oldest tail in a character's sequence fades to this fraction of full
+// opacity; the most recent tail is always drawn at full opacity.
+const MIN_TAIL_OPACITY = 0.5;
 
 /**
- * Splits a tail's points (ordered from the position itself outward into the
- * past — see buildTailPoints) into consecutive two-point segments, each
- * given a progressively lower opacity the farther it is from the position,
- * so the tail visually fades out toward its older end. Leaflet's Polyline
- * only supports one uniform opacity per path, hence the segments — the
- * fade is a stepped approximation, coarser for tails with few points.
+ * Assigns each tail in a character's sequence (ordered oldest to most
+ * recent — i.e. the order positions were visited) a linearly increasing
+ * opacity, from MIN_TAIL_OPACITY for the first (oldest) tail up to full
+ * opacity for the last (most recent) one, so the whole route reads as
+ * fading into the past. A single tail is always drawn at full opacity.
  */
-export function buildFadedTailSegments(points: LatLng[], baseOpacity: number): TailSegment[] {
-  const segmentCount = points.length - 1;
-  if (segmentCount <= 0) return [];
+export function applyTailOpacityGradient<T extends { opacity: number }>(tails: T[]): T[] {
+  const count = tails.length;
+  if (count <= 1) return tails.map((tail) => ({ ...tail, opacity: 1 }));
 
-  return Array.from({ length: segmentCount }, (_, index) => {
-    const t = segmentCount === 1 ? 0 : index / (segmentCount - 1);
-    const fade = 1 - t * (1 - MIN_FADE_FACTOR);
-    return {
-      positions: [points[index]!, points[index + 1]!] as [LatLng, LatLng],
-      opacity: baseOpacity * fade,
-    };
-  });
+  return tails.map((tail, index) => ({
+    ...tail,
+    opacity: MIN_TAIL_OPACITY + (1 - MIN_TAIL_OPACITY) * (index / (count - 1)),
+  }));
 }

@@ -12,7 +12,7 @@ import {
 import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
-import { buildTailPoints, hasTailToDraw } from '../../lib/tailConnection';
+import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from '../../lib/tailConnection';
 import { makeTimelineVisibilityChecker } from '../../lib/timelineVisibility';
 import type { TimelineMode } from '../MapTimelineControl';
 import { useRangeOptions } from './characters/rangeOptions';
@@ -112,6 +112,7 @@ export function CharactersSection({
       const positions = positionsByCharacterId[expandedCharacterId];
       const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
       const color = character?.color ?? null;
+      const characterTails: CharacterTailOverlay[] = [];
       let precedingPosition: CharacterPosition | undefined;
       positions?.forEach((position, positionIndex) => {
         if (!isPositionVisible(position)) return;
@@ -125,15 +126,16 @@ export function CharactersSection({
         });
 
         if (hasTailToDraw(position, precedingPosition)) {
-          tails.push({
+          characterTails.push({
             characterId: expandedCharacterId,
             points: buildTailPoints(position, precedingPosition),
             color,
-            opacity: 1,
+            opacity: 0,
           });
         }
         precedingPosition = position;
       });
+      tails.push(...applyTailOpacityGradient(characterTails));
     }
 
     // A visible-but-collapsed character shows its last position as an
@@ -155,6 +157,7 @@ export function CharactersSection({
         -1,
       );
 
+      const characterTails: CharacterTailOverlay[] = [];
       let precedingPosition: CharacterPosition | undefined;
       positions.forEach((position, positionIndex) => {
         if (!isPositionVisible(position)) return;
@@ -170,15 +173,16 @@ export function CharactersSection({
         });
 
         if (hasTailToDraw(position, precedingPosition)) {
-          tails.push({
+          characterTails.push({
             characterId,
             points: buildTailPoints(position, precedingPosition),
             color,
-            opacity: 0.75,
+            opacity: 0,
           });
         }
         precedingPosition = position;
       });
+      tails.push(...applyTailOpacityGradient(characterTails));
     });
 
     onVisiblePositionsChange(pins.length > 0 ? pins : null);
