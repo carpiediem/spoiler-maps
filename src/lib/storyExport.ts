@@ -12,13 +12,14 @@ import {
   type ChapterRange,
   type EpisodeRange,
 } from '../db';
-import type {
-  StoryDocument,
-  StoryDocumentCharacter,
-  StoryDocumentMarker,
-  StoryDocumentMarkerSet,
-  StoryDocumentPosition,
-  StoryDocumentRangeTuple,
+import {
+  STORY_DOCUMENT_FORMAT_VERSION,
+  type StoryDocument,
+  type StoryDocumentCharacter,
+  type StoryDocumentMarker,
+  type StoryDocumentMarkerSet,
+  type StoryDocumentPosition,
+  type StoryDocumentRangeTuple,
 } from './storyDocument';
 
 // A range's start/end ids are guaranteed to resolve: indexById is built from
@@ -159,6 +160,7 @@ export async function buildStoryDocument(storyId: number): Promise<StoryDocument
   );
 
   return {
+    formatVersion: STORY_DOCUMENT_FORMAT_VERSION,
     name: story.name,
     ...(story.tileUrlTemplate ? { tileUrlTemplate: story.tileUrlTemplate } : {}),
     ...(story.tileLayerAuthor ? { tileLayerAuthor: story.tileLayerAuthor } : {}),

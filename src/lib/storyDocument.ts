@@ -1,6 +1,14 @@
 import type { LatLng } from '../db';
 
 /**
+ * The current version of the StoryDocument YAML format. Bumped whenever a
+ * change would make an older app unable to correctly interpret a file —
+ * parseStoryDocument rejects any file whose formatVersion is higher than
+ * this, rather than silently misreading it.
+ */
+export const STORY_DOCUMENT_FORMAT_VERSION = 1;
+
+/**
  * A chapter/episode range, serialized as a flat 0-based [start, end] index
  * into the document's own `books[].chapters` (or `television[].episodes`)
  * arrays, in the order they're written — rather than referencing a
@@ -70,6 +78,8 @@ export interface StoryDocumentMarkerSet {
 
 /** The full human-editable shape of a story, as exported to / imported from YAML. */
 export interface StoryDocument {
+  /** Defaults to 1 when absent, for files exported before this field existed. */
+  formatVersion: number;
   name: string;
   tileUrlTemplate?: string;
   tileLayerAuthor?: string;

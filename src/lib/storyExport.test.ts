@@ -64,6 +64,7 @@ describe('buildStoryDocument', () => {
     const document = await buildStoryDocument(story.id);
 
     expect(document).toEqual({
+      formatVersion: 1,
       name: 'The Wheel of Time',
       initialCenter: { lat: 1, lng: 2 },
       initialZoom: 5,
