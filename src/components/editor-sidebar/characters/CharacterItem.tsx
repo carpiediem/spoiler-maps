@@ -122,30 +122,25 @@ export function CharacterItem({
       disableGutters
       elevation={0}
       square
-      slotProps={{
-        // Sticks just below the SidebarSection header (e.g. "Characters")
-        // that this list lives inside, rather than at the very top, so both
-        // stay visible while stacked. See SidebarSection for why the opaque
-        // background lives on AccordionSummary rather than here.
-        heading: {
-          sx: {
-            position: 'sticky',
-            top: SIDEBAR_SECTION_HEADER_HEIGHT,
-            // Above MUI's own floating-label z-index of 1 (see
-            // SidebarSection), but below SIDEBAR_SECTION_HEADER_Z_INDEX so
-            // the outer "Characters" header stays on top of this one when
-            // both are stuck and stacked.
-            zIndex: SIDEBAR_SECTION_HEADER_Z_INDEX - 1,
-          },
-        },
-      }}
       sx={{
         boxShadow: 'none',
         '&::before': { display: 'none' },
         borderRadius: 1,
       }}
     >
-      <Box sx={{ position: 'relative', opacity: isDragging ? 0.5 : 1 }}>
+      <Box
+        sx={{
+          position: 'sticky',
+          // Sticks just below the SidebarSection header (e.g. "Characters")
+          // that this list lives inside, rather than at the very top, so
+          // both stay visible while stacked.
+          top: SIDEBAR_SECTION_HEADER_HEIGHT,
+          // Below SIDEBAR_SECTION_HEADER_Z_INDEX, so the outer "Characters"
+          // header stays on top of this one when both are stuck at once.
+          zIndex: SIDEBAR_SECTION_HEADER_Z_INDEX - 1,
+          opacity: isDragging ? 0.5 : 1,
+        }}
+      >
         {/* A native title, not an MUI Tooltip: Tooltip clones an aria-label
             onto its child, which would replace this button's accessible
             name (otherwise just "Jon Snow") with "Drag to reorder". */}

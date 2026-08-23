@@ -13,10 +13,10 @@ import type { ReactNode, SyntheticEvent } from 'react';
 export const SIDEBAR_SECTION_HEADER_HEIGHT = 48;
 
 /**
- * Sticky z-index for this outer header. Above MUI's own floating input
- * labels (z-index: 1) — see the comment below — and above
- * CHARACTER_ITEM_HEADER_Z_INDEX, so this header stays on top of a nested
- * sticky CharacterItem header when both are stacked and scrolling.
+ * Sticky z-index for this outer header — above MUI's own floating input
+ * labels (z-index: 1), and above CharacterItem's own sticky header (which
+ * uses one less than this), so this one stays on top when both are stuck
+ * and stacked.
  */
 export const SIDEBAR_SECTION_HEADER_Z_INDEX = 3;
 
@@ -45,23 +45,6 @@ export function SidebarSection({
       disableGutters
       elevation={0}
       square
-      slotProps={{
-        // The heading (h3) slot, not AccordionSummary itself, is what wraps
-        // the header at the DOM level, so it's what needs position: sticky
-        // for the whole header to stay pinned. The opaque background goes
-        // on AccordionSummary below instead — Chromium doesn't reliably
-        // composite a sticky element's own background above unrelated
-        // scrolled content otherwise (verified: background here alone left
-        // scrolled-past content, e.g. an expanded form's floating labels,
-        // visibly bleeding through).
-        heading: {
-          sx: {
-            position: 'sticky',
-            top: 0,
-            zIndex: SIDEBAR_SECTION_HEADER_Z_INDEX,
-          },
-        },
-      }}
       sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
     >
       <AccordionSummary
@@ -73,6 +56,9 @@ export function SidebarSection({
           px: 1,
           minHeight: 40,
           '&.Mui-expanded': { minHeight: 40 },
+          position: 'sticky',
+          top: 0,
+          zIndex: SIDEBAR_SECTION_HEADER_Z_INDEX,
         }}
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>

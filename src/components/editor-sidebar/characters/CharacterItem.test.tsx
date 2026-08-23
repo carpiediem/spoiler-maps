@@ -180,14 +180,14 @@ describe('CharacterItem', () => {
     );
 
     const button = screen.getByTitle('Drag to reorder');
-    const heading = button.closest('h3')!;
-    expect(getComputedStyle(heading).position).toBe('sticky');
-    expect(getComputedStyle(heading).top).toBe('48px');
+    const wrapper = button.parentElement!;
+    expect(getComputedStyle(wrapper).position).toBe('sticky');
+    expect(getComputedStyle(wrapper).top).toBe('48px');
     expect(getComputedStyle(button).backgroundColor).not.toBe('');
     expect(getComputedStyle(button).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
     // Below SIDEBAR_SECTION_HEADER_Z_INDEX, so the outer SidebarSection
     // header (e.g. "Characters") stays on top when both are stuck at once.
-    expect(Number(getComputedStyle(heading).zIndex)).toBeLessThan(SIDEBAR_SECTION_HEADER_Z_INDEX);
+    expect(Number(getComputedStyle(wrapper).zIndex)).toBeLessThan(SIDEBAR_SECTION_HEADER_Z_INDEX);
   });
 
   it('dims the row while it is the one being dragged', () => {
