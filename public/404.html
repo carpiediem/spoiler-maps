@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Spoiler Maps</title>
+    <script>
+      // Single Page Apps for GitHub Pages: https://github.com/rafgraph/spa-github-pages
+      //
+      // GitHub Pages has no server-side rewrite rule, so a direct load of
+      // any client-side route (e.g. /spoiler-maps/view?d=...) 404s here
+      // instead of reaching index.html. This redirects to index.html,
+      // encoding the original path/query/hash into a query string that the
+      // matching script in index.html decodes and restores via
+      // history.replaceState once the app has loaded.
+      //
+      // pathSegmentsToKeep is 1: this is a GitHub Pages *project* site
+      // (carpiediem.github.io/spoiler-maps/...), so the first path segment
+      // ("spoiler-maps") is the app's own base path, not part of the route.
+      var pathSegmentsToKeep = 1;
+
+      var l = window.location;
+      l.replace(
+        l.protocol +
+          '//' +
+          l.hostname +
+          (l.port ? ':' + l.port : '') +
+          l.pathname
+            .split('/')
+            .slice(0, 1 + pathSegmentsToKeep)
+            .join('/') +
+          '/?/' +
+          l.pathname
+            .slice(1)
+            .split('/')
+            .slice(pathSegmentsToKeep)
+            .join('/')
+            .replace(/&/g, '~and~') +
+          (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+          l.hash,
+      );
+    </script>
+  </head>
+  <body></body>
+</html>
