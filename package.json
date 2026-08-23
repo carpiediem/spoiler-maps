@@ -12,6 +12,7 @@
     "typecheck": "tsc -b --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "docs:test-outline": "node scripts/generate-test-outline.cjs && prettier --write docs/test-suite-outline.md",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },

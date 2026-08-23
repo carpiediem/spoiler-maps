@@ -11,7 +11,7 @@ A story can be exported to (and imported from) a human-editable YAML file — se
 
 ## Inspiration
 
-Ten years ago, I adapted an existing map of The Song of Ice and Fire book series into [an interactive map](https://carpiediem.github.io/game-of-thrones-map/) that included controls to avoid spoiling the plot. As the Game of Thrones TV show gained popularity, my map got [quite a bit](https://lifehacker.com/get-your-game-of-thrones-fix-with-this-interactive-spo-1782986360/) of attention. I did my best to update the map to match subsequent series of the show, but the original code was quite brittle and each change meant editing lots of JSON data by hand. Since then, I've found myself wanting to make similar maps for other stories, so I finally got around to building a tool that would make it easier.
+Back [in 2013](https://web.archive.org/web/20130113121350/http://quartermaester.info/), I adapted [an existing map](https://www.sermountaingoat.co.uk/map/) of The Song of Ice and Fire book series into [an interactive map](https://carpiediem.github.io/game-of-thrones-map/) that included controls to avoid spoiling the plot. As the Game of Thrones TV show gained popularity, my map got [quite a bit](https://lifehacker.com/get-your-game-of-thrones-fix-with-this-interactive-spo-1782986360/) of attention. I did my best to update the map to match subsequent series of the show, but the original code was quite brittle and each change meant editing lots of JSON data by hand. Since then, I've found myself wanting to make similar maps for other stories, so I finally got around to building a tool that would make it easier.
 
 ## Tech Stack
 
@@ -59,10 +59,11 @@ The app will be available at http://localhost:5173.
 
 This repo uses a few GitHub Actions workflows under [.github/workflows](.github/workflows):
 
-- **[CI](.github/workflows/ci.yml)** — runs on every push to `main` and every pull request. Type-checks, verifies formatting, lints, and runs the test suite with coverage, uploading the results to [Codecov](https://codecov.io/gh/carpiediem/spoiler-maps). Once CI passes on a pull request opened by Dependabot, a separate job automatically approves it and enables auto-merge.
+- **[CI](.github/workflows/ci.yml)** — runs on every push to `main` and every pull request. Type-checks, verifies formatting, lints, and runs [the test suite](docs/test-suite-outline.md) with coverage, uploading the results to [Codecov](https://codecov.io/gh/carpiediem/spoiler-maps). Once CI passes on a pull request opened by Dependabot, a separate job automatically approves it and enables auto-merge.
 - **[CD](.github/workflows/cd.yml)** — runs on every push to `main` (and can be triggered manually). Builds the app and deploys it to [GitHub Pages](https://carpiediem.github.io/spoiler-maps/).
 - **[CodeQL](.github/workflows/codeql-analysis.yml)** — runs on push and pull requests to `main`, plus a weekly schedule. Scans the JavaScript/TypeScript source for security vulnerabilities.
 - **[Accessibility Scanner](.github/workflows/a11y-scan.yml)** — manually triggered from the Actions tab. Scans the live deployed site and files GitHub issues for any accessibility violations it finds.
+- **[Test Outline](.github/workflows/test-outline.yml)** — runs on every push to `main` that touches a test file or the generator script. Regenerates [docs/test-suite-outline.md](docs/test-suite-outline.md) and commits it back if anything changed.
 
 ## Contributing
 
