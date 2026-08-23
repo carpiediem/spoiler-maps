@@ -127,6 +127,7 @@ describe('MapView', () => {
     position: { lat: number; lng: number },
     label: string,
     dead = false,
+    note: string | null = null,
   ) {
     return {
       characterId: 1,
@@ -135,7 +136,7 @@ describe('MapView', () => {
         characterId: 1,
         position,
         dead,
-        note: null,
+        note,
         tail: null,
         chapterRange: null,
         episodeRange: null,
@@ -228,6 +229,47 @@ describe('MapView', () => {
     expect(onCharacterPositionPinClick).toHaveBeenCalledWith(pin);
   });
 
+  it('binds a tooltip showing the position’s note', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const { container } = render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        characterPositionPins={[makePin(1, { lat: 41, lng: -101 }, '1', false, 'Hiding here')]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    expect(marker!.getTooltip()).toBeDefined();
+
+    act(() => marker!.openTooltip());
+    expect(container.querySelector('.leaflet-tooltip')?.textContent).toBe('Hiding here');
+  });
+
+  it('binds no tooltip — never the raw lat/lng — when the position has no note', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        characterPositionPins={[makePin(1, { lat: 41, lng: -101 }, '1')]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    expect(marker!.getTooltip()).toBeUndefined();
+  });
+
   it('renders a solid colored dot, not a labeled pin, for a "dot"-style position', () => {
     const mapRef = createRef<LeafletMap | null>();
     const onCharacterPositionPinClick = vi.fn();
@@ -258,6 +300,32 @@ describe('MapView', () => {
       circle!.fire('click');
     });
     expect(onCharacterPositionPinClick).toHaveBeenCalledWith(dotPin);
+  });
+
+  it('binds a tooltip showing the note on a "dot"-style position too', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const dotPin = {
+      ...makePin(1, { lat: 41, lng: -101 }, '', false, 'Last seen alive'),
+      style: 'dot' as const,
+    };
+    const { container } = render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        characterPositionPins={[dotPin]}
+      />,
+    );
+
+    let circle: LeafletCircleMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletCircleMarker) circle = layer;
+    });
+    expect(circle!.getTooltip()).toBeDefined();
+
+    act(() => circle!.openTooltip());
+    expect(container.querySelector('.leaflet-tooltip')?.textContent).toBe('Last seen alive');
   });
 
   it('renders a "dot"-style position under active editing as the usual draggable pin instead', () => {

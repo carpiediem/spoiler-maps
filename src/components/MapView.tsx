@@ -7,6 +7,7 @@ import {
   Marker,
   Polyline,
   TileLayer,
+  Tooltip,
   useMap,
   useMapEvents,
 } from 'react-leaflet';
@@ -240,7 +241,10 @@ export function MapView({
               eventHandlers={{
                 click: () => onCharacterPositionPinClick?.(pin),
               }}
-            />
+            >
+              {/* Never falls back to showing the lat/lng — no note means no tooltip at all. */}
+              {pin.characterPosition.note && <Tooltip>{pin.characterPosition.note}</Tooltip>}
+            </CircleMarker>
           );
         }
 
@@ -267,7 +271,9 @@ export function MapView({
             eventHandlers={{
               click: () => onCharacterPositionPinClick?.(pin),
             }}
-          />
+          >
+            {pin.characterPosition.note && <Tooltip>{pin.characterPosition.note}</Tooltip>}
+          </Marker>
         );
       })}
       {kind === 'quadkey' ? (
