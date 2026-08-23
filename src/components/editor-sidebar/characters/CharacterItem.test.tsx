@@ -157,6 +157,7 @@ describe('CharacterItem', () => {
       icon: null,
       color: null,
       sortOrder: 1,
+      url: null,
     };
     render(
       <CharacterItem
