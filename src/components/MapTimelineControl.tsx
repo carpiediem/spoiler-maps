@@ -13,6 +13,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { FlatOption } from './editor-sidebar/characters/rangeOptions';
 
@@ -187,7 +188,13 @@ export function MapTimelineControl({
           {heading}
         </Typography>
       )}
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 0.5,
+          backgroundColor: (theme) => alpha(theme.palette.info.light, 0.08),
+        }}
+      >
         <ToggleButtonGroup
           value={mode}
           exclusive
