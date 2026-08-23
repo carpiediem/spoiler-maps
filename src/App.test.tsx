@@ -32,6 +32,20 @@ describe('App routes', () => {
     expect(await screen.findByRole('button', { name: /new map/i })).toBeInTheDocument();
   });
 
+  it('redirects /?d=<url> to /view?d=<url> instead of /edit', async () => {
+    render(
+      <MemoryRouter initialEntries={['/?d=https://example.com/story.yaml']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    // The view screen starts loading the given URL (rather than the edit
+    // screen's "New Map" default), proving the redirect landed on /view
+    // with the query string preserved.
+    expect(await screen.findByRole('progressbar')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /new map/i })).not.toBeInTheDocument();
+  });
+
   it('renders the editor at /edit', async () => {
     render(
       <MemoryRouter initialEntries={['/edit']}>
