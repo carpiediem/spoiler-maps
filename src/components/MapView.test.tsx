@@ -582,9 +582,13 @@ describe('MapView', () => {
     });
 
     expect(polylines).toHaveLength(1);
-    const options = polylines[0]!.options as { opacity?: number; className?: string };
+    const options = polylines[0]!.options as { opacity?: number };
     expect(options.opacity).toBe(1);
-    expect(options.className).toBe('character-tail-flow');
+    // The flow class is added directly to the rendered element via a ref
+    // (see attachTailFlowClass), not through pathOptions.className — Leaflet
+    // only applies that at path-creation time, before react-leaflet's own
+    // deferred pathOptions update runs, so it never actually lands there.
+    expect(polylines[0]!.getElement()?.classList.contains('character-tail-flow')).toBe(true);
   });
 
   it('applies the initial zoom limits to the underlying Leaflet map', () => {
