@@ -32,7 +32,7 @@ export function hasTailToDraw(
 
 // The oldest tail in a character's sequence fades to this fraction of full
 // opacity; the most recent tail is always drawn at full opacity.
-const MIN_TAIL_OPACITY = 0.5;
+const MIN_TAIL_OPACITY = 0.1;
 
 /**
  * Assigns each tail in a character's sequence (ordered oldest to most
