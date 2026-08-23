@@ -71,7 +71,20 @@ export function CharacterPathsPanel({
         p: 2,
       }}
     >
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          alignItems: 'center',
+          mb: 1,
+          position: 'sticky',
+          top: 0,
+          zIndex: 1,
+          // Opaque, matching the Paper's own background — otherwise the
+          // list below shows through as it scrolls past this header.
+          bgcolor: 'background.paper',
+        }}
+      >
         <Checkbox
           checked={allChecked}
           indeterminate={someChecked}

@@ -25,6 +25,24 @@ describe('CharacterPathsPanel', () => {
     expect(screen.getByRole('checkbox', { name: /toggle all characters/i })).toBeDisabled();
   });
 
+  it('sticks the header to the top of the panel, with an opaque background so the list can’t show through', () => {
+    render(
+      <CharacterPathsPanel
+        characters={characters}
+        checkedIndices={new Set()}
+        onCheckedIndicesChange={vi.fn()}
+        showFullPath={false}
+        onShowFullPathChange={vi.fn()}
+      />,
+    );
+
+    const header = screen.getByText('Character Paths').closest('div')!;
+    expect(getComputedStyle(header).position).toBe('sticky');
+    expect(getComputedStyle(header).top).toBe('0px');
+    expect(getComputedStyle(header).backgroundColor).not.toBe('');
+    expect(getComputedStyle(header).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
   it('shows an icon image when set, "Unnamed Character" when the name is blank, and a default swatch color when unset', () => {
     const { container } = render(
       <CharacterPathsPanel
