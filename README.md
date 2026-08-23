@@ -12,7 +12,7 @@ A story can be exported to (and imported from) a human-editable YAML file — se
 ## Routes
 
 - `/edit/:storyId?` — the editor, working against the browser's local database. A bare `/edit` returns to whichever story you last had open; `/edit/new` always starts the create-new-story flow. `/` redirects here.
-- `/view/:storyId?` — the read-only, spoiler-safe viewer, for sharing a finished map. Pass `?d=<url>` to load a story from anywhere on the internet (the same YAML export format above — see [docs/yaml-export-format.md](docs/yaml-export-format.md)) instead of the local database; the URL must be reachable with CORS enabled (a GitHub Gist's raw URL works). `/view/:storyId` (no `?d=`) previews a locally-stored story the same way, without exporting it first.
+- `/view/:storyId?` — the read-only, spoiler-safe viewer, for sharing a finished map. Pass `?d=<url>` to load a story from anywhere on the internet (the same YAML export format above — see [docs/yaml-export-format.md](docs/yaml-export-format.md)) instead of the local database; the URL must be reachable with CORS enabled (a GitHub Gist's raw URL works). `/view/:storyId` (no `?d=`) previews a locally-stored story the same way, without exporting it first. For example: [`/view?d=<gist raw URL>`](https://carpiediem.github.io/spoiler-maps/view?d=https://gist.githubusercontent.com/carpiediem/a503bb967999979b08584db523061db3/raw/a-song-of-ice-and-fire.yaml).
 
 ## Inspiration
 
