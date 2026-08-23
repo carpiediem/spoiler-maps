@@ -25,6 +25,7 @@ import {
 import { DEFAULT_CHARACTER_COLOR } from '../../../lib/characterColor';
 import type { TimelineMode } from '../../MapTimelineControl';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
+import { SIDEBAR_SECTION_HEADER_HEIGHT } from '../SidebarSection';
 import { PositionList } from './PositionList';
 
 interface CharacterItemProps {
@@ -121,6 +122,20 @@ export function CharacterItem({
       disableGutters
       elevation={0}
       square
+      slotProps={{
+        // Sticks just below the SidebarSection header (e.g. "Characters")
+        // that this list lives inside, rather than at the very top, so both
+        // stay visible while stacked. See SidebarSection for why the opaque
+        // background lives on AccordionSummary rather than here.
+        heading: {
+          sx: {
+            position: 'sticky',
+            top: SIDEBAR_SECTION_HEADER_HEIGHT,
+            // See SidebarSection: above MUI's own floating-label z-index of 1.
+            zIndex: 2,
+          },
+        },
+      }}
       sx={{
         boxShadow: 'none',
         '&::before': { display: 'none' },
@@ -139,7 +154,7 @@ export function CharacterItem({
           onDragEnd={onDragEnd}
           onDragOver={onDragOver}
           onDrop={onDrop}
-          sx={{ backgroundColor: 'rgba(0, 0, 0, .03)', px: 1, minHeight: 40 }}
+          sx={{ backgroundColor: 'grey.200', px: 1, minHeight: 40 }}
         >
           <Stack
             direction="row"

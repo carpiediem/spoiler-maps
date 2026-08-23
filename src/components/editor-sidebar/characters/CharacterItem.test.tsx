@@ -145,6 +145,47 @@ describe('CharacterItem', () => {
     expect(screen.getByText('Jon Snow')).toBeInTheDocument();
   });
 
+  it('sticks below the SidebarSection header, with an opaque background on the button itself', () => {
+    const character: Character = {
+      id: 1,
+      storyId: 1,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 1,
+    };
+    render(
+      <CharacterItem
+        character={character}
+        expanded={false}
+        onToggle={vi.fn()}
+        visible={false}
+        onToggleVisible={vi.fn()}
+        isDragging={false}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        onDragOver={vi.fn()}
+        onDrop={vi.fn()}
+        onCharacterChange={vi.fn()}
+        onDelete={vi.fn()}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        onPositionsChange={vi.fn()}
+        positionsVersion={0}
+        timelineMode="book"
+        timelineIndex={Number.MAX_SAFE_INTEGER}
+      />,
+    );
+
+    const button = screen.getByTitle('Drag to reorder');
+    const heading = button.closest('h3')!;
+    expect(getComputedStyle(heading).position).toBe('sticky');
+    expect(getComputedStyle(heading).top).toBe('48px');
+    expect(getComputedStyle(button).backgroundColor).not.toBe('');
+    expect(getComputedStyle(button).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
   it('dims the row while it is the one being dragged', () => {
     const character: Character = {
       id: 1,

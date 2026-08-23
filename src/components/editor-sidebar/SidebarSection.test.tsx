@@ -34,7 +34,7 @@ describe('SidebarSection', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 
-  it('sticks the header’s h3 wrapper, with an opaque background, to the top of its scroll container', () => {
+  it('sticks the header’s h3 wrapper to the top of its scroll container', () => {
     render(
       <SidebarSection id="books" title="Books" expanded onChange={vi.fn()}>
         content
@@ -44,7 +44,17 @@ describe('SidebarSection', () => {
     const heading = document.getElementById('books-header')!.closest('h3')!;
     expect(getComputedStyle(heading).position).toBe('sticky');
     expect(getComputedStyle(heading).top).toBe('0px');
-    expect(getComputedStyle(heading).backgroundColor).not.toBe('');
-    expect(getComputedStyle(heading).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
+  it('gives the button an opaque background, not just the h3 wrapper, so scrolled content can’t show through', () => {
+    render(
+      <SidebarSection id="books" title="Books" expanded onChange={vi.fn()}>
+        content
+      </SidebarSection>,
+    );
+
+    const button = document.getElementById('books-header')!;
+    expect(getComputedStyle(button).backgroundColor).not.toBe('');
+    expect(getComputedStyle(button).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
   });
 });
