@@ -74,13 +74,13 @@ describe('applyTailOpacityGradient', () => {
     expect(applyTailOpacityGradient([{ opacity: 0 }])).toEqual([{ opacity: 1 }]);
   });
 
-  it('fades linearly from 10% opacity for the first (oldest) tail to full for the last (most recent)', () => {
+  it('fades linearly from 20% opacity for the first (oldest) tail to full for the last (most recent)', () => {
     const tails = [{ opacity: 0 }, { opacity: 0 }, { opacity: 0 }];
 
     const result = applyTailOpacityGradient(tails);
 
-    expect(result[0]!.opacity).toBe(0.1);
-    expect(result[1]!.opacity).toBeCloseTo(0.55);
+    expect(result[0]!.opacity).toBe(0.2);
+    expect(result[1]!.opacity).toBeCloseTo(0.6);
     expect(result[2]!.opacity).toBe(1);
   });
 
@@ -92,7 +92,7 @@ describe('applyTailOpacityGradient', () => {
 
     const result = applyTailOpacityGradient(tails);
 
-    expect(result[0]).toMatchObject({ characterId: 1, color: '#ff0000', opacity: 0.1 });
+    expect(result[0]).toMatchObject({ characterId: 1, color: '#ff0000', opacity: 0.2 });
     expect(result[1]).toMatchObject({ characterId: 1, color: '#ff0000', opacity: 1 });
   });
 });
