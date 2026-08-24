@@ -198,7 +198,13 @@ export function ViewScreen() {
             hasSeasons={episodeOptions.length > 0}
             heading="Show spoilers through:"
             initialMode={initialTimeline?.mode}
-            initialIndex={initialTimeline?.index}
+            // Defaults to the very start (no spoilers revealed yet) unless
+            // a #chapter-N/#episode-N URL fragment says otherwise — a
+            // shared link with no fragment shouldn't open showing every
+            // spoiler by default. EditScreen has no such default (it keeps
+            // MapTimelineControl's own "last chapter" default), since the
+            // author placing markers wants to see everything by default.
+            initialIndex={initialTimeline?.index ?? 1}
             onChange={(mode, index) => {
               setTimelineMode(mode);
               setTimelineIndex(index);

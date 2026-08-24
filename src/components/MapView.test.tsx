@@ -619,4 +619,29 @@ describe('MapView', () => {
     expect(mapRef.current!.getMinZoom()).toBe(3);
     expect(mapRef.current!.getMaxZoom()).toBe(8);
   });
+
+  it('recenters the live map when center/zoom change without remounting', () => {
+    // MapContainer's own center/zoom props, like minZoom/maxZoom above,
+    // only set up the map when it's first created — this is the case where
+    // that already bit us: loading straight into a specific story mounts
+    // the map at DEFAULT_CENTER first (its own initialCenter hasn't loaded
+    // yet), and without this sync, it would never move once that data
+    // arrived, unless MapView happened to remount.
+    const mapRef = createRef<LeafletMap | null>();
+    const { rerender } = render(
+      <MapView tileUrl={null} center={{ lat: 0, lng: 0 }} zoom={2} mapRef={mapRef} />,
+    );
+
+    expect(mapRef.current!.getZoom()).toBe(2);
+    expect(mapRef.current!.getCenter().lat).toBeCloseTo(0);
+    expect(mapRef.current!.getCenter().lng).toBeCloseTo(0);
+
+    act(() => {
+      rerender(<MapView tileUrl={null} center={center} zoom={6} mapRef={mapRef} />);
+    });
+
+    expect(mapRef.current!.getZoom()).toBe(6);
+    expect(mapRef.current!.getCenter().lat).toBeCloseTo(center.lat);
+    expect(mapRef.current!.getCenter().lng).toBeCloseTo(center.lng);
+  });
 });

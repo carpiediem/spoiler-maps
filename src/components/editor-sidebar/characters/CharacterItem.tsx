@@ -155,7 +155,13 @@ export function CharacterItem({
           onDragOver={onDragOver}
           onDrop={onDrop}
           sx={{
-            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.06),
+            // An opaque base with the tint layered on top as a flat-color
+            // background-image, not just a translucent backgroundColor —
+            // this row is position: sticky, so a translucent color alone
+            // would let whatever's scrolled underneath show through it.
+            backgroundColor: 'background.paper',
+            backgroundImage: (theme) =>
+              `linear-gradient(${alpha(theme.palette.primary.main, 0.06)}, ${alpha(theme.palette.primary.main, 0.06)})`,
             px: 1,
             minHeight: 40,
           }}

@@ -182,6 +182,19 @@ describe('ViewScreen', () => {
     expect(await screen.findByText('AGOT: Prologue')).toBeInTheDocument();
   });
 
+  it('defaults the spoiler slider to the first chapter, not the last, with no URL fragment', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
+    );
+
+    renderAt('/view?d=https://example.com/story.yaml');
+
+    // A shared link with no #chapter-N/#episode-N fragment shouldn't open
+    // showing every spoiler by default.
+    expect(await screen.findByText('AGOT: Prologue')).toBeInTheDocument();
+  });
+
   it('renders a local story directly from the database, given a story id and no data URL', async () => {
     const story = await createStory({
       name: 'A Song of Ice and Fire',
@@ -265,7 +278,10 @@ describe('ViewScreen', () => {
       vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
     );
     const user = userEvent.setup();
-    const { container } = renderAt('/view?d=https://example.com/story.yaml');
+    // Explicitly at the last chapter (the slider now defaults to the very
+    // first instead, so both of Jon's positions — including the one
+    // starting at chapter index 1 — need to be reached deliberately here).
+    const { container } = renderAt('/view?d=https://example.com/story.yaml#chapter-2');
 
     await screen.findByText('Jon Snow');
     await user.click(screen.getByRole('button', { name: /got it/i }));
@@ -274,9 +290,8 @@ describe('ViewScreen', () => {
 
     await user.click(screen.getByRole('checkbox', { name: 'Jon Snow' }));
 
-    // The slider starts on the last chapter, so both of Jon's positions
-    // (including the one starting at chapter index 1) are reached — but
-    // only the last one shows as a pin, per buildViewPinsAndTails.
+    // Both of Jon's positions are now reached — but only the last one shows
+    // as a pin, per buildViewPinsAndTails.
     await waitFor(() => {
       expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
     });
@@ -288,7 +303,7 @@ describe('ViewScreen', () => {
       vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
     );
     const user = userEvent.setup();
-    const { container } = renderAt('/view?d=https://example.com/story.yaml');
+    const { container } = renderAt('/view?d=https://example.com/story.yaml#chapter-2');
 
     await screen.findByText('Jon Snow');
     await user.click(screen.getByRole('button', { name: /got it/i }));

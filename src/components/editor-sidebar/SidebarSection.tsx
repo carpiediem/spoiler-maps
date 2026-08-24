@@ -7,8 +7,16 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, styled } from '@mui/material/styles';
 import type { ReactNode, SyntheticEvent } from 'react';
+
+// MUI's own default Accordion heading wrapper (a plain 'h3') uses
+// `all: unset` so it doesn't affect layout at all — critical here, since
+// this wraps a position:sticky AccordionSummary, and a real <h2>'s UA
+// default margin/display breaks that positioning. slots={{ heading: 'h2' }}
+// replaces the wrapper entirely (losing that reset, not just the tag), so
+// this mirrors it on the tag we actually want.
+const SectionHeading = styled('h2')({ all: 'unset' });
 
 /** This section header's rendered height, so a nested sticky header (e.g. CharacterItem's) can offset below it instead of overlapping it. */
 export const SIDEBAR_SECTION_HEADER_HEIGHT = 48;
@@ -51,7 +59,7 @@ export function SidebarSection({
       // so it should be an <h2> — the nested per-item accordions (BookItem/
       // SeasonItem/CharacterItem) keep the default <h3>, correctly one
       // level under this.
-      slots={{ heading: 'h2' }}
+      slots={{ heading: SectionHeading }}
       sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
     >
       <AccordionSummary
@@ -59,7 +67,13 @@ export function SidebarSection({
         aria-controls={`${id}-content`}
         id={`${id}-header`}
         sx={{
-          backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
+          // An opaque base with the tint layered on top as a flat-color
+          // background-image, not just a translucent backgroundColor —
+          // this row is position: sticky, so a translucent color alone
+          // would let whatever's scrolled underneath show through it.
+          backgroundColor: 'background.paper',
+          backgroundImage: (theme) =>
+            `linear-gradient(${alpha(theme.palette.primary.main, 0.12)}, ${alpha(theme.palette.primary.main, 0.12)})`,
           px: 1,
           minHeight: 40,
           '&.Mui-expanded': { minHeight: 40 },

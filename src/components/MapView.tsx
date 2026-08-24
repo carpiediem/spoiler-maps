@@ -107,6 +107,34 @@ function TailDrawingCatcher({ onPointClick }: TailDrawingCatcherProps) {
   return null;
 }
 
+interface InitialPositionSyncProps {
+  center: LatLng;
+  zoom: number;
+}
+
+// Same story as ZoomLimits below: MapContainer's center/zoom props only
+// set up the Leaflet map when it's first created, not on later prop
+// changes — so loading straight into a specific story (e.g. /edit/<id>
+// directly) mounts the map at DEFAULT_CENTER first (selectedStory is still
+// null while the story list is loading) and then never recenters once that
+// story's own initialCenter/initialZoom actually arrive, since MapView
+// itself doesn't remount for that. Switching stories works fine already —
+// EditScreen keys MapView by selectedStoryId, forcing a real remount.
+function InitialPositionSync({ center, zoom }: InitialPositionSyncProps) {
+  const map = useMap();
+
+  // Only ever meant to correct that one late-arriving-data case, not to
+  // fight the user's own subsequent panning/zooming — center/zoom here are
+  // a story's saved initialCenter/initialZoom, which in practice only
+  // change on that initial load or when switching stories (already
+  // remounting), not from live map interaction.
+  useEffect(() => {
+    map.setView([center.lat, center.lng], zoom);
+  }, [map, center.lat, center.lng, zoom]);
+
+  return null;
+}
+
 interface ZoomLimitsProps {
   minZoom?: number;
   maxZoom?: number;
@@ -180,6 +208,7 @@ export function MapView({
       maxZoom={maxZoom}
       style={{ position: 'absolute', inset: 0 }}
     >
+      <InitialPositionSync center={center} zoom={zoom} />
       <ZoomLimits minZoom={minZoom} maxZoom={maxZoom} />
       {onPositionChange && <MapPositionTracker onPositionChange={onPositionChange} />}
       {tailDraftPoints && onTailPointClick && (
