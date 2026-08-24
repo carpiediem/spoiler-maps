@@ -27,6 +27,8 @@ export function DescriptionDialog({
         sx={{
           px: 3,
           pb: 1,
+          maxHeight: '60vh',
+          overflowY: 'auto',
           '& > div > :first-child': { mt: 0 },
           '& > div > :last-child': { mb: 0 },
         }}
