@@ -666,6 +666,160 @@ describe('App', () => {
     ).toBeInTheDocument();
   });
 
+  it('auto-imports a story from /edit?d=<url> and starts editing it', async () => {
+    const yamlText = [
+      'name: The Wheel of Time',
+      'initialCenter: { lat: 1, lng: 2 }',
+      'initialZoom: 4',
+      'minZoom: 0',
+      'maxZoom: 19',
+    ].join('\n');
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, text: () => Promise.resolve(yamlText) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <MemoryRouter initialEntries={['/edit?d=https://example.com/wheel-of-time.yaml']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByDisplayValue('The Wheel of Time v2')).toBeInTheDocument();
+    // Only one story was created — the effect didn't re-import on its own
+    // second run (e.g. from the ?d= param still being present after the
+    // first import navigates away from it).
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    vi.unstubAllGlobals();
+  });
+
+  it('shows a dismissible error, without crashing, when the /edit?d=<url> fetch fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 404, text: () => Promise.resolve('') }),
+    );
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/edit?d=https://example.com/missing.yaml']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText(/responded with 404/i)).toBeInTheDocument();
+    // The create-new form is still usable underneath.
+    expect(screen.getByRole('button', { name: /new map/i })).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Close'));
+    await waitFor(() => expect(screen.queryByText(/responded with 404/i)).not.toBeInTheDocument());
+
+    vi.unstubAllGlobals();
+  });
+
+  it('shows a stringified error when the /edit?d=<url> fetch rejects with a non-Error value', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue('network down'));
+
+    render(
+      <MemoryRouter initialEntries={['/edit?d=https://example.com/missing.yaml']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('network down')).toBeInTheDocument();
+
+    vi.unstubAllGlobals();
+  });
+
+  it('does not update state after unmounting while a /edit?d=<url> import is still in flight', async () => {
+    let resolveFetch: (value: { ok: boolean; text: () => Promise<string> }) => void;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+      ),
+    );
+
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/edit?d=https://example.com/wheel-of-time.yaml']}>
+        <App />
+      </MemoryRouter>,
+    );
+    unmount();
+
+    const yamlText = [
+      'name: The Wheel of Time',
+      'initialCenter: { lat: 1, lng: 2 }',
+      'initialZoom: 4',
+      'minZoom: 0',
+      'maxZoom: 19',
+    ].join('\n');
+    resolveFetch!({ ok: true, text: () => Promise.resolve(yamlText) });
+    // Letting the fetch (and the import it would trigger) resolve after
+    // unmount should not throw or warn about updating an unmounted
+    // component.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    vi.unstubAllGlobals();
+  });
+
+  it('does not update state after unmounting while a failing /edit?d=<url> import is still in flight', async () => {
+    let resolveFetch: (value: { ok: boolean; status: number; text: () => Promise<string> }) => void;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+      ),
+    );
+
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/edit?d=https://example.com/missing.yaml']}>
+        <App />
+      </MemoryRouter>,
+    );
+    unmount();
+
+    resolveFetch!({ ok: false, status: 404, text: () => Promise.resolve('') });
+    // Letting the failed fetch resolve after unmount should not throw or
+    // warn about updating an unmounted component with the error state.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    vi.unstubAllGlobals();
+  });
+
+  it('ignores a ?d= param when a specific story id is already in the URL', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+    resetDatabaseForTests();
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+
+    render(
+      <MemoryRouter initialEntries={[`/edit/${story.id}?d=https://example.com/other.yaml`]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByDisplayValue('A Song of Ice and Fire')).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
   it('exports the selected story, downloading it as a YAML file', async () => {
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
     try {

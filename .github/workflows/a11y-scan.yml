@@ -33,18 +33,19 @@ jobs:
           # each URL and snapshots it, nothing more), and EditScreen's real
           # content (a selected story's map/character/marker data) lives in
           # the visiting browser's own IndexedDB, which a fresh scan never
-          # has. ViewScreen, by contrast, can load its content from a `?d=`
-          # query param alone — so the second URL points at
+          # has. Both other screens, though, can load their content from a
+          # `?d=` query param alone — so the second and third URLs point at
           # public/sample-story.yaml (kept in sync with the app's
-          # StoryDocument schema by src/publicSampleStory.test.tsx) to give
-          # the scanner a populated page: character list, map pins/tails,
-          # the description dialog, timeline. EditScreen's populated states
-          # (accordions with real items, the palette/description editors)
-          # still aren't reachable this way; there's no query-param
-          # equivalent for its IndexedDB-backed content.
+          # StoryDocument schema by src/publicSampleStory.test.tsx): once via
+          # /view?d= (the description dialog, character list, map pins/
+          # tails, timeline) and once via /edit?d= (EditScreen auto-imports
+          # it as a new story on load — see EditScreen.tsx — reaching its
+          # populated states too: the Books/Characters/Markers accordions
+          # with real items, the palette selector, the description editor).
           urls: |
             https://carpiediem.github.io/spoiler-maps/
             https://carpiediem.github.io/spoiler-maps/view?d=https://carpiediem.github.io/spoiler-maps/sample-story.yaml
+            https://carpiediem.github.io/spoiler-maps/edit?d=https://carpiediem.github.io/spoiler-maps/sample-story.yaml
           repository: ${{ github.repository }}
           # A fine-grained PAT with contents:write, issues:write,
           # pull-requests:write, actions:write, and metadata:read on this
