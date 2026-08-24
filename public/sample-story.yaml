@@ -1,0 +1,65 @@
+formatVersion: 1
+name: The Wandering Lantern
+description: |
+  A **sample map** for testing and demos — not a real story.
+
+  - Follows two travelers across a fictional continent
+  - Includes a marker set and a couple of character paths
+paletteKey: lush-forest
+tileUrlTemplate: https://tile.openstreetmap.org/{z}/{x}/{y}.png
+initialCenter: { lat: 46.8, lng: 8.2 }
+initialZoom: 5
+minZoom: 2
+maxZoom: 18
+books:
+  - name: The Wandering Lantern
+    author: A. Sample
+    chapters:
+      - name: The Departure
+      - name: Crossing the Pass
+      - name: The Lantern's Glow
+television:
+  - episodes:
+      - name: Episode 1
+      - name: Episode 2
+characters:
+  - name: Mira Ashwood
+    group: Travelers
+    color: '#2E6F40'
+    positions:
+      - lat: 47.37
+        lng: 8.54
+        note: Sets out from the capital.
+        chapters: [0, 0]
+      - lat: 46.2
+        lng: 7.36
+        tail:
+          - { lat: 47.37, lng: 8.54 }
+          - { lat: 46.8, lng: 7.9 }
+        note: Crosses the mountain pass.
+        chapters: [1, 1]
+  - name: Corin Vale
+    group: Travelers
+    color: '#6A6AA7'
+    positions:
+      - lat: 45.9
+        lng: 8.9
+        dead: true
+        note: Falls at the edge of the valley.
+        chapters: [2, 2]
+markerSets:
+  - name: Landmarks
+    markers:
+      - label: Ashwood Capital
+        color: '#2E6F40'
+        lat: 47.37
+        lng: 8.54
+      - label: The Old Pass
+        color: '#A2574F'
+        lat: 46.5
+        lng: 7.6
+        polygon:
+          - { lat: 46.55, lng: 7.55 }
+          - { lat: 46.55, lng: 7.65 }
+          - { lat: 46.45, lng: 7.65 }
+          - { lat: 46.45, lng: 7.55 }

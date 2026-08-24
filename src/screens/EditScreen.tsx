@@ -292,10 +292,12 @@ export function EditScreen() {
   return (
     <ThemeProvider theme={storyTheme}>
       <div className="app">
-        <Typography component="h1" sx={visuallyHidden}>
-          {selectedStory ? `Editing ${selectedStory.name}` : 'Spoiler Maps Editor'}
-        </Typography>
         <main aria-label="Map">
+          {/* Inside the main landmark, not a sibling of it — otherwise it's
+              page content not contained by any landmark. */}
+          <Typography component="h1" sx={visuallyHidden}>
+            {selectedStory ? `Editing ${selectedStory.name}` : 'Spoiler Maps Editor'}
+          </Typography>
           <MapView
             key={selectedStoryId ?? 'new'}
             mapRef={mapRef}
