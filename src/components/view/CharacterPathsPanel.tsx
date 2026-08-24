@@ -79,11 +79,18 @@ export function CharacterPathsPanel({
           mb: 1,
           position: 'sticky',
           top: 0,
-          zIndex: 1,
-          // A dedicated stacking context, so this row's z-index reliably
-          // wins over whatever list item is scrolled underneath it — clicks
-          // on the row (e.g. its own padding, not one of its controls)
-          // should never fall through to that item instead.
+          // MUI's Checkbox hardcodes z-index: 1 on its own internal <input>
+          // (see @mui/material/internal/SwitchBase), and none of the List/
+          // ListItem/checkbox wrapper elements below establish their own
+          // stacking context — so that input's z-index is compared directly
+          // against this row's here. z-index: 1 here would tie with it, and
+          // ties resolve in DOM order, which favors the List (it renders
+          // after this row) — so a click where the two visually overlap
+          // during a scroll would hit the character's checkbox underneath
+          // instead of this row's. zIndex: 2 wins outright.
+          zIndex: 2,
+          // A dedicated stacking context, so this row's z-index is compared
+          // as a single unit against the list instead of leaking past it.
           isolation: 'isolate',
           // Opaque, matching the Paper's own background — otherwise the
           // list below shows through as it scrolls past this header.
