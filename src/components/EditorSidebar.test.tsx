@@ -260,6 +260,56 @@ describe('EditorSidebar', () => {
     });
   });
 
+  it('includes the chosen palette when saving, and shows its swatches once selected', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[]}
+          selectedStoryId={null}
+          onSelectStory={vi.fn()}
+          onSave={onSave}
+          onSaveDescription={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
+    );
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+
+    await user.click(screen.getByLabelText(/^palette$/i));
+    await user.click(await screen.findByRole('option', { name: /blue eclipse/i }));
+
+    // Re-renders the closed field with the chosen palette's own label and swatches.
+    expect(screen.getByText('Blue Eclipse')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ paletteKey: 'blue-eclipse' }));
+  });
+
   it('extrapolates a {q} template from a real example tile URL', async () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
@@ -434,6 +484,42 @@ describe('EditorSidebar', () => {
     expect(screen.getByLabelText(/tile layer author/i)).toHaveValue('Jane Cartographer');
     expect(screen.getByLabelText(/tile layer attribution url/i)).toHaveValue('https://example.com');
     expect(screen.getByText(/51\.5000, -0\.1278 · Zoom 6/)).toBeInTheDocument();
+  });
+
+  it('falls back to "Default" for a palette key that no longer matches a known palette', () => {
+    const story = makeStory({ id: 1, paletteKey: 'a-removed-palette' });
+    render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={1}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onSaveDescription={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Default')).toBeInTheDocument();
   });
 
   it('saves the tile layer author and attribution URL when both are provided', async () => {

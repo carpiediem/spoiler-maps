@@ -76,6 +76,7 @@ export function DescriptionEditorDialog({
   );
 
   async function handleSave() {
+    /* v8 ignore next -- editor is set synchronously on mount, before the Save button is ever clickable. */
     if (!editor) return;
     const markdown = (
       editor.storage as unknown as Record<string, MarkdownStorage>
