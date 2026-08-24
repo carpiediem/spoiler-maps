@@ -1,7 +1,7 @@
-import { ThemeProvider, Typography } from '@mui/material';
+import { Alert, Snackbar, ThemeProvider, Typography } from '@mui/material';
 import type { Map as LeafletMap } from 'leaflet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { EditorSidebar } from '../components/EditorSidebar';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
 import { MapView } from '../components/MapView';
@@ -43,8 +43,11 @@ export function EditScreen() {
   const { storyId: storyIdParam } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
   const selectedStoryId = parseStoryIdParam(storyIdParam);
+  const [searchParams] = useSearchParams();
+  const dataUrl = searchParams.get('d');
 
   const [stories, setStories] = useState<Story[]>([]);
+  const [importError, setImportError] = useState<string | null>(null);
   const [tileUrl, setTileUrl] = useState<string | null>(null);
   const [mapPosition, setMapPosition] = useState<{ center: LatLng; zoom: number }>({
     center: DEFAULT_CENTER,
@@ -109,12 +112,56 @@ export function EditScreen() {
   // story once the story list has finished loading, falling back to the
   // first story if none was remembered (or it no longer exists) — leaves
   // the URL alone (the create-new flow) if there's no story to redirect to.
+  // Skipped while a `?d=` import is pending/in-flight — that effect (below)
+  // owns navigation for this landing state instead, to avoid the two
+  // racing (both would just navigate to the freshly imported story anyway).
   useEffect(() => {
-    if (storyIdParam !== undefined || stories.length === 0) return;
+    if (storyIdParam !== undefined || stories.length === 0 || dataUrl) return;
     const lastViewedId = getLastViewedStoryId();
     const target = stories.find((s) => s.id === lastViewedId) ?? stories[0];
     navigate(`/edit/${target.id}`, { replace: true });
-  }, [storyIdParam, stories, navigate]);
+  }, [storyIdParam, stories, navigate, dataUrl]);
+
+  // Lets an /edit?d=<url> link auto-import that YAML as a brand-new story
+  // and start editing it — e.g. so the accessibility scanner (which can
+  // only load a static list of URLs, not click through the UI to create a
+  // story) can reach EditScreen's populated states too, not just the empty
+  // "New Map" form. Only for the bare create-new landing state; an
+  // explicit story id in the URL wins over a `?d=` param. No extra
+  // "already imported this dataUrl" ref/guard beyond `cancelled`: once
+  // import succeeds, handleSelectStory navigates to the new story's own
+  // URL, which changes selectedStoryId and so already satisfies this
+  // effect's own guard on any later run — a redundant ref-based guard here
+  // actively breaks things under StrictMode's dev-only double-invoke
+  // (mount → cleanup → mount): the ref would already be set by the first
+  // (about-to-be-cancelled) invocation, so the second, real one would see
+  // it and skip entirely, silently dropping the import.
+  useEffect(() => {
+    if (!dataUrl || selectedStoryId !== null) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(dataUrl);
+        if (!response.ok) {
+          throw new Error(`Could not load this map: the server responded with ${response.status}.`);
+        }
+        const imported = await importStoryFromYaml(await response.text());
+        if (cancelled) return;
+        setStories((previous) => [...previous, imported]);
+        setTileUrl(imported.tileUrlTemplate);
+        handleSelectStory(imported.id);
+      } catch (error) {
+        if (cancelled) return;
+        setImportError(error instanceof Error ? error.message : String(error));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataUrl, selectedStoryId]);
 
   const selectedStory = stories.find((s) => s.id === selectedStoryId) ?? null;
   const storyTheme = useMemo(
@@ -281,6 +328,10 @@ export function EditScreen() {
     handleSelectStory(imported.id);
   }
 
+  function handleDismissImportError() {
+    setImportError(null);
+  }
+
   async function handleDeleteStory() {
     /* v8 ignore next -- the Delete Story button only renders once selectedStoryId names a story already in `stories`. */
     if (selectedStoryId === null) return;
@@ -352,6 +403,11 @@ export function EditScreen() {
           timelineMode={timelineMode}
           timelineIndex={timelineIndex}
         />
+        <Snackbar open={importError !== null} onClose={handleDismissImportError}>
+          <Alert severity="error" onClose={handleDismissImportError}>
+            {importError}
+          </Alert>
+        </Snackbar>
       </div>
     </ThemeProvider>
   );
