@@ -65,4 +65,26 @@ describe('App routes', () => {
 
     expect(await screen.findByText(/no map specified/i)).toBeInTheDocument();
   });
+
+  it('has exactly one main landmark once / redirects to /edit', async () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('button', { name: /new map/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
+
+  it('has exactly one main landmark at /view with no map specified (error state)', async () => {
+    render(
+      <MemoryRouter initialEntries={['/view']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText(/no map specified/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
 });

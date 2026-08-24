@@ -144,6 +144,33 @@ describe('ViewScreen', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
+  it('has a main landmark in the error state (no story id or data URL given)', () => {
+    renderAt('/view');
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
+
+  it('has a main landmark in the loading state', () => {
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})));
+    renderAt('/view?d=https://example.com/story.yaml');
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
+
+  it('has exactly one main landmark once loaded', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
+    );
+    const user = userEvent.setup();
+    renderAt('/view?d=https://example.com/story.yaml');
+
+    // Same as the level-one-heading case: the WelcomeDialog aria-hides the
+    // rest of the page (including the main landmark) while it's open.
+    await user.click(await screen.findByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
+
   it('starts the timeline slider from a #chapter-N URL fragment instead of the last chapter', async () => {
     vi.stubGlobal(
       'fetch',
