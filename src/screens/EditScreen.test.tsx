@@ -61,6 +61,30 @@ describe('App', () => {
     expect(container.querySelector('.leaflet-container')).toBeInTheDocument();
   });
 
+  it('has exactly one level-one heading, naming the selected story once one is saved', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Spoiler Maps Editor' }),
+    ).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Editing A Song of Ice and Fire' }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
   it('loads existing stories, switches between them, and updates the selected one', async () => {
     const user = userEvent.setup();
     await createStory({
