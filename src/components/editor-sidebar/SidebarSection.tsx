@@ -46,6 +46,12 @@ export function SidebarSection({
       disableGutters
       elevation={0}
       square
+      // MUI wraps AccordionSummary in an <h3> by default; this section
+      // heading is one level under the page's own (visually hidden) <h1>,
+      // so it should be an <h2> — the nested per-item accordions (BookItem/
+      // SeasonItem/CharacterItem) keep the default <h3>, correctly one
+      // level under this.
+      slots={{ heading: 'h2' }}
       sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
     >
       <AccordionSummary

@@ -85,6 +85,51 @@ describe('App', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
+  it('never skips a heading level, even with a book accordion expanded', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/asoiaf/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+    const book = await createBook({
+      storyId: story.id,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
+    resetDatabaseForTests();
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={[`/edit/${story.id}`]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await screen.findByDisplayValue('A Song of Ice and Fire');
+    // Expands the Books section (a SidebarSection, <h2>), revealing the
+    // book's own accordion (BookItem, MUI's default <h3>) nested inside it.
+    await user.click(screen.getByRole('heading', { level: 2, name: /books/i }));
+    await screen.findByText('A Game of Thrones');
+
+    const levels = screen
+      .getAllByRole('heading')
+      .map((heading) => Number(heading.tagName.slice(1)));
+    expect(levels[0]).toBe(1);
+    for (let i = 1; i < levels.length; i++) {
+      expect(levels[i] - levels[i - 1]).toBeLessThanOrEqual(1);
+    }
+  });
+
   it('loads existing stories, switches between them, and updates the selected one', async () => {
     const user = userEvent.setup();
     await createStory({
