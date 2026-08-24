@@ -1,4 +1,4 @@
-import { Alert, Box, CircularProgress, ThemeProvider } from '@mui/material';
+import { Alert, Box, CircularProgress, ThemeProvider, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { CharacterPathsPanel } from '../components/view/CharacterPathsPanel';
@@ -14,6 +14,7 @@ import { parseTimelineHash } from '../lib/timelineHash';
 import { buildDocumentChapterOptions, buildDocumentEpisodeOptions } from '../lib/viewTimeline';
 import { buildViewPinsAndTails } from '../lib/viewCharacterPins';
 import { buildStoryTheme } from '../theme';
+import { visuallyHidden } from '../lib/visuallyHidden';
 import './EditScreen.css';
 
 type LoadState =
@@ -126,6 +127,9 @@ export function ViewScreen() {
   if (loadState.status === 'loading') {
     return (
       <ThemeProvider theme={storyTheme}>
+        <Typography component="h1" sx={visuallyHidden}>
+          Spoiler Maps
+        </Typography>
         <Box
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}
         >
@@ -138,6 +142,9 @@ export function ViewScreen() {
   if (loadState.status === 'error') {
     return (
       <ThemeProvider theme={storyTheme}>
+        <Typography component="h1" sx={visuallyHidden}>
+          Spoiler Maps
+        </Typography>
         <Box
           sx={{
             display: 'flex',
@@ -165,6 +172,9 @@ export function ViewScreen() {
   return (
     <ThemeProvider theme={storyTheme}>
       <div className="app">
+        <Typography component="h1" sx={visuallyHidden}>
+          {document!.name}
+        </Typography>
         <main aria-label="Map">
           <MapView
             tileUrl={document!.tileUrlTemplate ?? null}

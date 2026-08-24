@@ -110,6 +110,40 @@ describe('ViewScreen', () => {
     expect(container.querySelector('.leaflet-container')).toBeInTheDocument();
   });
 
+  it('has a level-one heading in the error state (no story id or data URL given)', async () => {
+    renderAt('/view');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Spoiler Maps' }),
+    ).toBeInTheDocument();
+  });
+
+  it('has a level-one heading in the loading state', () => {
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})));
+    renderAt('/view?d=https://example.com/story.yaml');
+    expect(screen.getByRole('heading', { level: 1, name: 'Spoiler Maps' })).toBeInTheDocument();
+  });
+
+  it('has exactly one level-one heading, named after the story, once loaded', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve(validYaml) }),
+    );
+    const user = userEvent.setup();
+    renderAt('/view?d=https://example.com/story.yaml');
+
+    // The heading is present in the DOM as soon as the story loads, but the
+    // WelcomeDialog — open by default here — marks the rest of the page
+    // aria-hidden while it's up, same as any modal; dismiss it first so the
+    // heading is actually reachable via its accessible role, matching what
+    // a real assistive-tech user (and an accessibility scanner) would see.
+    await user.click(await screen.findByRole('button', { name: /got it/i }));
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'A Song of Ice and Fire' }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
   it('starts the timeline slider from a #chapter-N URL fragment instead of the last chapter', async () => {
     vi.stubGlobal(
       'fetch',

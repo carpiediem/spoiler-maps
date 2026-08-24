@@ -1,4 +1,4 @@
-import { ThemeProvider } from '@mui/material';
+import { ThemeProvider, Typography } from '@mui/material';
 import type { Map as LeafletMap } from 'leaflet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -29,6 +29,7 @@ import { useRangeOptions } from '../components/editor-sidebar/characters/rangeOp
 import { exportStoryToYaml } from '../lib/storyExport';
 import { importStoryFromYaml } from '../lib/storyImport';
 import { buildStoryTheme } from '../theme';
+import { visuallyHidden } from '../lib/visuallyHidden';
 import './EditScreen.css';
 
 /** "new", or absent, both mean the create-new-story flow; anything else must be a numeric id. */
@@ -291,6 +292,9 @@ export function EditScreen() {
   return (
     <ThemeProvider theme={storyTheme}>
       <div className="app">
+        <Typography component="h1" sx={visuallyHidden}>
+          {selectedStory ? `Editing ${selectedStory.name}` : 'Spoiler Maps Editor'}
+        </Typography>
         <main aria-label="Map">
           <MapView
             key={selectedStoryId ?? 'new'}
