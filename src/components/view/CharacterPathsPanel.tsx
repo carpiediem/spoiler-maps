@@ -105,7 +105,8 @@ export function CharacterPathsPanel({
           slotProps={{ input: { 'aria-label': 'Toggle all characters' } }}
           size="small"
         />
-        <Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 600 }}>
+        {/* One level under the page's own (visually hidden) <h1>. */}
+        <Typography variant="subtitle1" component="h2" sx={{ flex: 1, fontWeight: 600 }}>
           Character Paths
         </Typography>
         <Tooltip title={showFullPath ? 'Current locations only' : 'Show full path'} arrow>

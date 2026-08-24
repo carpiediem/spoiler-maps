@@ -184,7 +184,9 @@ export function PositionPanel({
         <IconButton size="small" aria-label="Back to sidebar" onClick={onBack}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+        {/* Replaces the sidebar's SidebarSection accordions (each an <h2>)
+            while open, so this is one too, not nested under any of them. */}
+        <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 500 }}>
           Position {index}
         </Typography>
       </Stack>
