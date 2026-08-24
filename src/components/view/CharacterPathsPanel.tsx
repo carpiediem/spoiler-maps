@@ -80,6 +80,11 @@ export function CharacterPathsPanel({
           position: 'sticky',
           top: 0,
           zIndex: 1,
+          // A dedicated stacking context, so this row's z-index reliably
+          // wins over whatever list item is scrolled underneath it — clicks
+          // on the row (e.g. its own padding, not one of its controls)
+          // should never fall through to that item instead.
+          isolation: 'isolate',
           // Opaque, matching the Paper's own background — otherwise the
           // list below shows through as it scrolls past this header.
           bgcolor: 'background.paper',
