@@ -127,13 +127,13 @@ export function ViewScreen() {
   if (loadState.status === 'loading') {
     return (
       <ThemeProvider theme={storyTheme}>
-        <Typography component="h1" sx={visuallyHidden}>
-          Spoiler Maps
-        </Typography>
         <Box
           component="main"
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}
         >
+          <Typography component="h1" sx={visuallyHidden}>
+            Spoiler Maps
+          </Typography>
           <CircularProgress />
         </Box>
       </ThemeProvider>
@@ -143,9 +143,6 @@ export function ViewScreen() {
   if (loadState.status === 'error') {
     return (
       <ThemeProvider theme={storyTheme}>
-        <Typography component="h1" sx={visuallyHidden}>
-          Spoiler Maps
-        </Typography>
         <Box
           component="main"
           sx={{
@@ -156,6 +153,9 @@ export function ViewScreen() {
             p: 2,
           }}
         >
+          <Typography component="h1" sx={visuallyHidden}>
+            Spoiler Maps
+          </Typography>
           <Alert severity="error" sx={{ maxWidth: 480 }}>
             {loadState.message}
           </Alert>
@@ -174,10 +174,12 @@ export function ViewScreen() {
   return (
     <ThemeProvider theme={storyTheme}>
       <div className="app">
-        <Typography component="h1" sx={visuallyHidden}>
-          {document!.name}
-        </Typography>
         <main aria-label="Map">
+          {/* Inside the main landmark, not a sibling of it — otherwise it's
+              page content not contained by any landmark. */}
+          <Typography component="h1" sx={visuallyHidden}>
+            {document!.name}
+          </Typography>
           <MapView
             tileUrl={document!.tileUrlTemplate ?? null}
             attribution={tileAttribution}
