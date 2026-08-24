@@ -27,4 +27,11 @@ describe('characterInitials', () => {
     expect(characterInitials('')).toBe('?');
     expect(characterInitials('   ')).toBe('?');
   });
+
+  it('ignores parenthesized text', () => {
+    expect(characterInitials('Jon Snow (Lord Commander)')).toBe('JS');
+    expect(characterInitials('Arya (Faceless Girl) Stark')).toBe('AS');
+    expect(characterInitials('Hodor (Wylis)')).toBe('HO');
+    expect(characterInitials('(Unknown) Jon Snow')).toBe('JS');
+  });
 });

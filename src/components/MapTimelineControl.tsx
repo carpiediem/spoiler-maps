@@ -13,6 +13,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { FlatOption } from './editor-sidebar/characters/rangeOptions';
 
@@ -179,94 +180,103 @@ export function MapTimelineControl({
         left: 52,
         zIndex: 1000,
         width: 260,
-        p: 0.5,
       }}
     >
-      {heading && (
-        <Typography variant="caption" sx={{ display: 'block', px: 0.5, pt: 0.5, fontWeight: 500 }}>
-          {heading}
-        </Typography>
-      )}
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
-        <ToggleButtonGroup
-          value={mode}
-          exclusive
-          orientation="vertical"
-          size="small"
-          onChange={handleModeChange}
-        >
-          <ToggleButton value="book" disabled={!hasBooks} aria-label="Books">
-            <Tooltip title="Books" arrow placement="left">
-              <MenuBookIcon fontSize="small" />
-            </Tooltip>
-          </ToggleButton>
-          <ToggleButton value="tv" disabled={!hasSeasons} aria-label="TV seasons">
-            <Tooltip title="TV" arrow placement="left">
-              <PersonalVideoIcon fontSize="small" />
-            </Tooltip>
-          </ToggleButton>
-        </ToggleButtonGroup>
-
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            flex: 1,
-            minWidth: 0,
-          }}
-        >
-          <Slider
+      <Box
+        sx={{
+          p: 0.5,
+          backgroundColor: (theme) => alpha(theme.palette.info.light, 0.08),
+        }}
+      >
+        {heading && (
+          <Typography
+            variant="caption"
+            sx={{ display: 'block', px: 0.5, pt: 0.5, fontWeight: 500 }}
+          >
+            {heading}
+          </Typography>
+        )}
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <ToggleButtonGroup
+            value={mode}
+            exclusive
+            orientation="vertical"
             size="small"
-            min={1}
-            max={Math.max(activeOptions.length, 1)}
-            value={index}
-            onChange={(_event, value) => setIndex(value as number)}
-            disabled={activeOptions.length === 0}
-            aria-label={unitLabel}
-            sx={{ mx: 1, width: 'auto' }}
-          />
+            onChange={handleModeChange}
+          >
+            <ToggleButton value="book" disabled={!hasBooks} aria-label="Books">
+              <Tooltip title="Books" arrow placement="left">
+                <MenuBookIcon fontSize="small" />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="tv" disabled={!hasSeasons} aria-label="TV seasons">
+              <Tooltip title="TV" arrow placement="left">
+                <PersonalVideoIcon fontSize="small" />
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Tooltip title={`Previous ${unitLabel}`}>
-              <span>
-                <IconButton
-                  size="small"
-                  onClick={() => step(-1)}
-                  disabled={index <= 1}
-                  aria-label={`Previous ${unitLabel}`}
-                >
-                  <ChevronLeftIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
+            <Slider
+              size="small"
+              min={1}
+              max={Math.max(activeOptions.length, 1)}
+              value={index}
+              onChange={(_event, value) => setIndex(value as number)}
+              disabled={activeOptions.length === 0}
+              aria-label={unitLabel}
+              sx={{ mx: 1, width: 'auto' }}
+            />
 
-            <Typography variant="caption" noWrap sx={{ flex: 1, textAlign: 'center' }}>
-              {currentOption ? (
-                currentOption.url ? (
-                  <Link href={currentOption.url} target="_blank" rel="noopener noreferrer">
-                    {currentLabel}
-                  </Link>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Tooltip title={`Previous ${unitLabel}`}>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => step(-1)}
+                    disabled={index <= 1}
+                    aria-label={`Previous ${unitLabel}`}
+                  >
+                    <ChevronLeftIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+
+              <Typography variant="caption" noWrap sx={{ flex: 1, textAlign: 'center' }}>
+                {currentOption ? (
+                  currentOption.url ? (
+                    <Link href={currentOption.url} target="_blank" rel="noopener noreferrer">
+                      {currentLabel}
+                    </Link>
+                  ) : (
+                    currentLabel
+                  )
                 ) : (
-                  currentLabel
-                )
-              ) : (
-                '—'
-              )}
-            </Typography>
+                  '—'
+                )}
+              </Typography>
 
-            <Tooltip title={`Next ${unitLabel}`}>
-              <span>
-                <IconButton
-                  size="small"
-                  onClick={() => step(1)}
-                  disabled={index >= activeOptions.length}
-                  aria-label={`Next ${unitLabel}`}
-                >
-                  <ChevronRightIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
+              <Tooltip title={`Next ${unitLabel}`}>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => step(1)}
+                    disabled={index >= activeOptions.length}
+                    aria-label={`Next ${unitLabel}`}
+                  >
+                    <ChevronRightIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Box>
           </Box>
         </Box>
       </Box>

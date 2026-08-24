@@ -15,6 +15,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useEffect, useState, type DragEvent, type SyntheticEvent } from 'react';
 import {
   listCharacterPositionsForCharacter,
@@ -153,7 +154,11 @@ export function CharacterItem({
           onDragEnd={onDragEnd}
           onDragOver={onDragOver}
           onDrop={onDrop}
-          sx={{ backgroundColor: 'grey.200', px: 1, minHeight: 40 }}
+          sx={{
+            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.06),
+            px: 1,
+            minHeight: 40,
+          }}
         >
           <Stack
             direction="row"
@@ -213,7 +218,9 @@ export function CharacterItem({
           </IconButton>
         </Tooltip>
       </Box>
-      <AccordionDetails sx={{ px: 1, backgroundColor: 'rgba(0, 0, 0, .015)' }}>
+      <AccordionDetails
+        sx={{ px: 1, backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.03) }}
+      >
         <Stack spacing={1.5}>
           <TextField
             label="Name"

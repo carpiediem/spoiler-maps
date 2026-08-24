@@ -10,7 +10,10 @@ export function WelcomeDialog({ open, onClose }: WelcomeDialogProps) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Welcome!</DialogTitle>
-      <DialogContentText component="div" sx={{ px: 3, pb: 1 }}>
+      <DialogContentText
+        component="div"
+        sx={{ px: 3, pb: 1, maxHeight: '60vh', overflowY: 'auto' }}
+      >
         <p>
           Someone shared this map with you — it shows where characters from a book or show have
           been, without spoiling where they go next.

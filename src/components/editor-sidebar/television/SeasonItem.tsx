@@ -13,6 +13,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useState, type SyntheticEvent } from 'react';
 import {
   createEpisode,
@@ -79,7 +80,11 @@ export function SeasonItem({
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
-        sx={{ backgroundColor: 'rgba(0, 0, 0, .03)', px: 1, minHeight: 40 }}
+        sx={{
+          backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.06),
+          px: 1,
+          minHeight: 40,
+        }}
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -93,7 +98,9 @@ export function SeasonItem({
           </Tooltip>
         </Stack>
       </AccordionSummary>
-      <AccordionDetails sx={{ px: 1, backgroundColor: 'rgba(0, 0, 0, .015)' }}>
+      <AccordionDetails
+        sx={{ px: 1, backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.03) }}
+      >
         <Stack spacing={1.5}>
           <TextField
             label="URL"

@@ -7,6 +7,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import type { ReactNode, SyntheticEvent } from 'react';
 
 /** This section header's rendered height, so a nested sticky header (e.g. CharacterItem's) can offset below it instead of overlapping it. */
@@ -52,7 +53,7 @@ export function SidebarSection({
         aria-controls={`${id}-content`}
         id={`${id}-header`}
         sx={{
-          backgroundColor: 'grey.100',
+          backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
           px: 1,
           minHeight: 40,
           '&.Mui-expanded': { minHeight: 40 },

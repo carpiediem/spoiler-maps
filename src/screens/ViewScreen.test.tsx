@@ -1,4 +1,4 @@
-import { render, screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react';
+import { render, screen, waitFor, waitForElementToBeRemoved, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -131,6 +131,8 @@ describe('ViewScreen', () => {
       initialZoom: 4,
       minZoom: 0,
       maxZoom: 19,
+      description: null,
+      paletteKey: null,
     });
     await createCharacter({
       storyId: story.id,
@@ -146,6 +148,54 @@ describe('ViewScreen', () => {
     renderAt(`/view/${story.id}`);
 
     expect(await screen.findByText('Jon Snow')).toBeInTheDocument();
+  });
+
+  it('shows a DescriptionDialog with the story name and description instead of the WelcomeDialog, when set', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 5, lng: 5 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: 'Winter is coming.',
+      paletteKey: null,
+    });
+    resetDatabaseForTests();
+
+    renderAt(`/view/${story.id}`);
+
+    expect(
+      await screen.findByRole('heading', { name: 'A Song of Ice and Fire' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Winter is coming.')).toBeInTheDocument();
+    expect(screen.queryByText('Welcome!')).not.toBeInTheDocument();
+  });
+
+  it('renders the description as HTML, not literal Markdown syntax', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 5, lng: 5 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: '**Winter** is coming.\n\n- Ice\n- Fire',
+      paletteKey: null,
+    });
+    resetDatabaseForTests();
+
+    renderAt(`/view/${story.id}`);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('Winter').tagName).toBe('STRONG');
+    expect(within(dialog).getByRole('list')).toBeInTheDocument();
+    expect(within(dialog).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(dialog).queryByText(/\*\*Winter\*\*/)).not.toBeInTheDocument();
   });
 
   it('shows a pin once a character is checked, respecting the spoiler slider', async () => {

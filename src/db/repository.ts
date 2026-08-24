@@ -137,6 +137,8 @@ function rowToStory(row: Row): Story {
     initialZoom: row.initial_zoom as number,
     minZoom: row.min_zoom as number,
     maxZoom: row.max_zoom as number,
+    description: row.description as string | null,
+    paletteKey: row.palette_key as string | null,
   };
 }
 
@@ -146,8 +148,9 @@ export async function createStory(input: NewStory): Promise<Story> {
     db,
     `INSERT INTO stories (
        name, tile_url_template, tile_layer_author, tile_layer_attribution_url,
-       initial_center_lat, initial_center_lng, initial_zoom, min_zoom, max_zoom
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+       initial_center_lat, initial_center_lng, initial_zoom, min_zoom, max_zoom,
+       description, palette_key
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       input.name,
       input.tileUrlTemplate,
@@ -158,6 +161,8 @@ export async function createStory(input: NewStory): Promise<Story> {
       input.initialZoom,
       input.minZoom,
       input.maxZoom,
+      input.description,
+      input.paletteKey,
     ],
   );
   await persist();
@@ -179,7 +184,8 @@ export async function updateStory(id: number, input: NewStory): Promise<void> {
   db.run(
     `UPDATE stories
      SET name = ?, tile_url_template = ?, tile_layer_author = ?, tile_layer_attribution_url = ?,
-         initial_center_lat = ?, initial_center_lng = ?, initial_zoom = ?, min_zoom = ?, max_zoom = ?
+         initial_center_lat = ?, initial_center_lng = ?, initial_zoom = ?, min_zoom = ?, max_zoom = ?,
+         description = ?, palette_key = ?
      WHERE id = ?;`,
     [
       input.name,
@@ -191,6 +197,8 @@ export async function updateStory(id: number, input: NewStory): Promise<void> {
       input.initialZoom,
       input.minZoom,
       input.maxZoom,
+      input.description,
+      input.paletteKey,
       id,
     ],
   );

@@ -44,6 +44,8 @@ async function seedStoryId(): Promise<number> {
     initialZoom: 4,
     minZoom: 0,
     maxZoom: 19,
+    description: null,
+    paletteKey: null,
   });
   return story.id;
 }

@@ -1,5 +1,6 @@
+import { ThemeProvider } from '@mui/material';
 import type { Map as LeafletMap } from 'leaflet';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { EditorSidebar } from '../components/EditorSidebar';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
@@ -27,6 +28,7 @@ import {
 import { useRangeOptions } from '../components/editor-sidebar/characters/rangeOptions';
 import { exportStoryToYaml } from '../lib/storyExport';
 import { importStoryFromYaml } from '../lib/storyImport';
+import { buildStoryTheme } from '../theme';
 import './EditScreen.css';
 
 /** "new", or absent, both mean the create-new-story flow; anything else must be a numeric id. */
@@ -114,6 +116,10 @@ export function EditScreen() {
   }, [storyIdParam, stories, navigate]);
 
   const selectedStory = stories.find((s) => s.id === selectedStoryId) ?? null;
+  const storyTheme = useMemo(
+    () => buildStoryTheme(selectedStory?.paletteKey ?? null),
+    [selectedStory?.paletteKey],
+  );
 
   useEffect(() => {
     setTileUrl(selectedStory?.tileUrlTemplate ?? null);
@@ -218,9 +224,10 @@ export function EditScreen() {
     initialZoom: number;
     minZoom: number;
     maxZoom: number;
+    paletteKey: string | null;
   }) {
     if (selectedStoryId === null) {
-      const created = await createStory(input);
+      const created = await createStory({ ...input, description: null });
       setStories((previous) => [...previous, created]);
       handleSelectStory(created.id);
     } else {
@@ -234,6 +241,18 @@ export function EditScreen() {
     }
 
     setTileUrl(input.tileUrlTemplate);
+  }
+
+  async function handleSaveDescription(description: string) {
+    /* v8 ignore next -- the description panel only renders once a story is selected. */
+    if (selectedStoryId === null) return;
+    const existing = stories.find((s) => s.id === selectedStoryId);
+    /* v8 ignore next -- the description panel only renders once selectedStoryId names a story already in `stories`. */
+    if (!existing) return;
+
+    const updated: Story = { ...existing, description };
+    await updateStory(selectedStoryId, updated);
+    setStories((previous) => previous.map((s) => (s.id === selectedStoryId ? updated : s)));
   }
 
   async function handleExportStory() {
@@ -270,61 +289,64 @@ export function EditScreen() {
   }
 
   return (
-    <div className="app">
-      <main aria-label="Map">
-        <MapView
-          key={selectedStoryId ?? 'new'}
-          mapRef={mapRef}
-          tileUrl={tileUrl}
-          attribution={tileAttribution}
-          center={mapCenter}
-          zoom={mapZoom}
-          minZoom={mapMinZoom}
-          maxZoom={mapMaxZoom}
-          onPositionChange={setMapPosition}
+    <ThemeProvider theme={storyTheme}>
+      <div className="app">
+        <main aria-label="Map">
+          <MapView
+            key={selectedStoryId ?? 'new'}
+            mapRef={mapRef}
+            tileUrl={tileUrl}
+            attribution={tileAttribution}
+            center={mapCenter}
+            zoom={mapZoom}
+            minZoom={mapMinZoom}
+            maxZoom={mapMaxZoom}
+            onPositionChange={setMapPosition}
+            draftPosition={draftPosition}
+            onDraftPositionChange={setDraftPosition}
+            characterPositionPins={characterPositionPins}
+            characterTails={characterTails}
+            editingPositionId={activePosition?.existing?.id ?? null}
+            onCharacterPositionPinClick={handlePinClick}
+            tailDraftPoints={tailDraftPoints}
+            onTailPointClick={handleTailPointClick}
+            tailColor={activePosition?.color ?? null}
+          />
+          <MapTimelineControl
+            key={`timeline-${selectedStoryId ?? 'new'}`}
+            {...rangeOptions}
+            initialMode={initialTimeline?.mode}
+            initialIndex={initialTimeline?.index}
+            onChange={handleTimelineChange}
+          />
+        </main>
+        <EditorSidebar
+          stories={stories}
+          selectedStoryId={selectedStoryId}
+          onSelectStory={handleSelectStory}
+          onExportStory={handleExportStory}
+          onImportFile={handleImportFile}
+          onDeleteStory={handleDeleteStory}
+          onSave={handleSave}
+          onSaveDescription={handleSaveDescription}
+          onCaptureMapPosition={getCurrentMapPosition}
+          mapPosition={mapPosition}
           draftPosition={draftPosition}
-          onDraftPositionChange={setDraftPosition}
-          characterPositionPins={characterPositionPins}
-          characterTails={characterTails}
-          editingPositionId={activePosition?.existing?.id ?? null}
-          onCharacterPositionPinClick={handlePinClick}
-          tailDraftPoints={tailDraftPoints}
-          onTailPointClick={handleTailPointClick}
-          tailColor={activePosition?.color ?? null}
+          activePosition={activePosition}
+          onAddPosition={handleAddPosition}
+          onEditPosition={handleEditPosition}
+          onBackFromPosition={handleBackFromPosition}
+          positionsVersion={positionsVersion}
+          onVisiblePositionsChange={setCharacterPositionPins}
+          onVisibleTailsChange={setCharacterTails}
+          isDrawingTail={tailDraftPoints !== null}
+          tailDraftPoints={tailDraftPoints ?? []}
+          onStartDrawingTail={handleStartDrawingTail}
+          onFinishDrawingTail={handleFinishDrawingTail}
+          timelineMode={timelineMode}
+          timelineIndex={timelineIndex}
         />
-        <MapTimelineControl
-          key={`timeline-${selectedStoryId ?? 'new'}`}
-          {...rangeOptions}
-          initialMode={initialTimeline?.mode}
-          initialIndex={initialTimeline?.index}
-          onChange={handleTimelineChange}
-        />
-      </main>
-      <EditorSidebar
-        stories={stories}
-        selectedStoryId={selectedStoryId}
-        onSelectStory={handleSelectStory}
-        onExportStory={handleExportStory}
-        onImportFile={handleImportFile}
-        onDeleteStory={handleDeleteStory}
-        onSave={handleSave}
-        onCaptureMapPosition={getCurrentMapPosition}
-        mapPosition={mapPosition}
-        draftPosition={draftPosition}
-        activePosition={activePosition}
-        onAddPosition={handleAddPosition}
-        onEditPosition={handleEditPosition}
-        onBackFromPosition={handleBackFromPosition}
-        positionsVersion={positionsVersion}
-        onVisiblePositionsChange={setCharacterPositionPins}
-        onVisibleTailsChange={setCharacterTails}
-        isDrawingTail={tailDraftPoints !== null}
-        tailDraftPoints={tailDraftPoints ?? []}
-        onStartDrawingTail={handleStartDrawingTail}
-        onFinishDrawingTail={handleFinishDrawingTail}
-        timelineMode={timelineMode}
-        timelineIndex={timelineIndex}
-      />
-    </div>
+      </div>
+    </ThemeProvider>
   );
 }

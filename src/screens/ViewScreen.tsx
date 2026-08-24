@@ -1,7 +1,8 @@
-import { Alert, Box, CircularProgress } from '@mui/material';
+import { Alert, Box, CircularProgress, ThemeProvider } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { CharacterPathsPanel } from '../components/view/CharacterPathsPanel';
+import { DescriptionDialog } from '../components/view/DescriptionDialog';
 import { WelcomeDialog } from '../components/view/WelcomeDialog';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
 import { MapView } from '../components/MapView';
@@ -12,6 +13,7 @@ import type { StoryDocument } from '../lib/storyDocument';
 import { parseTimelineHash } from '../lib/timelineHash';
 import { buildDocumentChapterOptions, buildDocumentEpisodeOptions } from '../lib/viewTimeline';
 import { buildViewPinsAndTails } from '../lib/viewCharacterPins';
+import { buildStoryTheme } from '../theme';
 import './EditScreen.css';
 
 type LoadState =
@@ -92,6 +94,10 @@ export function ViewScreen() {
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);
 
   const document = loadState.status === 'ready' ? loadState.document : null;
+  const storyTheme = useMemo(
+    () => buildStoryTheme(document?.paletteKey ?? null),
+    [document?.paletteKey],
+  );
 
   const chapterOptions = useMemo(
     () => (document ? buildDocumentChapterOptions(document) : []),
@@ -119,29 +125,33 @@ export function ViewScreen() {
 
   if (loadState.status === 'loading') {
     return (
-      <Box
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}
-      >
-        <CircularProgress />
-      </Box>
+      <ThemeProvider theme={storyTheme}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}
+        >
+          <CircularProgress />
+        </Box>
+      </ThemeProvider>
     );
   }
 
   if (loadState.status === 'error') {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          p: 2,
-        }}
-      >
-        <Alert severity="error" sx={{ maxWidth: 480 }}>
-          {loadState.message}
-        </Alert>
-      </Box>
+      <ThemeProvider theme={storyTheme}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100vh',
+            p: 2,
+          }}
+        >
+          <Alert severity="error" sx={{ maxWidth: 480 }}>
+            {loadState.message}
+          </Alert>
+        </Box>
+      </ThemeProvider>
     );
   }
 
@@ -153,41 +163,52 @@ export function ViewScreen() {
   const timelineKey = dataUrl ?? storyId ?? 'none';
 
   return (
-    <div className="app">
-      <main aria-label="Map">
-        <MapView
-          tileUrl={document!.tileUrlTemplate ?? null}
-          attribution={tileAttribution}
-          center={document!.initialCenter}
-          zoom={document!.initialZoom}
-          minZoom={document!.minZoom}
-          maxZoom={document!.maxZoom}
-          characterPositionPins={pins.length > 0 ? pins : null}
-          characterTails={tails}
+    <ThemeProvider theme={storyTheme}>
+      <div className="app">
+        <main aria-label="Map">
+          <MapView
+            tileUrl={document!.tileUrlTemplate ?? null}
+            attribution={tileAttribution}
+            center={document!.initialCenter}
+            zoom={document!.initialZoom}
+            minZoom={document!.minZoom}
+            maxZoom={document!.maxZoom}
+            characterPositionPins={pins.length > 0 ? pins : null}
+            characterTails={tails}
+          />
+          <MapTimelineControl
+            key={timelineKey}
+            chapterOptions={chapterOptions}
+            episodeOptions={episodeOptions}
+            hasBooks={chapterOptions.length > 0}
+            hasSeasons={episodeOptions.length > 0}
+            heading="Show spoilers through:"
+            initialMode={initialTimeline?.mode}
+            initialIndex={initialTimeline?.index}
+            onChange={(mode, index) => {
+              setTimelineMode(mode);
+              setTimelineIndex(index);
+            }}
+          />
+        </main>
+        <CharacterPathsPanel
+          characters={document!.characters}
+          checkedIndices={checkedIndices}
+          onCheckedIndicesChange={setCheckedIndices}
+          showFullPath={showFullPath}
+          onShowFullPathChange={setShowFullPath}
         />
-        <MapTimelineControl
-          key={timelineKey}
-          chapterOptions={chapterOptions}
-          episodeOptions={episodeOptions}
-          hasBooks={chapterOptions.length > 0}
-          hasSeasons={episodeOptions.length > 0}
-          heading="Show spoilers through:"
-          initialMode={initialTimeline?.mode}
-          initialIndex={initialTimeline?.index}
-          onChange={(mode, index) => {
-            setTimelineMode(mode);
-            setTimelineIndex(index);
-          }}
-        />
-      </main>
-      <CharacterPathsPanel
-        characters={document!.characters}
-        checkedIndices={checkedIndices}
-        onCheckedIndicesChange={setCheckedIndices}
-        showFullPath={showFullPath}
-        onShowFullPathChange={setShowFullPath}
-      />
-      <WelcomeDialog open={isWelcomeOpen} onClose={handleCloseWelcome} />
-    </div>
+        {document!.description ? (
+          <DescriptionDialog
+            open={isWelcomeOpen}
+            onClose={handleCloseWelcome}
+            storyName={document!.name}
+            description={document!.description}
+          />
+        ) : (
+          <WelcomeDialog open={isWelcomeOpen} onClose={handleCloseWelcome} />
+        )}
+      </div>
+    </ThemeProvider>
   );
 }

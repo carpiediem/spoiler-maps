@@ -171,6 +171,8 @@ export async function buildStoryDocument(storyId: number): Promise<StoryDocument
     initialZoom: story.initialZoom,
     minZoom: story.minZoom,
     maxZoom: story.maxZoom,
+    ...(story.description ? { description: story.description } : {}),
+    ...(story.paletteKey ? { paletteKey: story.paletteKey } : {}),
     books: bookDocs,
     television: seasonDocs,
     characters: characterDocs,

@@ -53,6 +53,8 @@ async function seedCharacter(
     initialZoom: 4,
     minZoom: 0,
     maxZoom: 19,
+    description: null,
+    paletteKey: null,
   });
   return createCharacter({
     storyId: story.id,

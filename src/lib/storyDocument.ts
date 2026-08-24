@@ -88,6 +88,10 @@ export interface StoryDocument {
   initialZoom: number;
   minZoom: number;
   maxZoom: number;
+  /** A rich-text synopsis, stored as Markdown. */
+  description?: string;
+  /** References a key in palettes.ts; absent/unrecognized falls back to the default theme. */
+  paletteKey?: string;
   books: StoryDocumentBook[];
   television: StoryDocumentSeason[];
   characters: StoryDocumentCharacter[];

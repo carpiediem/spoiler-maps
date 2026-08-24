@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 
 export interface Migration {
   version: number;
@@ -214,6 +214,17 @@ export const MIGRATIONS: Migration[] = [
       -- Lets a character's name in the view screen link out to their own
       -- wiki page, the same way a chapter/episode/book already can.
       ALTER TABLE characters ADD COLUMN url TEXT;
+    `,
+  },
+  {
+    version: 12,
+    sql: `
+      -- description is a Markdown-formatted synopsis, edited via a rich-text
+      -- modal. palette_key references one of the named palettes in
+      -- palettes.ts, re-theming the app's MUI components; a null or
+      -- unrecognized key just falls back to the default theme.
+      ALTER TABLE stories ADD COLUMN description TEXT;
+      ALTER TABLE stories ADD COLUMN palette_key TEXT;
     `,
   },
 ];

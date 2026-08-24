@@ -1,4 +1,5 @@
 import { Box, Button, Paper } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import type { CharacterPosition, LatLng, Story } from '../db';
@@ -66,7 +67,10 @@ interface EditorSidebarProps {
     initialZoom: number;
     minZoom: number;
     maxZoom: number;
+    paletteKey: string | null;
   }) => void;
+  /** Saves the description immediately, independent of the main form's Save button. */
+  onSaveDescription: (description: string) => Promise<void>;
   onCaptureMapPosition: () => { center: LatLng; zoom: number } | null;
   /** The map's current live position, to tell whether it has moved from what's stored in the form. */
   mapPosition: { center: LatLng; zoom: number } | null;
@@ -116,6 +120,7 @@ export function EditorSidebar({
   onImportFile,
   onDeleteStory,
   onSave,
+  onSaveDescription,
   onCaptureMapPosition,
   mapPosition,
   draftPosition,
@@ -165,9 +170,15 @@ export function EditorSidebar({
 
   useEffect(() => {
     if (syncedStoryIdRef.current === selectedStoryId) return;
-    syncedStoryIdRef.current = selectedStoryId;
 
     const story = stories.find((candidate) => candidate.id === selectedStoryId) ?? null;
+    // A direct navigation to /edit/<id> renders with selectedStoryId already
+    // set while `stories` is still the initial empty array (its fetch is
+    // still in flight) — don't lock in a sync against a not-yet-loaded list,
+    // or the form would stay stuck on empty defaults once the list arrives.
+    if (selectedStoryId !== null && story === null && stories.length === 0) return;
+
+    syncedStoryIdRef.current = selectedStoryId;
     reset(storyToFormValues(story));
     setExpandedSection('map');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -201,6 +212,7 @@ export function EditorSidebar({
       initialZoom: data.initialZoom,
       minZoom: data.minZoom,
       maxZoom: data.maxZoom,
+      paletteKey: data.paletteKey || null,
     });
     // Marks these values (with tileUrlValue normalized to the resolved
     // template, in case a real tile URL was extrapolated) as the new clean
@@ -238,6 +250,7 @@ export function EditorSidebar({
           width: '200%',
           transform: activePosition ? 'translateX(-50%)' : 'translateX(0%)',
           transition: 'transform 0.3s ease-in-out',
+          backgroundColor: (theme) => alpha(theme.palette.info.light, 0.08),
         }}
       >
         <Box
@@ -265,6 +278,8 @@ export function EditorSidebar({
                 isDirty={isDirty}
                 mapPosition={mapPosition}
                 onCaptureMapPosition={onCaptureMapPosition}
+                description={selectedStoryId !== null ? (selectedStory?.description ?? null) : null}
+                onSaveDescription={selectedStoryId !== null ? onSaveDescription : null}
               />
             </SidebarSection>
 
