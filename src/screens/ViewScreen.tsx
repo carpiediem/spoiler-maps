@@ -131,6 +131,7 @@ export function ViewScreen() {
           Spoiler Maps
         </Typography>
         <Box
+          component="main"
           sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}
         >
           <CircularProgress />
@@ -146,6 +147,7 @@ export function ViewScreen() {
           Spoiler Maps
         </Typography>
         <Box
+          component="main"
           sx={{
             display: 'flex',
             alignItems: 'center',
