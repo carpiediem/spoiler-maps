@@ -18,6 +18,7 @@ import {
 import { alpha } from '@mui/material/styles';
 import type { SyntheticEvent } from 'react';
 import { updateMarker, type Marker } from '../../../db';
+import { DEFAULT_MARKER_COLOR } from '../../../lib/markerColor';
 import type { FlatOption } from '../characters/rangeOptions';
 import { RangeSelect } from '../RangeSelect';
 
@@ -58,7 +59,7 @@ export function MarkerItem({
   onCancelArea,
   onClearArea,
 }: MarkerItemProps) {
-  function handleFieldChange(field: 'label' | 'icon' | 'url', value: string) {
+  function handleFieldChange(field: 'label' | 'icon' | 'url' | 'color', value: string) {
     onMarkerChange({ ...marker, [field]: field === 'label' ? value : value || null });
   }
 
@@ -219,6 +220,34 @@ export function MarkerItem({
                     </IconButton>
                   </InputAdornment>
                 ),
+              },
+            }}
+          />
+          <TextField
+            label="Color"
+            type="color"
+            size="small"
+            value={marker.color ?? DEFAULT_MARKER_COLOR}
+            onChange={(event) => handleFieldChange('color', event.target.value)}
+            onBlur={handleBlur}
+            slotProps={{ inputLabel: { shrink: true } }}
+            fullWidth
+            helperText="Used for the marker's area, and its pin when no icon is set."
+            sx={{
+              '& .MuiInputBase-input': {
+                mx: 1,
+                px: 0.5,
+                py: 1,
+                height: 24,
+                cursor: 'pointer',
+                // The browser's own <input type="color"> chrome renders a
+                // heavier bezel around the swatch that the outline can't
+                // override; drop it so only the TextField's border shows.
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                '&::-webkit-color-swatch-wrapper': { p: 0 },
+                '&::-webkit-color-swatch': { border: 'none', borderRadius: 1 },
+                '&::-moz-color-swatch': { border: 'none', borderRadius: 1 },
               },
             }}
           />

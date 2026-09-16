@@ -196,11 +196,15 @@ describe('MarkersSection', () => {
     const urlField = screen.getByLabelText('Wiki URL');
     fireEvent.change(urlField, { target: { value: 'https://wiki.example.com/winterfell' } });
     fireEvent.blur(urlField);
+    const colorField = screen.getByLabelText('Color');
+    fireEvent.change(colorField, { target: { value: '#00ff00' } });
+    fireEvent.blur(colorField);
 
     await vi.waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.icon).toBe('https://example.com/icon.png');
       expect(updated.url).toBe('https://wiki.example.com/winterfell');
+      expect(updated.color).toBe('#00ff00');
     });
     expect(marker.id).toBeGreaterThan(0);
   });
