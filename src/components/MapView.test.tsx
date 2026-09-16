@@ -591,6 +591,124 @@ describe('MapView', () => {
     expect(polylines[0]!.getElement()?.classList.contains('character-tail-flow')).toBe(true);
   });
 
+  it('does not render a marker icon for a "no icons" marker pin', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[
+          {
+            marker: {
+              id: 1,
+              markerSetId: 1,
+              label: 'Winterfell',
+              icon: null,
+              url: null,
+              color: null,
+              position: { lat: 41, lng: -101 },
+              polygon: null,
+              chapterRange: null,
+              episodeRange: null,
+            },
+            noIcons: true,
+          },
+        ]}
+      />,
+    );
+
+    let markerCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) markerCount += 1;
+    });
+    expect(markerCount).toBe(0);
+  });
+
+  it('renders a non-draggable pin for a marker whose set does show icons', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[
+          {
+            marker: {
+              id: 1,
+              markerSetId: 1,
+              label: 'Winterfell',
+              icon: null,
+              url: null,
+              color: '#ff0000',
+              position: { lat: 41, lng: -101 },
+              polygon: null,
+              chapterRange: null,
+              episodeRange: null,
+            },
+            noIcons: false,
+          },
+        ]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    expect(marker).toBeDefined();
+    expect(marker!.options.draggable).not.toBe(true);
+    expect(marker!.getLatLng().lat).toBeCloseTo(41);
+  });
+
+  it('renders the active marker pin as draggable and reports its new lat/lng on drag end', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onActiveMarkerDragEnd = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        activeMarkerPin={{
+          marker: {
+            id: 1,
+            markerSetId: 1,
+            label: 'Winterfell',
+            icon: null,
+            url: null,
+            color: null,
+            position: { lat: 41, lng: -101 },
+            polygon: null,
+            chapterRange: null,
+            episodeRange: null,
+          },
+          noIcons: true,
+        }}
+        onActiveMarkerDragEnd={onActiveMarkerDragEnd}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    expect(marker).toBeDefined();
+    expect(marker!.options.draggable).toBe(true);
+
+    act(() => {
+      marker!.setLatLng([42, -102]);
+      marker!.fire('dragend', { target: marker });
+    });
+
+    expect(onActiveMarkerDragEnd).toHaveBeenCalledTimes(1);
+    const [reported] = onActiveMarkerDragEnd.mock.calls[0] as [{ lat: number; lng: number }];
+    expect(reported.lat).toBeCloseTo(42);
+    expect(reported.lng).toBeCloseTo(-102);
+  });
+
   it('applies the initial zoom limits to the underlying Leaflet map', () => {
     const mapRef = createRef<LeafletMap | null>();
     render(

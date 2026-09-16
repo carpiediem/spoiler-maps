@@ -111,7 +111,7 @@ describe('stories', () => {
       url: null,
       sortOrder: 0,
     });
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses' });
+    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses', noIcons: false });
 
     await deleteStory(story.id);
 
@@ -226,7 +226,7 @@ describe('tv seasons and episodes', () => {
 describe('marker sets and markers', () => {
   it('creates, lists, updates, and deletes marker sets for a story', async () => {
     const story = await seedStory();
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses' });
+    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses', noIcons: false });
 
     expect(await listMarkerSetsForStory(story.id)).toEqual([markerSet]);
 
@@ -239,11 +239,12 @@ describe('marker sets and markers', () => {
 
   it('creates, lists, updates, and deletes markers for a marker set, cascading on marker set delete', async () => {
     const story = await seedStory();
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses' });
+    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses', noIcons: false });
     const marker = await createMarker({
       markerSetId: markerSet.id,
       label: 'Winterfell',
       icon: 'castle',
+      url: 'https://wiki.example.com/winterfell',
       color: '#1d3557',
       position: { lat: 54.5, lng: -1.5 },
       polygon: null,
@@ -263,6 +264,7 @@ describe('marker sets and markers', () => {
       markerSetId: markerSet.id,
       label: "King's Landing",
       icon: null,
+      url: null,
       color: null,
       position: { lat: 42.6, lng: 8.7 },
       polygon: null,
@@ -275,11 +277,16 @@ describe('marker sets and markers', () => {
 
   it('round-trips a polygon', async () => {
     const story = await seedStory();
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Territories' });
+    const markerSet = await createMarkerSet({
+      storyId: story.id,
+      name: 'Territories',
+      noIcons: false,
+    });
     const marker = await createMarker({
       markerSetId: markerSet.id,
       label: 'The North',
       icon: null,
+      url: null,
       color: '#457b9d',
       position: { lat: 54.5, lng: -1.5 },
       polygon: [

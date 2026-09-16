@@ -17,6 +17,7 @@ import {
 import { buildTileAttribution } from '../lib/attribution';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import { downloadTextFile } from '../lib/downloadTextFile';
+import type { ActiveMarker, MarkerMapPin } from '../lib/markerPins';
 import { getLastViewedStoryId, setLastViewedStoryId } from '../lib/lastViewedStory';
 import { parseTimelineHash } from '../lib/timelineHash';
 import {
@@ -61,6 +62,8 @@ export function EditScreen() {
     null,
   );
   const [characterTails, setCharacterTails] = useState<CharacterTailOverlay[]>([]);
+  const [markerPins, setMarkerPins] = useState<MarkerMapPin[] | null>(null);
+  const [activeMarker, setActiveMarker] = useState<ActiveMarker | null>(null);
   // When set, the sidebar slides its main content out to the left and
   // slides a Position form in from the right, in place of the accordion
   // list. Owned here (rather than by EditorSidebar) so a click on a map
@@ -205,6 +208,8 @@ export function EditScreen() {
     setActivePosition(null);
     setDraftPosition(null);
     setTailDraftPoints(null);
+    setMarkerPins(null);
+    setActiveMarker(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStoryId]);
 
@@ -275,6 +280,10 @@ export function EditScreen() {
 
   function handleFinishDrawingTail() {
     setTailDraftPoints(null);
+  }
+
+  function handleActiveMarkerDragEnd(position: LatLng) {
+    activeMarker?.onDrag(position);
   }
 
   async function handleSave(input: {
@@ -382,6 +391,9 @@ export function EditScreen() {
             tailDraftPoints={tailDraftPoints}
             onTailPointClick={handleTailPointClick}
             tailColor={activePosition?.color ?? null}
+            markerPins={markerPins}
+            activeMarkerPin={activeMarker}
+            onActiveMarkerDragEnd={handleActiveMarkerDragEnd}
           />
           <MapTimelineControl
             key={`timeline-${selectedStoryId ?? 'new'}`}
@@ -416,6 +428,8 @@ export function EditScreen() {
           onFinishDrawingTail={handleFinishDrawingTail}
           timelineMode={timelineMode}
           timelineIndex={timelineIndex}
+          onVisibleMarkersChange={setMarkerPins}
+          onActiveMarkerChange={setActiveMarker}
         />
         <Snackbar open={importError !== null} onClose={handleDismissImportError}>
           <Alert severity="error" onClose={handleDismissImportError}>

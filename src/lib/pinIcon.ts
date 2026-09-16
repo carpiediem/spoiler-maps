@@ -1,4 +1,6 @@
 import { icon, type Icon } from 'leaflet';
+import type { Marker } from '../db';
+import { DEFAULT_MARKER_COLOR } from './markerColor';
 
 function textColorFor(colorHex: string): string {
   const r = parseInt(colorHex.substring(0, 2), 16);
@@ -61,4 +63,16 @@ export function buildSkullIcon(): Icon {
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
+}
+
+/**
+ * The icon for a map marker: the marker's own custom image when it has one
+ * (e.g. a real building/crest icon), or a plain colored teardrop pin
+ * (buildPinIcon with no label) otherwise.
+ */
+export function buildMarkerIcon(marker: Marker): Icon {
+  if (marker.icon) {
+    return icon({ iconUrl: marker.icon, iconSize: [28, 28], iconAnchor: [14, 28] });
+  }
+  return buildPinIcon('', marker.color ?? DEFAULT_MARKER_COLOR);
 }

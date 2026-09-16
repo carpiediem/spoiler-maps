@@ -61,6 +61,8 @@ export interface MarkerSet {
   id: number;
   storyId: number;
   name: string;
+  /** When true, the map skips rendering an icon for this set's markers — for tiles that already show one at each marker's location. */
+  noIcons: boolean;
 }
 
 /**
@@ -93,6 +95,8 @@ export interface Marker {
   markerSetId: number;
   label: string;
   icon: string | null;
+  /** The marker's own wiki page, if any — shown as a link in the editor. */
+  url: string | null;
   /** CSS color (e.g. a hex string), used for the icon and/or polygon. */
   color: string | null;
   position: LatLng;

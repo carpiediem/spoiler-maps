@@ -281,6 +281,10 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
             marker.icon,
             `markerSets[${markerSetIndex}].markers[${markerIndex}].icon`,
           ),
+          url: assertOptionalString(
+            marker.url,
+            `markerSets[${markerSetIndex}].markers[${markerIndex}].url`,
+          ),
           color: assertOptionalString(
             marker.color,
             `markerSets[${markerSetIndex}].markers[${markerIndex}].color`,
@@ -314,7 +318,11 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
           ),
         };
       });
-      return { name: assertString(markerSet.name, `markerSets[${markerSetIndex}].name`), markers };
+      return {
+        name: assertString(markerSet.name, `markerSets[${markerSetIndex}].name`),
+        noIcons: markerSet.noIcons === true,
+        markers,
+      };
     },
   );
 
@@ -478,13 +486,18 @@ async function importMarkerSets(
   episodeIdsByIndex: number[],
 ): Promise<void> {
   for (const [markerSetIndex, markerSet] of markerSets.entries()) {
-    const createdMarkerSet = await createMarkerSet({ storyId, name: markerSet.name });
+    const createdMarkerSet = await createMarkerSet({
+      storyId,
+      name: markerSet.name,
+      noIcons: markerSet.noIcons ?? false,
+    });
     for (const [markerIndex, marker] of markerSet.markers.entries()) {
       const path = `markerSets[${markerSetIndex}].markers[${markerIndex}]`;
       await createMarker({
         markerSetId: createdMarkerSet.id,
         label: marker.label,
         icon: marker.icon ?? null,
+        url: marker.url ?? null,
         color: marker.color ?? null,
         position: { lat: marker.lat, lng: marker.lng },
         polygon: marker.polygon ?? null,

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import type { CharacterPosition, LatLng, Story } from '../db';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
+import type { ActiveMarker, MarkerMapPin } from '../lib/markerPins';
 import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
 import type { TimelineMode } from './MapTimelineControl';
@@ -110,6 +111,10 @@ interface EditorSidebarProps {
   timelineMode: TimelineMode;
   /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
   timelineIndex: number;
+  /** Called with the pins to render for every marker set toggled visible, excluding whichever marker is currently selected. */
+  onVisibleMarkersChange: (pins: MarkerMapPin[] | null) => void;
+  /** Called with the currently selected marker (and a handler for dragging its pin), or null once none is selected. */
+  onActiveMarkerChange: (active: ActiveMarker | null) => void;
 }
 
 export function EditorSidebar({
@@ -137,6 +142,8 @@ export function EditorSidebar({
   onFinishDrawingTail,
   timelineMode,
   timelineIndex,
+  onVisibleMarkersChange,
+  onActiveMarkerChange,
 }: EditorSidebarProps) {
   const {
     control,
@@ -342,7 +349,14 @@ export function EditorSidebar({
                   expanded={expandedSection === 'markers'}
                   onChange={handleAccordionChange('markers')}
                 >
-                  <MarkersSection storyId={selectedStoryId} onCountChange={setMarkersCount} />
+                  <MarkersSection
+                    storyId={selectedStoryId}
+                    onCountChange={setMarkersCount}
+                    mapCenter={mapPosition?.center}
+                    onVisibleMarkersChange={onVisibleMarkersChange}
+                    onActiveMarkerChange={onActiveMarkerChange}
+                    sectionExpanded={expandedSection === 'markers'}
+                  />
                 </SidebarSection>
 
                 <Button

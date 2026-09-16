@@ -15,7 +15,8 @@ import 'leaflet/dist/leaflet.css';
 import type { LatLng } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
-import { buildPinIcon, buildSkullIcon } from '../lib/pinIcon';
+import type { MarkerMapPin } from '../lib/markerPins';
+import { buildMarkerIcon, buildPinIcon, buildSkullIcon } from '../lib/pinIcon';
 import { attachTailFlowClass } from '../lib/tailFlowClass';
 import { detectTileUrlTemplateKind } from '../lib/tileUrl';
 import { QuadkeyTileLayer } from './QuadkeyTileLayer';
@@ -68,6 +69,12 @@ interface MapViewProps {
   onTailPointClick?: (point: LatLng) => void;
   /** The color of the character whose tail is being drawn. */
   tailColor?: string | null;
+  /** Static (non-draggable) pins for every marker toggled visible on the map, excluding whichever one is currently selected (see activeMarkerPin). */
+  markerPins?: MarkerMapPin[] | null;
+  /** The marker currently selected in the sidebar, rendered as a draggable pin regardless of its set's noIcons/visibility. */
+  activeMarkerPin?: MarkerMapPin | null;
+  /** Called with the new lat/lng once the active marker pin is dropped. */
+  onActiveMarkerDragEnd?: (position: LatLng) => void;
 }
 
 interface DraftPositionMarkerProps {
@@ -194,6 +201,9 @@ export function MapView({
   tailDraftPoints,
   onTailPointClick,
   tailColor,
+  markerPins,
+  activeMarkerPin,
+  onActiveMarkerDragEnd,
 }: MapViewProps) {
   const activeTileUrl = tileUrl ?? DEFAULT_TILE_URL;
   const kind = tileUrl ? detectTileUrlTemplateKind(tileUrl) : 'xyz';
@@ -306,6 +316,29 @@ export function MapView({
           </Marker>
         );
       })}
+      {markerPins?.map((pin) =>
+        pin.noIcons ? null : (
+          <Marker
+            key={pin.marker.id}
+            position={[pin.marker.position.lat, pin.marker.position.lng]}
+            icon={buildMarkerIcon(pin.marker)}
+          />
+        ),
+      )}
+      {activeMarkerPin && onActiveMarkerDragEnd && (
+        <Marker
+          key={`active-${activeMarkerPin.marker.id}`}
+          position={[activeMarkerPin.marker.position.lat, activeMarkerPin.marker.position.lng]}
+          icon={buildMarkerIcon(activeMarkerPin.marker)}
+          draggable
+          eventHandlers={{
+            dragend: (event) => {
+              const latLng = (event.target as LeafletMarker).getLatLng();
+              onActiveMarkerDragEnd({ lat: latLng.lat, lng: latLng.lng });
+            },
+          }}
+        />
+      )}
       {kind === 'quadkey' ? (
         <QuadkeyTileLayer
           key={activeTileUrl}

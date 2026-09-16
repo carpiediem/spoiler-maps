@@ -208,10 +208,12 @@ markerSets:
     expect(document.markerSets).toEqual([
       {
         name: 'Cities',
+        noIcons: false,
         markers: [
           {
             label: 'Winterfell',
             icon: 'https://example.com/winterfell.png',
+            url: undefined,
             color: '#00ff00',
             lat: 3,
             lng: 3,
@@ -538,11 +540,12 @@ describe('round trip', () => {
       chapterRange: { startChapterId: chapter1.id, endChapterId: null },
       episodeRange: null,
     });
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Cities' });
+    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Cities', noIcons: false });
     await createMarker({
       markerSetId: markerSet.id,
       label: 'Winterfell',
       icon: null,
+      url: null,
       color: '#00ff00',
       position: { lat: 3, lng: 3 },
       polygon: null,
