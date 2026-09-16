@@ -272,6 +272,50 @@ describe('ViewScreen', () => {
     expect(within(dialog).queryByText(/\*\*Winter\*\*/)).not.toBeInTheDocument();
   });
 
+  it('shows a marker pin without needing to be checked, respecting the spoiler slider', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () =>
+          Promise.resolve(`
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+books:
+  - name: A Game of Thrones
+    chapters:
+      - name: Prologue
+      - name: Bran
+markerSets:
+  - name: Cities
+    markers:
+      - label: Winterfell
+        lat: 10
+        lng: 10
+      - label: The Wall
+        lat: 20
+        lng: 20
+        chapters: [1, null]
+`),
+      }),
+    );
+    const user = userEvent.setup();
+    const { container } = renderAt('/view?d=https://example.com/story.yaml');
+
+    await screen.findByText('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    // Winterfell has no range, so it's always visible; The Wall's chapter
+    // range hasn't been reached yet at the default (start of story) slider.
+    await waitFor(() => {
+      expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+    });
+  });
+
   it('shows a pin once a character is checked, respecting the spoiler slider', async () => {
     vi.stubGlobal(
       'fetch',

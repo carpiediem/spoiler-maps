@@ -67,7 +67,7 @@ function isRangeReached(range: StoryDocumentRangeTuple, currentIndex: number): b
   return true;
 }
 
-/** The chapter/episode-range shape shared by a StoryDocumentPosition and a StoryDocumentAlias. */
+/** The chapter/episode-range shape shared by a StoryDocumentPosition, a StoryDocumentAlias, and a StoryDocumentMarker. */
 interface RangedDocumentEntity {
   chapters?: StoryDocumentRangeTuple;
   episodes?: StoryDocumentRangeTuple;
@@ -75,8 +75,8 @@ interface RangedDocumentEntity {
 
 /**
  * The view-screen equivalent of makeTimelineVisibilityChecker: true while an
- * entity's (a position's or an alias's) start/end chapter/episode range (for
- * the active medium) contains the timeline's current (1-based) scrub
+ * entity's (a position's, an alias's, or a marker's) start/end chapter/episode
+ * range (for the active medium) contains the timeline's current (1-based) scrub
  * position, or when it has no range at all for that medium. An entity
  * restricted only by the *other* medium (e.g. an episode range but no
  * chapter range at all) never shows while scrubbing the active one — only

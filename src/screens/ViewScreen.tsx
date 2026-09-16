@@ -13,6 +13,7 @@ import type { StoryDocument } from '../lib/storyDocument';
 import { parseTimelineHash } from '../lib/timelineHash';
 import { buildDocumentChapterOptions, buildDocumentEpisodeOptions } from '../lib/viewTimeline';
 import { buildViewPinsAndTails } from '../lib/viewCharacterPins';
+import { buildViewMarkerPins } from '../lib/viewMarkerPins';
 import { buildStoryTheme } from '../theme';
 import { visuallyHidden } from '../lib/visuallyHidden';
 import './EditScreen.css';
@@ -120,6 +121,11 @@ export function ViewScreen() {
     );
   }, [document, checkedIndices, showFullPath, timelineMode, timelineIndex]);
 
+  const markerPins = useMemo(() => {
+    if (!document) return [];
+    return buildViewMarkerPins(document, timelineMode, timelineIndex);
+  }, [document, timelineMode, timelineIndex]);
+
   function handleCloseWelcome() {
     setIsWelcomeOpen(false);
   }
@@ -189,6 +195,7 @@ export function ViewScreen() {
             maxZoom={document!.maxZoom}
             characterPositionPins={pins.length > 0 ? pins : null}
             characterTails={tails}
+            markerPins={markerPins.length > 0 ? markerPins : null}
           />
           <MapTimelineControl
             key={timelineKey}
