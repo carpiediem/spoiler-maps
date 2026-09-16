@@ -246,6 +246,7 @@ describe('marker sets and markers', () => {
       icon: 'castle',
       url: 'https://wiki.example.com/winterfell',
       color: '#1d3557',
+      large: false,
       position: { lat: 54.5, lng: -1.5 },
       polygon: null,
       chapterRange: null,
@@ -266,6 +267,7 @@ describe('marker sets and markers', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 42.6, lng: 8.7 },
       polygon: null,
       chapterRange: null,
@@ -288,6 +290,7 @@ describe('marker sets and markers', () => {
       icon: null,
       url: null,
       color: '#457b9d',
+      large: false,
       position: { lat: 54.5, lng: -1.5 },
       polygon: [
         { lat: 54.5, lng: -1.5 },

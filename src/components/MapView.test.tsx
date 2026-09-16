@@ -608,6 +608,7 @@ describe('MapView', () => {
               icon: null,
               url: null,
               color: null,
+              large: false,
               position: { lat: 41, lng: -101 },
               polygon: null,
               chapterRange: null,
@@ -643,6 +644,7 @@ describe('MapView', () => {
               icon: null,
               url: null,
               color: '#ff0000',
+              large: false,
               position: { lat: 41, lng: -101 },
               polygon: null,
               chapterRange: null,
@@ -680,6 +682,7 @@ describe('MapView', () => {
             icon: null,
             url: null,
             color: null,
+            large: false,
             position: { lat: 41, lng: -101 },
             polygon: null,
             chapterRange: null,
@@ -707,6 +710,44 @@ describe('MapView', () => {
     const [reported] = onActiveMarkerDragEnd.mock.calls[0] as [{ lat: number; lng: number }];
     expect(reported.lat).toBeCloseTo(42);
     expect(reported.lng).toBeCloseTo(-102);
+  });
+
+  it('always renders the active marker as a plain pushpin, ignoring its own icon/large flag', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        activeMarkerPin={{
+          marker: {
+            id: 1,
+            markerSetId: 1,
+            label: 'Winterfell',
+            icon: 'https://example.com/icon.png',
+            url: null,
+            color: '#00ff00',
+            large: true,
+            position: { lat: 41, lng: -101 },
+            polygon: null,
+            chapterRange: null,
+            episodeRange: null,
+          },
+          noIcons: false,
+        }}
+        onActiveMarkerDragEnd={vi.fn()}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    expect(marker).toBeDefined();
+    // A DivIcon (the plain pushpin), not an Icon built from the marker's
+    // own custom image — DivIcon has no iconUrl option at all.
+    expect((marker!.options.icon!.options as { iconUrl?: string }).iconUrl).toBeUndefined();
   });
 
   it('applies the initial zoom limits to the underlying Leaflet map', () => {

@@ -285,6 +285,7 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
             marker.url,
             `markerSets[${markerSetIndex}].markers[${markerIndex}].url`,
           ),
+          large: marker.large === true,
           color: assertOptionalString(
             marker.color,
             `markerSets[${markerSetIndex}].markers[${markerIndex}].color`,
@@ -499,6 +500,7 @@ async function importMarkerSets(
         icon: marker.icon ?? null,
         url: marker.url ?? null,
         color: marker.color ?? null,
+        large: marker.large ?? false,
         position: { lat: marker.lat, lng: marker.lng },
         polygon: marker.polygon ?? null,
         chapterRange: resolveChapterRange(marker.chapters, chapterIdsByIndex, `${path}.chapters`),

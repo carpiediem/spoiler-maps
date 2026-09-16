@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { buildPinIcon, buildSkullIcon } from './pinIcon';
+import type { Marker } from '../db';
+import { buildMarkerIcon, buildPinIcon, buildSkullIcon } from './pinIcon';
+
+function makeMarker(overrides: Partial<Marker> = {}): Marker {
+  return {
+    id: 1,
+    markerSetId: 1,
+    label: 'Winterfell',
+    icon: null,
+    url: null,
+    color: null,
+    large: false,
+    position: { lat: 1, lng: 1 },
+    polygon: null,
+    chapterRange: null,
+    episodeRange: null,
+    ...overrides,
+  };
+}
 
 function decodeSvg(dataUrl: string): string {
   const [, encoded] = dataUrl.split(',', 2);
@@ -74,5 +92,46 @@ describe('buildSkullIcon', () => {
     expect(skull.options.iconSize).toEqual([24, 24]);
     expect(pin.options.iconSize).toEqual([24, 37]);
     expect(skull.options.iconAnchor).toEqual([12, 12]);
+  });
+});
+
+describe('buildMarkerIcon', () => {
+  it('builds a plain colored teardrop pin, with no label, when there is no custom icon', () => {
+    const icon = buildMarkerIcon(makeMarker({ color: '#1976d2' }));
+    const svg = decodeSvg(icon.options.iconUrl as string);
+
+    expect(svg).toContain('fill="#1976d2"');
+    expect(svg).toContain('></text>');
+    expect(icon.options.iconSize).toEqual([24, 37]);
+  });
+
+  it('falls back to the default marker color when unset', () => {
+    const icon = buildMarkerIcon(makeMarker());
+    const svg = decodeSvg(icon.options.iconUrl as string);
+
+    expect(svg).toContain('fill="#2e7d32"');
+  });
+
+  it('uses the marker’s own custom icon image when set', () => {
+    const icon = buildMarkerIcon(makeMarker({ icon: 'https://example.com/icon.png' }));
+
+    expect(icon.options.iconUrl).toBe('https://example.com/icon.png');
+    expect(icon.options.iconSize).toEqual([28, 28]);
+    expect(icon.options.iconAnchor).toEqual([14, 28]);
+  });
+
+  it('scales up a "large" marker’s teardrop pin', () => {
+    const regular = buildMarkerIcon(makeMarker({ large: false }));
+    const large = buildMarkerIcon(makeMarker({ large: true }));
+
+    expect(regular.options.iconSize).toEqual([24, 37]);
+    expect(large.options.iconSize).toEqual([36, 55.5]);
+  });
+
+  it('scales up a "large" marker’s custom icon image', () => {
+    const icon = buildMarkerIcon(makeMarker({ icon: 'https://example.com/icon.png', large: true }));
+
+    expect(icon.options.iconSize).toEqual([42, 42]);
+    expect(icon.options.iconAnchor).toEqual([21, 42]);
   });
 });

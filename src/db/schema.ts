@@ -264,4 +264,12 @@ export const MIGRATIONS: Migration[] = [
       ALTER TABLE marker_sets ADD COLUMN no_icons INTEGER NOT NULL DEFAULT 0;
     `,
   },
+  {
+    version: 14,
+    sql: `
+      -- Stored as 0/1, since SQLite has no native boolean type. Renders a
+      -- marker's icon at a larger size on the map.
+      ALTER TABLE markers ADD COLUMN large INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ];

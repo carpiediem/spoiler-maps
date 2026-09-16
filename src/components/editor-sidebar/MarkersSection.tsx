@@ -14,6 +14,7 @@ import {
   type MarkerSet,
 } from '../../db';
 import type { ActiveMarker, MarkerMapPin } from '../../lib/markerPins';
+import { useRangeOptions } from './characters/rangeOptions';
 import { MarkerSetItem } from './markers/MarkerSetItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
 
@@ -42,6 +43,7 @@ export function MarkersSection({
   const [visibleMarkerSetIds, setVisibleMarkerSetIds] = useState<Set<number>>(new Set());
   const [expandedMarkerId, setExpandedMarkerId] = useState<number | null>(null);
   const [expandedMarkerSetId, setExpandedMarkerSetId] = useState<number | null>(null);
+  const { chapterOptions, episodeOptions, hasBooks, hasSeasons } = useRangeOptions(storyId);
 
   const load = useCallback(async (storyId: number, isCancelled: () => boolean) => {
     const loadedMarkerSets = await listMarkerSetsForStory(storyId);
@@ -108,6 +110,7 @@ export function MarkersSection({
           icon: updated.icon,
           url: updated.url,
           color: updated.color,
+          large: updated.large,
           position: updated.position,
           polygon: updated.polygon,
           chapterRange: updated.chapterRange,
@@ -221,6 +224,7 @@ export function MarkersSection({
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: mapCenter ?? { lat: 0, lng: 0 },
       polygon: null,
       chapterRange: null,
@@ -287,6 +291,10 @@ export function MarkersSection({
           onMarkerChange={(marker) => handleMarkerChange(markerSet.id, marker)}
           onAddMarker={() => handleAddMarker(markerSet.id)}
           onDeleteMarker={(markerId) => handleDeleteMarker(markerSet.id, markerId)}
+          chapterOptions={chapterOptions}
+          episodeOptions={episodeOptions}
+          hasBooks={hasBooks}
+          hasSeasons={hasSeasons}
         />
       ))}
 

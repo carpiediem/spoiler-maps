@@ -1,6 +1,15 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createMarker, createMarkerSet, createStory, listMarkersForMarkerSet } from '../../db';
+import {
+  createBook,
+  createChapter,
+  createEpisode,
+  createMarker,
+  createMarkerSet,
+  createStory,
+  createTvSeason,
+  listMarkersForMarkerSet,
+} from '../../db';
 import { resetDatabaseForTests } from '../../db/client';
 import { MarkersSection } from './MarkersSection';
 
@@ -55,6 +64,7 @@ describe('MarkersSection', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 1, lng: 1 },
       polygon: null,
       chapterRange: null,
@@ -66,6 +76,7 @@ describe('MarkersSection', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 2, lng: 2 },
       polygon: null,
       chapterRange: null,
@@ -77,6 +88,7 @@ describe('MarkersSection', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 3, lng: 3 },
       polygon: null,
       chapterRange: null,
@@ -167,6 +179,7 @@ describe('MarkersSection', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 1, lng: 1 },
       polygon: null,
       chapterRange: null,
@@ -201,6 +214,7 @@ describe('MarkersSection', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 1, lng: 1 },
       polygon: null,
       chapterRange: null,
@@ -238,15 +252,14 @@ describe('MarkersSection', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 1, lng: 1 },
       polygon: null,
       chapterRange: null,
       episodeRange: null,
     });
     const onVisibleMarkersChange = vi.fn();
-    render(
-      <MarkersSection storyId={storyId} onVisibleMarkersChange={onVisibleMarkersChange} />,
-    );
+    render(<MarkersSection storyId={storyId} onVisibleMarkersChange={onVisibleMarkersChange} />);
     await screen.findByText('Landmarks');
 
     await vi.waitFor(() => expect(onVisibleMarkersChange).toHaveBeenCalledWith(null));
@@ -256,7 +269,10 @@ describe('MarkersSection', () => {
 
     await vi.waitFor(() =>
       expect(onVisibleMarkersChange).toHaveBeenCalledWith([
-        expect.objectContaining({ noIcons: true, marker: expect.objectContaining({ label: 'Winterfell' }) }),
+        expect.objectContaining({
+          noIcons: true,
+          marker: expect.objectContaining({ label: 'Winterfell' }),
+        }),
       ]),
     );
   });
@@ -270,6 +286,7 @@ describe('MarkersSection', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 1, lng: 1 },
       polygon: null,
       chapterRange: null,
@@ -311,6 +328,7 @@ describe('MarkersSection', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 1, lng: 1 },
       polygon: null,
       chapterRange: null,
@@ -322,7 +340,9 @@ describe('MarkersSection', () => {
     const header = await screen.findByText('Landmarks');
     fireEvent.click(header);
     fireEvent.click(await screen.findByText('Winterfell'));
-    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenLastCalledWith(expect.anything()));
+    await vi.waitFor(() =>
+      expect(onActiveMarkerChange).toHaveBeenLastCalledWith(expect.anything()),
+    );
 
     fireEvent.click(header);
 
@@ -338,6 +358,7 @@ describe('MarkersSection', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 1, lng: 1 },
       polygon: null,
       chapterRange: null,
@@ -351,5 +372,132 @@ describe('MarkersSection', () => {
     rerender(<MarkersSection storyId={storyId} sectionExpanded={false} />);
 
     await vi.waitFor(() => expect(screen.getByText('Winterfell')).not.toBeVisible());
+  });
+
+  it('shows the marker’s icon in its header when one is set', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: 'https://example.com/winterfell.png',
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    const image = await screen.findByRole('img', { name: 'Winterfell' });
+
+    expect(image).toHaveAttribute('src', 'https://example.com/winterfell.png');
+  });
+
+  it('toggles a marker’s Large checkbox and persists it', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+    const checkbox = screen.getByRole('checkbox', { name: /large marker/i });
+    expect(checkbox).not.toBeChecked();
+
+    fireEvent.click(checkbox);
+
+    await vi.waitFor(async () => {
+      expect(checkbox).toBeChecked();
+      const [updated] = await listMarkersForMarkerSet(markerSet.id);
+      expect(updated.large).toBe(true);
+    });
+  });
+
+  it('edits a marker’s chapter range and persists it', async () => {
+    const storyId = await seedStoryId();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter = await createChapter({ bookId: book.id, name: 'Bran', url: null, sortOrder: 0 });
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+
+    fireEvent.mouseDown(await screen.findByLabelText('Start Chapter'));
+    fireEvent.click(await screen.findByRole('option', { name: /bran/i }));
+
+    await vi.waitFor(async () => {
+      const [updated] = await listMarkersForMarkerSet(markerSet.id);
+      expect(updated.chapterRange).toEqual({ startChapterId: chapter.id, endChapterId: null });
+    });
+  });
+
+  it('edits a marker’s episode range and persists it', async () => {
+    const storyId = await seedStoryId();
+    const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
+    const episode = await createEpisode({
+      seasonId: season.id,
+      name: 'Winter Is Coming',
+      url: null,
+      sortOrder: 0,
+    });
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+
+    fireEvent.mouseDown(await screen.findByLabelText('Start Episode'));
+    fireEvent.click(await screen.findByRole('option', { name: /winter is coming/i }));
+
+    await vi.waitFor(async () => {
+      const [updated] = await listMarkersForMarkerSet(markerSet.id);
+      expect(updated.episodeRange).toEqual({ startEpisodeId: episode.id, endEpisodeId: null });
+    });
   });
 });

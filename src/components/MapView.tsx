@@ -33,7 +33,9 @@ const CHARACTER_TAIL_WEIGHT = 5;
 
 // A plain CSS pin instead of react-leaflet's default marker icon, which
 // needs its image assets specially reconfigured to resolve under a
-// bundler — not worth it for a single draggable draft-position pin.
+// bundler — not worth it for a single draggable draft-position pin. Also
+// used for the currently selected marker below, so dragging always shows
+// the same simple pushpin regardless of that marker's own icon/size.
 const DRAFT_POSITION_ICON = divIcon({
   className: '',
   html: '<div style="width: 20px; height: 20px; border-radius: 50% 50% 50% 0; background: #d32f2f; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5); transform: rotate(-45deg);"></div>',
@@ -329,7 +331,7 @@ export function MapView({
         <Marker
           key={`active-${activeMarkerPin.marker.id}`}
           position={[activeMarkerPin.marker.position.lat, activeMarkerPin.marker.position.lng]}
-          icon={buildMarkerIcon(activeMarkerPin.marker)}
+          icon={DRAFT_POSITION_ICON}
           draggable
           eventHandlers={{
             dragend: (event) => {

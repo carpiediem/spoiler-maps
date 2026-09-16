@@ -547,6 +547,7 @@ describe('buildStoryDocument', () => {
       icon: 'https://example.com/winterfell.png',
       url: 'https://wiki.example.com/winterfell',
       color: '#00ff00',
+      large: false,
       position: { lat: 3, lng: 3 },
       polygon: [
         { lat: 3.1, lng: 3.1 },
@@ -596,6 +597,7 @@ describe('buildStoryDocument', () => {
       icon: null,
       url: null,
       color: null,
+      large: false,
       position: { lat: 3, lng: 3 },
       polygon: null,
       chapterRange: null,

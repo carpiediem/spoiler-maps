@@ -83,6 +83,8 @@ export interface StoryDocumentMarker {
   /** The marker's own wiki page, if any. */
   url?: string;
   color?: string;
+  /** Renders the marker's icon at a larger size on the map. */
+  large?: boolean;
   lat: number;
   lng: number;
   polygon?: LatLng[];

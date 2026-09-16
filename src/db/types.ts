@@ -99,6 +99,8 @@ export interface Marker {
   url: string | null;
   /** CSS color (e.g. a hex string), used for the icon and/or polygon. */
   color: string | null;
+  /** Renders the marker's icon at a larger size on the map. */
+  large: boolean;
   position: LatLng;
   /** An optional area outline, e.g. a territory boundary, in addition to the position pin. */
   polygon: LatLng[] | null;

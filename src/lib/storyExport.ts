@@ -166,6 +166,7 @@ export async function buildStoryDocument(storyId: number): Promise<StoryDocument
           ...(marker.icon ? { icon: marker.icon } : {}),
           ...(marker.url ? { url: marker.url } : {}),
           ...(marker.color ? { color: marker.color } : {}),
+          ...(marker.large ? { large: true } : {}),
           lat: marker.position.lat,
           lng: marker.position.lng,
           ...(marker.polygon ? { polygon: marker.polygon } : {}),

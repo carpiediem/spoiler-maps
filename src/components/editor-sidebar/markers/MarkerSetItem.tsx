@@ -20,6 +20,7 @@ import {
 import { alpha } from '@mui/material/styles';
 import { useState, type SyntheticEvent } from 'react';
 import { updateMarkerSet, type Marker, type MarkerSet } from '../../../db';
+import type { FlatOption } from '../characters/rangeOptions';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
 import { SIDEBAR_SECTION_HEADER_HEIGHT, SIDEBAR_SECTION_HEADER_Z_INDEX } from '../SidebarSection';
 import { MarkerItem } from './MarkerItem';
@@ -36,12 +37,14 @@ interface MarkerSetItemProps {
   onDelete: () => void;
   /** The id of the marker currently expanded within this set, if any. */
   expandedMarkerId: number | null;
-  onMarkerToggle: (
-    markerId: number,
-  ) => (event: SyntheticEvent, isExpanded: boolean) => void;
+  onMarkerToggle: (markerId: number) => (event: SyntheticEvent, isExpanded: boolean) => void;
   onMarkerChange: (marker: Marker) => void;
   onAddMarker: () => void;
   onDeleteMarker: (markerId: number) => void;
+  chapterOptions: FlatOption[];
+  episodeOptions: FlatOption[];
+  hasBooks: boolean;
+  hasSeasons: boolean;
 }
 
 export function MarkerSetItem({
@@ -58,6 +61,10 @@ export function MarkerSetItem({
   onMarkerChange,
   onAddMarker,
   onDeleteMarker,
+  chapterOptions,
+  episodeOptions,
+  hasBooks,
+  hasSeasons,
 }: MarkerSetItemProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
@@ -178,6 +185,10 @@ export function MarkerSetItem({
                 onToggle={onMarkerToggle(marker.id)}
                 onMarkerChange={onMarkerChange}
                 onDelete={() => onDeleteMarker(marker.id)}
+                chapterOptions={chapterOptions}
+                episodeOptions={episodeOptions}
+                hasBooks={hasBooks}
+                hasSeasons={hasSeasons}
               />
             ))}
           </Stack>

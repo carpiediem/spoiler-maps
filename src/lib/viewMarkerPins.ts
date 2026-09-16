@@ -13,6 +13,7 @@ function toMapMarker(marker: StoryDocumentMarker, syntheticId: number): Marker {
     icon: marker.icon ?? null,
     url: marker.url ?? null,
     color: marker.color ?? null,
+    large: marker.large ?? false,
     position: { lat: marker.lat, lng: marker.lng },
     polygon: marker.polygon ?? null,
     chapterRange: null,
