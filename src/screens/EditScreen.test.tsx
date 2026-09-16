@@ -17,6 +17,8 @@ import {
   createCharacterPosition,
   createStory,
   getStory,
+  listMarkerSetsForStory,
+  listMarkersForMarkerSet,
 } from '../db';
 
 async function deleteStoredDatabase(): Promise<void> {
@@ -587,6 +589,106 @@ describe('App', () => {
     // Drawing mode ends and the tail button reappears.
     expect(await screen.findByRole('button', { name: /add a tail/i })).toBeInTheDocument();
   }, 10000);
+
+  it('draws, saves, and renders a marker area at 50% opacity', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+    resetDatabaseForTests();
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^markers$/i }));
+    await user.click(screen.getByRole('button', { name: /add collection/i }));
+    await screen.findByText('Unnamed Collection');
+    await user.click(screen.getByRole('button', { name: /add marker/i }));
+    await screen.findByText('Unnamed Marker');
+
+    const drawButton = screen.getByRole('button', { name: /draw area/i });
+    await user.click(drawButton);
+    expect(screen.queryByRole('button', { name: /draw area/i })).not.toBeInTheDocument();
+
+    const mapContainer = container.querySelector('.leaflet-container')!;
+    fireEvent.click(mapContainer, { clientX: 120, clientY: 80 });
+    fireEvent.click(mapContainer, { clientX: 160, clientY: 80 });
+    fireEvent.click(mapContainer, { clientX: 160, clientY: 120 });
+
+    const saveButton = await screen.findByRole('button', { name: /save area/i });
+    await waitFor(() => expect(saveButton).toBeEnabled());
+    await user.click(saveButton);
+
+    expect(await screen.findByRole('button', { name: /^edit area$/i })).toBeInTheDocument();
+
+    const [markerSet] = await listMarkerSetsForStory(story.id);
+    const [marker] = await listMarkersForMarkerSet(markerSet!.id);
+    expect(marker!.polygon).toHaveLength(3);
+
+    await waitFor(() => {
+      const area = container.querySelector('.leaflet-interactive');
+      expect(area).not.toBeNull();
+      expect(area).toHaveAttribute('fill-opacity', '0.5');
+    });
+  });
+
+  it('discards the area draft if the marker is deselected before saving', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^markers$/i }));
+    await user.click(screen.getByRole('button', { name: /add collection/i }));
+    await screen.findByText('Unnamed Collection');
+    const markerButton = screen.getByRole('button', { name: /add marker/i });
+    await user.click(markerButton);
+    await screen.findByText('Unnamed Marker');
+
+    await user.click(screen.getByRole('button', { name: /draw area/i }));
+    expect(await screen.findByRole('button', { name: /save area/i })).toBeInTheDocument();
+
+    // Collapsing the marker's own accordion deselects it, which should
+    // discard the in-progress draft rather than leave it dangling.
+    await user.click(screen.getByText('Unnamed Marker'));
+
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /save area/i })).not.toBeInTheDocument(),
+    );
+
+    const [markerSet] = await listMarkerSetsForStory(story.id);
+    const [marker] = await listMarkersForMarkerSet(markerSet!.id);
+    expect(marker!.polygon).toBeNull();
+  });
 
   it('does not update state after unmounting while stories are still loading', async () => {
     const { unmount } = render(

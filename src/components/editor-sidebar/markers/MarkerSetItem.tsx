@@ -45,6 +45,12 @@ interface MarkerSetItemProps {
   episodeOptions: FlatOption[];
   hasBooks: boolean;
   hasSeasons: boolean;
+  isEditingMarkerArea?: boolean;
+  areaDraftPointCount?: number;
+  onStartEditingMarkerArea?: () => void;
+  onSaveMarkerArea?: () => void;
+  onCancelMarkerArea?: () => void;
+  onClearMarkerArea?: () => void;
 }
 
 export function MarkerSetItem({
@@ -65,6 +71,12 @@ export function MarkerSetItem({
   episodeOptions,
   hasBooks,
   hasSeasons,
+  isEditingMarkerArea,
+  areaDraftPointCount,
+  onStartEditingMarkerArea,
+  onSaveMarkerArea,
+  onCancelMarkerArea,
+  onClearMarkerArea,
 }: MarkerSetItemProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
@@ -189,6 +201,12 @@ export function MarkerSetItem({
                 episodeOptions={episodeOptions}
                 hasBooks={hasBooks}
                 hasSeasons={hasSeasons}
+                isEditingArea={expandedMarkerId === marker.id && !!isEditingMarkerArea}
+                areaDraftPointCount={areaDraftPointCount}
+                onStartEditingArea={onStartEditingMarkerArea}
+                onSaveArea={onSaveMarkerArea}
+                onCancelArea={onCancelMarkerArea}
+                onClearArea={onClearMarkerArea}
               />
             ))}
           </Stack>

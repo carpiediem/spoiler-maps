@@ -6,6 +6,7 @@ import {
   AccordionDetails,
   AccordionSummary,
   Box,
+  Button,
   Checkbox,
   FormControlLabel,
   IconButton,
@@ -30,6 +31,14 @@ interface MarkerItemProps {
   episodeOptions: FlatOption[];
   hasBooks: boolean;
   hasSeasons: boolean;
+  /** Whether this marker's area is currently being drawn/edited on the map. */
+  isEditingArea?: boolean;
+  /** The number of points in the in-progress area draft, for enabling/disabling Save. */
+  areaDraftPointCount?: number;
+  onStartEditingArea?: () => void;
+  onSaveArea?: () => void;
+  onCancelArea?: () => void;
+  onClearArea?: () => void;
 }
 
 export function MarkerItem({
@@ -42,6 +51,12 @@ export function MarkerItem({
   episodeOptions,
   hasBooks,
   hasSeasons,
+  isEditingArea,
+  areaDraftPointCount,
+  onStartEditingArea,
+  onSaveArea,
+  onCancelArea,
+  onClearArea,
 }: MarkerItemProps) {
   function handleFieldChange(field: 'label' | 'icon' | 'url', value: string) {
     onMarkerChange({ ...marker, [field]: field === 'label' ? value : value || null });
@@ -216,6 +231,35 @@ export function MarkerItem({
             }
             label="Large marker"
           />
+
+          {isEditingArea ? (
+            <Stack spacing={1}>
+              <Typography variant="caption" color="text.secondary">
+                Click the map to add points; drag a point to move it; click a point to remove it (at
+                least 3 required).
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <Button size="small" onClick={onSaveArea} disabled={(areaDraftPointCount ?? 0) < 3}>
+                  Save Area
+                </Button>
+                <Button size="small" onClick={onCancelArea}>
+                  Cancel
+                </Button>
+              </Stack>
+            </Stack>
+          ) : (
+            <Stack direction="row" spacing={1}>
+              <Button size="small" onClick={onStartEditingArea}>
+                {marker.polygon ? 'Edit Area' : 'Draw Area'}
+              </Button>
+              {marker.polygon && (
+                <Button size="small" color="error" onClick={onClearArea}>
+                  Clear Area
+                </Button>
+              )}
+            </Stack>
+          )}
+
           {hasBooks && (
             <Stack spacing={1.5}>
               <Typography variant="body2" sx={{ fontWeight: 500 }}>

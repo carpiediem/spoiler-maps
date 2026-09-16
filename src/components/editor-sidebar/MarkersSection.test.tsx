@@ -500,4 +500,112 @@ describe('MarkersSection', () => {
       expect(updated.episodeRange).toEqual({ startEpisodeId: episode.id, endEpisodeId: null });
     });
   });
+
+  it('exposes an onAreaSave handler on the active marker that persists a polygon', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onActiveMarkerChange = vi.fn();
+    render(<MarkersSection storyId={storyId} onActiveMarkerChange={onActiveMarkerChange} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+
+    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
+    const active = onActiveMarkerChange.mock.calls.at(-1)![0];
+    const polygon = [
+      { lat: 1, lng: 1 },
+      { lat: 2, lng: 2 },
+      { lat: 3, lng: 3 },
+    ];
+
+    active.onAreaSave(polygon);
+
+    await vi.waitFor(async () => {
+      const [updated] = await listMarkersForMarkerSet(markerSet.id);
+      expect(updated.polygon).toEqual(polygon);
+    });
+  });
+
+  it('treats fewer than 3 saved area points as no area at all', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onActiveMarkerChange = vi.fn();
+    render(<MarkersSection storyId={storyId} onActiveMarkerChange={onActiveMarkerChange} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+
+    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
+    const active = onActiveMarkerChange.mock.calls.at(-1)![0];
+
+    active.onAreaSave([
+      { lat: 1, lng: 1 },
+      { lat: 2, lng: 2 },
+    ]);
+
+    await vi.waitFor(async () => {
+      const [updated] = await listMarkersForMarkerSet(markerSet.id);
+      expect(updated.polygon).toBeNull();
+    });
+  });
+
+  it('clears a marker’s area via onAreaSave(null)', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: [
+        { lat: 1, lng: 1 },
+        { lat: 2, lng: 2 },
+        { lat: 3, lng: 3 },
+      ],
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onActiveMarkerChange = vi.fn();
+    render(<MarkersSection storyId={storyId} onActiveMarkerChange={onActiveMarkerChange} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+
+    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
+    const active = onActiveMarkerChange.mock.calls.at(-1)![0];
+
+    active.onAreaSave(null);
+
+    await vi.waitFor(async () => {
+      const [updated] = await listMarkersForMarkerSet(markerSet.id);
+      expect(updated.polygon).toBeNull();
+    });
+  });
 });

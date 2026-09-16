@@ -7,9 +7,11 @@ export interface MarkerMapPin {
   noIcons: boolean;
 }
 
-/** The marker currently selected in the sidebar, plus a handler for persisting a drag on its map pin. */
+/** The marker currently selected in the sidebar, plus handlers for persisting a drag on its map pin or an edit to its area. */
 export interface ActiveMarker {
   marker: Marker;
   noIcons: boolean;
   onDrag: (position: LatLng) => void;
+  /** Saves the marker's area (null clears it). Fewer than 3 points is treated as no area at all. */
+  onAreaSave: (polygon: LatLng[] | null) => void;
 }

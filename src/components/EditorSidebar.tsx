@@ -115,6 +115,14 @@ interface EditorSidebarProps {
   onVisibleMarkersChange: (pins: MarkerMapPin[] | null) => void;
   /** Called with the currently selected marker (and a handler for dragging its pin), or null once none is selected. */
   onActiveMarkerChange: (active: ActiveMarker | null) => void;
+  /** Whether the currently selected marker's area is being drawn/edited on the map. */
+  isEditingMarkerArea: boolean;
+  /** The number of points in the in-progress area draft, for enabling/disabling Save. */
+  areaDraftPointCount: number;
+  onStartEditingMarkerArea: () => void;
+  onSaveMarkerArea: () => void;
+  onCancelMarkerArea: () => void;
+  onClearMarkerArea: () => void;
 }
 
 export function EditorSidebar({
@@ -144,6 +152,12 @@ export function EditorSidebar({
   timelineIndex,
   onVisibleMarkersChange,
   onActiveMarkerChange,
+  isEditingMarkerArea,
+  areaDraftPointCount,
+  onStartEditingMarkerArea,
+  onSaveMarkerArea,
+  onCancelMarkerArea,
+  onClearMarkerArea,
 }: EditorSidebarProps) {
   const {
     control,
@@ -356,6 +370,12 @@ export function EditorSidebar({
                     onVisibleMarkersChange={onVisibleMarkersChange}
                     onActiveMarkerChange={onActiveMarkerChange}
                     sectionExpanded={expandedSection === 'markers'}
+                    isEditingMarkerArea={isEditingMarkerArea}
+                    areaDraftPointCount={areaDraftPointCount}
+                    onStartEditingMarkerArea={onStartEditingMarkerArea}
+                    onSaveMarkerArea={onSaveMarkerArea}
+                    onCancelMarkerArea={onCancelMarkerArea}
+                    onClearMarkerArea={onClearMarkerArea}
                   />
                 </SidebarSection>
 

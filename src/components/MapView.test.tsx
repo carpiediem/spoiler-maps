@@ -1,16 +1,35 @@
 import {
   CircleMarker as LeafletCircleMarker,
   Marker as LeafletMarker,
+  Polygon as LeafletPolygon,
   Polyline as LeafletPolyline,
   type Map as LeafletMap,
 } from 'leaflet';
 import { act, render } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import type { Marker } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
 import { MapView } from './MapView';
 
 const center = { lat: 40, lng: -100 };
+
+function makeMarker(overrides: Partial<Marker> = {}): Marker {
+  return {
+    id: 1,
+    markerSetId: 1,
+    label: 'Winterfell',
+    icon: null,
+    url: null,
+    color: null,
+    large: false,
+    position: { lat: 41, lng: -101 },
+    polygon: null,
+    chapterRange: null,
+    episodeRange: null,
+    ...overrides,
+  };
+}
 
 describe('MapView', () => {
   it('renders the default xyz tile layer when no tileUrl is set', () => {
@@ -748,6 +767,274 @@ describe('MapView', () => {
     // A DivIcon (the plain pushpin), not an Icon built from the marker's
     // own custom image — DivIcon has no iconUrl option at all.
     expect((marker!.options.icon!.options as { iconUrl?: string }).iconUrl).toBeUndefined();
+  });
+
+  it('renders a marker’s saved area at 50% opacity, in its own color', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const polygon = [
+      { lat: 41, lng: -101 },
+      { lat: 42, lng: -101 },
+      { lat: 42, lng: -102 },
+    ];
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[{ marker: makeMarker({ color: '#00ff00', polygon }), noIcons: false }]}
+      />,
+    );
+
+    let area: LeafletPolygon | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) area = layer;
+    });
+    expect(area).toBeDefined();
+    expect((area!.options as { fillColor?: string }).fillColor).toBe('#00ff00');
+    expect((area!.options as { fillOpacity?: number }).fillOpacity).toBe(0.5);
+    expect(area!.getLatLngs()).toHaveLength(1);
+  });
+
+  it('renders a "no icons" marker’s area even though its icon is suppressed', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const polygon = [
+      { lat: 41, lng: -101 },
+      { lat: 42, lng: -101 },
+      { lat: 42, lng: -102 },
+    ];
+    const { container } = render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[{ marker: makeMarker({ polygon }), noIcons: true }]}
+      />,
+    );
+
+    let areaCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) areaCount += 1;
+    });
+    expect(areaCount).toBe(1);
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+  });
+
+  it('renders the active marker’s saved area, hiding it once a draft takes over', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const polygon = [
+      { lat: 41, lng: -101 },
+      { lat: 42, lng: -101 },
+      { lat: 42, lng: -102 },
+    ];
+    const { rerender } = render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        activeMarkerPin={{ marker: makeMarker({ polygon }), noIcons: false }}
+        onActiveMarkerDragEnd={vi.fn()}
+      />,
+    );
+
+    let areaCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) areaCount += 1;
+    });
+    expect(areaCount).toBe(1);
+
+    act(() => {
+      rerender(
+        <MapView
+          tileUrl={null}
+          center={center}
+          zoom={5}
+          mapRef={mapRef}
+          activeMarkerPin={{ marker: makeMarker({ polygon }), noIcons: false }}
+          onActiveMarkerDragEnd={vi.fn()}
+          areaDraftPoints={polygon}
+          onAreaDraftPointsChange={vi.fn()}
+        />,
+      );
+    });
+
+    areaCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) areaCount += 1;
+    });
+    // The saved area is gone; the draft polygon (below) takes its place.
+    expect(areaCount).toBe(1);
+  });
+
+  it('adds a point to the area draft when the map is clicked', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onAreaDraftPointsChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[{ lat: 1, lng: 1 }]}
+        onAreaDraftPointsChange={onAreaDraftPointsChange}
+      />,
+    );
+
+    act(() => {
+      mapRef.current!.fire('click', { latlng: { lat: 41, lng: -101 } });
+    });
+
+    expect(onAreaDraftPointsChange).toHaveBeenCalledWith([
+      { lat: 1, lng: 1 },
+      { lat: 41, lng: -101 },
+    ]);
+  });
+
+  it('does not listen for map clicks when no area draft is in progress', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onAreaDraftPointsChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={null}
+        onAreaDraftPointsChange={onAreaDraftPointsChange}
+      />,
+    );
+
+    act(() => {
+      mapRef.current!.fire('click', { latlng: { lat: 41, lng: -101 } });
+    });
+
+    expect(onAreaDraftPointsChange).not.toHaveBeenCalled();
+  });
+
+  it('renders a draggable vertex per area draft point, updating it on drag end', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onAreaDraftPointsChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[
+          { lat: 1, lng: 1 },
+          { lat: 2, lng: 2 },
+          { lat: 3, lng: 3 },
+        ]}
+        onAreaDraftPointsChange={onAreaDraftPointsChange}
+      />,
+    );
+
+    const vertices: LeafletMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) vertices.push(layer);
+    });
+    expect(vertices).toHaveLength(3);
+    expect(vertices.every((vertex) => vertex.options.draggable)).toBe(true);
+
+    act(() => {
+      vertices[1]!.setLatLng([9, 9]);
+      vertices[1]!.fire('dragend', { target: vertices[1] });
+    });
+
+    expect(onAreaDraftPointsChange).toHaveBeenCalledWith([
+      { lat: 1, lng: 1 },
+      { lat: 9, lng: 9 },
+      { lat: 3, lng: 3 },
+    ]);
+  });
+
+  it('removes a vertex on click, as long as at least 3 would remain', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onAreaDraftPointsChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[
+          { lat: 1, lng: 1 },
+          { lat: 2, lng: 2 },
+          { lat: 3, lng: 3 },
+        ]}
+        onAreaDraftPointsChange={onAreaDraftPointsChange}
+      />,
+    );
+
+    const vertices: LeafletMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) vertices.push(layer);
+    });
+
+    act(() => {
+      vertices[0]!.fire('click');
+    });
+
+    // Only 3 points exist — removing one would leave fewer than a valid
+    // triangle, so the click is a no-op.
+    expect(onAreaDraftPointsChange).not.toHaveBeenCalled();
+  });
+
+  it('renders a dashed, translucent preview polygon for a 3+ point area draft', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[
+          { lat: 1, lng: 1 },
+          { lat: 2, lng: 2 },
+          { lat: 3, lng: 3 },
+        ]}
+        onAreaDraftPointsChange={vi.fn()}
+        areaDraftColor="#0000ff"
+      />,
+    );
+
+    let preview: LeafletPolygon | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) preview = layer;
+    });
+    expect(preview).toBeDefined();
+    expect((preview!.options as { fillColor?: string }).fillColor).toBe('#0000ff');
+    expect((preview!.options as { fillOpacity?: number }).fillOpacity).toBe(0.35);
+  });
+
+  it('renders a plain line, not a filled polygon, for a 2-point area draft', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[
+          { lat: 1, lng: 1 },
+          { lat: 2, lng: 2 },
+        ]}
+        onAreaDraftPointsChange={vi.fn()}
+      />,
+    );
+
+    let polygonCount = 0;
+    let polylineCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) polygonCount += 1;
+      if (layer instanceof LeafletPolyline && !(layer instanceof LeafletPolygon)) {
+        polylineCount += 1;
+      }
+    });
+    expect(polygonCount).toBe(0);
+    expect(polylineCount).toBe(1);
   });
 
   it('applies the initial zoom limits to the underlying Leaflet map', () => {

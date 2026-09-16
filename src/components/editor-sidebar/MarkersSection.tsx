@@ -29,6 +29,14 @@ interface MarkersSectionProps {
   onActiveMarkerChange?: (active: ActiveMarker | null) => void;
   /** Whether the Markers accordion itself is expanded; collapsing it also collapses whichever marker set/marker was expanded inside it. */
   sectionExpanded?: boolean;
+  /** Whether the currently selected marker's area is being drawn/edited on the map. */
+  isEditingMarkerArea?: boolean;
+  /** The number of points in the in-progress area draft, for enabling/disabling Save. */
+  areaDraftPointCount?: number;
+  onStartEditingMarkerArea?: () => void;
+  onSaveMarkerArea?: () => void;
+  onCancelMarkerArea?: () => void;
+  onClearMarkerArea?: () => void;
 }
 
 export function MarkersSection({
@@ -38,6 +46,12 @@ export function MarkersSection({
   onVisibleMarkersChange,
   onActiveMarkerChange,
   sectionExpanded,
+  isEditingMarkerArea,
+  areaDraftPointCount,
+  onStartEditingMarkerArea,
+  onSaveMarkerArea,
+  onCancelMarkerArea,
+  onClearMarkerArea,
 }: MarkersSectionProps) {
   const [markersByMarkerSetId, setMarkersByMarkerSetId] = useState<Record<number, Marker[]>>({});
   const [visibleMarkerSetIds, setVisibleMarkerSetIds] = useState<Set<number>>(new Set());
@@ -92,18 +106,17 @@ export function MarkersSection({
     onCountChange?.(total);
   }, [markerSets, markersByMarkerSetId, onCountChange]);
 
-  // Handles a drag on the currently selected marker's map pin: persists the
-  // new position both locally and to the database. Stable except when the
-  // selection itself changes, so it doesn't retrigger the pins effect below
-  // on every unrelated render.
-  const handleMarkerDrag = useCallback(
-    (position: LatLng) => {
+  // Applies an update to the currently selected marker, both locally and to
+  // the database. Stable except when the selection itself changes, so it
+  // doesn't retrigger the pins effect below on every unrelated render.
+  const updateExpandedMarker = useCallback(
+    (apply: (marker: Marker) => Marker) => {
       if (expandedMarkerId === null || expandedMarkerSetId === null) return;
       setMarkersByMarkerSetId((previous) => {
         const markers = previous[expandedMarkerSetId] ?? [];
         const marker = markers.find((candidate) => candidate.id === expandedMarkerId);
         if (!marker) return previous;
-        const updated = { ...marker, position };
+        const updated = apply(marker);
         updateMarker(updated.id, {
           markerSetId: updated.markerSetId,
           label: updated.label,
@@ -127,6 +140,23 @@ export function MarkersSection({
     [expandedMarkerId, expandedMarkerSetId],
   );
 
+  // Handles a drag on the currently selected marker's map pin.
+  const handleMarkerDrag = useCallback(
+    (position: LatLng) => updateExpandedMarker((marker) => ({ ...marker, position })),
+    [updateExpandedMarker],
+  );
+
+  // Saves the currently selected marker's area; fewer than 3 points is
+  // treated as no area at all (a polygon needs at least a triangle).
+  const handleAreaSave = useCallback(
+    (polygon: LatLng[] | null) =>
+      updateExpandedMarker((marker) => ({
+        ...marker,
+        polygon: polygon && polygon.length >= 3 ? polygon : null,
+      })),
+    [updateExpandedMarker],
+  );
+
   useEffect(() => {
     const pins: MarkerMapPin[] = [];
     (markerSets ?? []).forEach((markerSet) => {
@@ -145,7 +175,12 @@ export function MarkersSection({
       const markerSet = markerSets?.find((candidate) => candidate.id === expandedMarkerSetId);
       onActiveMarkerChange?.(
         marker && markerSet
-          ? { marker, noIcons: markerSet.noIcons, onDrag: handleMarkerDrag }
+          ? {
+              marker,
+              noIcons: markerSet.noIcons,
+              onDrag: handleMarkerDrag,
+              onAreaSave: handleAreaSave,
+            }
           : null,
       );
     } else {
@@ -158,6 +193,7 @@ export function MarkersSection({
     expandedMarkerId,
     expandedMarkerSetId,
     handleMarkerDrag,
+    handleAreaSave,
     onVisibleMarkersChange,
     onActiveMarkerChange,
   ]);
@@ -295,6 +331,12 @@ export function MarkersSection({
           episodeOptions={episodeOptions}
           hasBooks={hasBooks}
           hasSeasons={hasSeasons}
+          isEditingMarkerArea={isEditingMarkerArea}
+          areaDraftPointCount={areaDraftPointCount}
+          onStartEditingMarkerArea={onStartEditingMarkerArea}
+          onSaveMarkerArea={onSaveMarkerArea}
+          onCancelMarkerArea={onCancelMarkerArea}
+          onClearMarkerArea={onClearMarkerArea}
         />
       ))}
 

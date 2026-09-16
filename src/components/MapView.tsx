@@ -5,6 +5,7 @@ import {
   CircleMarker,
   MapContainer,
   Marker,
+  Polygon,
   Polyline,
   TileLayer,
   Tooltip,
@@ -15,6 +16,7 @@ import 'leaflet/dist/leaflet.css';
 import type { LatLng } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
+import { DEFAULT_MARKER_COLOR } from '../lib/markerColor';
 import type { MarkerMapPin } from '../lib/markerPins';
 import { buildMarkerIcon, buildPinIcon, buildSkullIcon } from '../lib/pinIcon';
 import { attachTailFlowClass } from '../lib/tailFlowClass';
@@ -42,6 +44,23 @@ const DRAFT_POSITION_ICON = divIcon({
   iconSize: [20, 20],
   iconAnchor: [10, 20],
 });
+
+// A small draggable dot for each vertex of a marker area being drawn/edited
+// — deliberately plain (no color), so it reads as a control handle rather
+// than part of the shape itself.
+const AREA_VERTEX_ICON = divIcon({
+  className: '',
+  html: '<div style="width: 12px; height: 12px; border-radius: 50%; background: #ffffff; border: 2px solid #333333; box-shadow: 0 0 3px rgba(0,0,0,0.6);"></div>',
+  iconSize: [12, 12],
+  iconAnchor: [6, 6],
+});
+
+// A polygon area is shown at 50% opacity so the underlying map tiles stay
+// legible beneath it.
+const AREA_FILL_OPACITY = 0.5;
+// The live in-progress draft is shown a bit lighter, with a dashed outline,
+// so it reads as unsaved/still-editable rather than the final result.
+const AREA_DRAFT_FILL_OPACITY = 0.35;
 
 interface MapViewProps {
   tileUrl: string | null;
@@ -77,6 +96,12 @@ interface MapViewProps {
   activeMarkerPin?: MarkerMapPin | null;
   /** Called with the new lat/lng once the active marker pin is dropped. */
   onActiveMarkerDragEnd?: (position: LatLng) => void;
+  /** Points of the marker area currently being drawn/edited, in order; null when not in that mode. Suppresses the active marker's own saved area, shown live here instead. */
+  areaDraftPoints?: LatLng[] | null;
+  /** Called with the full updated point list after a vertex is dragged, added (via map click), or removed (via clicking it). */
+  onAreaDraftPointsChange?: (points: LatLng[]) => void;
+  /** The color to draw the in-progress area draft with; falls back to the default marker color. */
+  areaDraftColor?: string | null;
 }
 
 interface DraftPositionMarkerProps {
@@ -100,14 +125,14 @@ function DraftPositionMarker({ position, onChange }: DraftPositionMarkerProps) {
   );
 }
 
-interface TailDrawingCatcherProps {
+interface MapClickCatcherProps {
   onPointClick: (point: LatLng) => void;
 }
 
-// A map-wide click listener, mounted only while drawing a tail: each click
-// on the map (not already consumed by a marker's own click handler) appends
-// a point to the in-progress tail.
-function TailDrawingCatcher({ onPointClick }: TailDrawingCatcherProps) {
+// A map-wide click listener, mounted only while drawing a tail or a
+// marker's area: each click on the map (not already consumed by a marker's
+// own click handler) appends a point to whichever is currently in progress.
+function MapClickCatcher({ onPointClick }: MapClickCatcherProps) {
   useMapEvents({
     click: (event) => {
       onPointClick({ lat: event.latlng.lat, lng: event.latlng.lng });
@@ -206,6 +231,9 @@ export function MapView({
   markerPins,
   activeMarkerPin,
   onActiveMarkerDragEnd,
+  areaDraftPoints,
+  onAreaDraftPointsChange,
+  areaDraftColor,
 }: MapViewProps) {
   const activeTileUrl = tileUrl ?? DEFAULT_TILE_URL;
   const kind = tileUrl ? detectTileUrlTemplateKind(tileUrl) : 'xyz';
@@ -223,8 +251,11 @@ export function MapView({
       <InitialPositionSync center={center} zoom={zoom} />
       <ZoomLimits minZoom={minZoom} maxZoom={maxZoom} />
       {onPositionChange && <MapPositionTracker onPositionChange={onPositionChange} />}
-      {tailDraftPoints && onTailPointClick && (
-        <TailDrawingCatcher onPointClick={onTailPointClick} />
+      {tailDraftPoints && onTailPointClick && <MapClickCatcher onPointClick={onTailPointClick} />}
+      {areaDraftPoints && onAreaDraftPointsChange && (
+        <MapClickCatcher
+          onPointClick={(point) => onAreaDraftPointsChange([...areaDraftPoints, point])}
+        />
       )}
       {draftPosition && onDraftPositionChange && editingPositionId == null && (
         <DraftPositionMarker position={draftPosition} onChange={onDraftPositionChange} />
@@ -319,6 +350,19 @@ export function MapView({
         );
       })}
       {markerPins?.map((pin) =>
+        pin.marker.polygon ? (
+          <Polygon
+            key={`area-${pin.marker.id}`}
+            positions={pin.marker.polygon.map((point) => [point.lat, point.lng])}
+            pathOptions={{
+              color: pin.marker.color ?? DEFAULT_MARKER_COLOR,
+              fillColor: pin.marker.color ?? DEFAULT_MARKER_COLOR,
+              fillOpacity: AREA_FILL_OPACITY,
+            }}
+          />
+        ) : null,
+      )}
+      {markerPins?.map((pin) =>
         pin.noIcons ? null : (
           <Marker
             key={pin.marker.id}
@@ -326,6 +370,17 @@ export function MapView({
             icon={buildMarkerIcon(pin.marker)}
           />
         ),
+      )}
+      {/* The active marker's saved area is hidden while its draft is being drawn/edited — the draft below stands in for it instead. */}
+      {activeMarkerPin?.marker.polygon && !areaDraftPoints && (
+        <Polygon
+          positions={activeMarkerPin.marker.polygon.map((point) => [point.lat, point.lng])}
+          pathOptions={{
+            color: activeMarkerPin.marker.color ?? DEFAULT_MARKER_COLOR,
+            fillColor: activeMarkerPin.marker.color ?? DEFAULT_MARKER_COLOR,
+            fillOpacity: AREA_FILL_OPACITY,
+          }}
+        />
       )}
       {activeMarkerPin && onActiveMarkerDragEnd && (
         <Marker
@@ -341,6 +396,49 @@ export function MapView({
           }}
         />
       )}
+      {areaDraftPoints && areaDraftPoints.length >= 3 && (
+        <Polygon
+          positions={areaDraftPoints.map((point) => [point.lat, point.lng])}
+          pathOptions={{
+            color: areaDraftColor ?? DEFAULT_MARKER_COLOR,
+            fillColor: areaDraftColor ?? DEFAULT_MARKER_COLOR,
+            fillOpacity: AREA_DRAFT_FILL_OPACITY,
+            dashArray: '4',
+          }}
+        />
+      )}
+      {areaDraftPoints && areaDraftPoints.length === 2 && (
+        <Polyline
+          positions={areaDraftPoints.map((point) => [point.lat, point.lng])}
+          pathOptions={{ color: areaDraftColor ?? DEFAULT_MARKER_COLOR, dashArray: '4' }}
+        />
+      )}
+      {areaDraftPoints?.map((point, index) => (
+        <Marker
+          key={index}
+          position={[point.lat, point.lng]}
+          icon={AREA_VERTEX_ICON}
+          draggable
+          eventHandlers={{
+            dragend: (event) => {
+              const latLng = (event.target as LeafletMarker).getLatLng();
+              onAreaDraftPointsChange?.(
+                areaDraftPoints.map((existing, existingIndex) =>
+                  existingIndex === index ? { lat: latLng.lat, lng: latLng.lng } : existing,
+                ),
+              );
+            },
+            // Leaflet suppresses the click that would otherwise follow an
+            // actual drag, so this only fires on a genuine (non-drag) click.
+            click: () => {
+              if (areaDraftPoints.length <= 3) return;
+              onAreaDraftPointsChange?.(
+                areaDraftPoints.filter((_, existingIndex) => existingIndex !== index),
+              );
+            },
+          }}
+        />
+      ))}
       {kind === 'quadkey' ? (
         <QuadkeyTileLayer
           key={activeTileUrl}

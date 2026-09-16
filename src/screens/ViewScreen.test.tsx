@@ -316,6 +316,47 @@ markerSets:
     });
   });
 
+  it('renders a marker’s area at 50% opacity', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () =>
+          Promise.resolve(`
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+markerSets:
+  - name: Territories
+    markers:
+      - label: The North
+        lat: 10
+        lng: 10
+        color: '#00ff00'
+        polygon:
+          - { lat: 10, lng: 10 }
+          - { lat: 11, lng: 10 }
+          - { lat: 11, lng: 11 }
+`),
+      }),
+    );
+    const user = userEvent.setup();
+    const { container } = renderAt('/view?d=https://example.com/story.yaml');
+
+    await screen.findByText('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    await waitFor(() => {
+      const area = container.querySelector('.leaflet-interactive');
+      expect(area).not.toBeNull();
+      expect(area).toHaveAttribute('fill', '#00ff00');
+      expect(area).toHaveAttribute('fill-opacity', '0.5');
+    });
+  });
+
   it('shows a pin once a character is checked, respecting the spoiler slider', async () => {
     vi.stubGlobal(
       'fetch',

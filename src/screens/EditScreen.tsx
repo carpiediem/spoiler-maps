@@ -64,6 +64,9 @@ export function EditScreen() {
   const [characterTails, setCharacterTails] = useState<CharacterTailOverlay[]>([]);
   const [markerPins, setMarkerPins] = useState<MarkerMapPin[] | null>(null);
   const [activeMarker, setActiveMarker] = useState<ActiveMarker | null>(null);
+  // Points of the marker area currently being drawn/edited; null when not
+  // in that mode. Only ever applies to the currently selected marker.
+  const [areaDraftPoints, setAreaDraftPoints] = useState<LatLng[] | null>(null);
   // When set, the sidebar slides its main content out to the left and
   // slides a Position form in from the right, in place of the accordion
   // list. Owned here (rather than by EditorSidebar) so a click on a map
@@ -286,6 +289,33 @@ export function EditScreen() {
     activeMarker?.onDrag(position);
   }
 
+  // An in-progress area draft only ever makes sense for the marker it was
+  // started on — if the user selects a different marker (or deselects
+  // entirely) mid-draw, discard it rather than letting it silently apply to
+  // whatever's selected next.
+  useEffect(() => {
+    setAreaDraftPoints(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMarker?.marker.id]);
+
+  function handleStartEditingMarkerArea() {
+    setAreaDraftPoints(activeMarker?.marker.polygon ?? []);
+  }
+
+  function handleSaveMarkerArea() {
+    activeMarker?.onAreaSave(areaDraftPoints);
+    setAreaDraftPoints(null);
+  }
+
+  function handleCancelMarkerArea() {
+    setAreaDraftPoints(null);
+  }
+
+  function handleClearMarkerArea() {
+    activeMarker?.onAreaSave(null);
+    setAreaDraftPoints(null);
+  }
+
   async function handleSave(input: {
     name: string;
     tileUrlTemplate: string;
@@ -394,6 +424,9 @@ export function EditScreen() {
             markerPins={markerPins}
             activeMarkerPin={activeMarker}
             onActiveMarkerDragEnd={handleActiveMarkerDragEnd}
+            areaDraftPoints={areaDraftPoints}
+            onAreaDraftPointsChange={setAreaDraftPoints}
+            areaDraftColor={activeMarker?.marker.color ?? null}
           />
           <MapTimelineControl
             key={`timeline-${selectedStoryId ?? 'new'}`}
@@ -430,6 +463,12 @@ export function EditScreen() {
           timelineIndex={timelineIndex}
           onVisibleMarkersChange={setMarkerPins}
           onActiveMarkerChange={setActiveMarker}
+          isEditingMarkerArea={areaDraftPoints !== null}
+          areaDraftPointCount={areaDraftPoints?.length ?? 0}
+          onStartEditingMarkerArea={handleStartEditingMarkerArea}
+          onSaveMarkerArea={handleSaveMarkerArea}
+          onCancelMarkerArea={handleCancelMarkerArea}
+          onClearMarkerArea={handleClearMarkerArea}
         />
         <Snackbar open={importError !== null} onClose={handleDismissImportError}>
           <Alert severity="error" onClose={handleDismissImportError}>
