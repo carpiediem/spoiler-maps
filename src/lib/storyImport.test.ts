@@ -17,7 +17,6 @@ import {
   listCharactersForStory,
   listMarkerSetsForStory,
   listMarkersForMarkerSet,
-  listStories,
   listTvSeasonsForStory,
 } from '../db';
 import { resetDatabaseForTests } from '../db/client';
@@ -455,17 +454,36 @@ describe('importStoryDocument', () => {
     expect(nan).toMatchObject({ name: 'Nan', group: null, color: null, url: null });
   });
 
-  it('deletes the partially created story and rethrows when a range references an out-of-bounds index', async () => {
-    await expect(
-      importStoryDocument(
-        minimalDocument({
-          books: [{ name: 'A Game of Thrones', chapters: [{ name: 'Bran' }] }],
-          characters: [{ name: 'Jon Snow', positions: [{ lat: 1, lng: 1, chapters: [0, 5] }] }],
-        }),
-      ),
-    ).rejects.toThrow(/references index 5/);
+  it('clamps a range that references an out-of-bounds index to the last entry', async () => {
+    const story = await importStoryDocument(
+      minimalDocument({
+        books: [{ name: 'A Game of Thrones', chapters: [{ name: 'Bran' }] }],
+        characters: [{ name: 'Jon Snow', positions: [{ lat: 1, lng: 1, chapters: [0, 5] }] }],
+      }),
+    );
 
-    expect(await listStories()).toEqual([]);
+    const [character] = await listCharactersForStory(story.id);
+    const [position] = await listCharacterPositionsForCharacter(character!.id);
+    const books = await listBooksForStory(story.id);
+    const chapters = await listChaptersForBook(books[0]!.id);
+
+    expect(position!.chapterRange).toEqual({
+      startChapterId: chapters[0]!.id,
+      endChapterId: chapters[0]!.id,
+    });
+  });
+
+  it('treats a range as open-ended when the story has no chapters or episodes at all', async () => {
+    const story = await importStoryDocument(
+      minimalDocument({
+        characters: [{ name: 'Jon Snow', positions: [{ lat: 1, lng: 1, chapters: [0, 5] }] }],
+      }),
+    );
+
+    const [character] = await listCharactersForStory(story.id);
+    const [position] = await listCharacterPositionsForCharacter(character!.id);
+
+    expect(position!.chapterRange).toBeNull();
   });
 });
 

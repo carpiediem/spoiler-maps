@@ -349,43 +349,40 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
   };
 }
 
-function resolveRangeEndpoint(
-  index: number | null,
-  idsByIndex: number[],
-  path: string,
-): number | null {
-  if (index === null) return null;
-  const id = idsByIndex[index];
-  assert(
-    id !== undefined,
-    `${path} references index ${index}, but the story only has ${idsByIndex.length} entries.`,
-  );
-  return id;
+/**
+ * Resolves an index into the corresponding database id, clamping out-of-range
+ * indexes to the nearest valid entry. Source data (e.g. hand-authored YAML,
+ * or imports from other tools) sometimes uses sentinel values like 999 to
+ * mean "through the end of the story," which can overshoot the story's
+ * actual chapter/episode count.
+ */
+function resolveRangeEndpoint(index: number | null, idsByIndex: number[]): number | null {
+  if (index === null || idsByIndex.length === 0) return null;
+  const clampedIndex = Math.min(Math.max(index, 0), idsByIndex.length - 1);
+  return idsByIndex[clampedIndex];
 }
 
 function resolveChapterRange(
   tuple: StoryDocumentRangeTuple | undefined,
   chapterIdsByIndex: number[],
-  path: string,
 ): ChapterRange | null {
   if (!tuple) return null;
   const [start, end] = tuple;
   return {
-    startChapterId: resolveRangeEndpoint(start, chapterIdsByIndex, `${path}[0]`),
-    endChapterId: resolveRangeEndpoint(end, chapterIdsByIndex, `${path}[1]`),
+    startChapterId: resolveRangeEndpoint(start, chapterIdsByIndex),
+    endChapterId: resolveRangeEndpoint(end, chapterIdsByIndex),
   };
 }
 
 function resolveEpisodeRange(
   tuple: StoryDocumentRangeTuple | undefined,
   episodeIdsByIndex: number[],
-  path: string,
 ): EpisodeRange | null {
   if (!tuple) return null;
   const [start, end] = tuple;
   return {
-    startEpisodeId: resolveRangeEndpoint(start, episodeIdsByIndex, `${path}[0]`),
-    endEpisodeId: resolveRangeEndpoint(end, episodeIdsByIndex, `${path}[1]`),
+    startEpisodeId: resolveRangeEndpoint(start, episodeIdsByIndex),
+    endEpisodeId: resolveRangeEndpoint(end, episodeIdsByIndex),
   };
 }
 
@@ -452,20 +449,18 @@ async function importCharacters(
       url: character.url ?? null,
       sortOrder: characterIndex,
     });
-    for (const [positionIndex, position] of character.positions.entries()) {
-      const path = `characters[${characterIndex}].positions[${positionIndex}]`;
+    for (const position of character.positions) {
       await createCharacterPosition({
         characterId: createdCharacter.id,
         position: { lat: position.lat, lng: position.lng },
         dead: position.dead ?? false,
         note: position.note ?? null,
         tail: position.tail ?? null,
-        chapterRange: resolveChapterRange(position.chapters, chapterIdsByIndex, `${path}.chapters`),
-        episodeRange: resolveEpisodeRange(position.episodes, episodeIdsByIndex, `${path}.episodes`),
+        chapterRange: resolveChapterRange(position.chapters, chapterIdsByIndex),
+        episodeRange: resolveEpisodeRange(position.episodes, episodeIdsByIndex),
       });
     }
-    for (const [aliasIndex, alias] of (character.aliases ?? []).entries()) {
-      const path = `characters[${characterIndex}].aliases[${aliasIndex}]`;
+    for (const alias of character.aliases ?? []) {
       await createCharacterAlias({
         characterId: createdCharacter.id,
         name: alias.name,
@@ -473,8 +468,8 @@ async function importCharacters(
         icon: alias.icon ?? null,
         color: alias.color ?? null,
         url: alias.url ?? null,
-        chapterRange: resolveChapterRange(alias.chapters, chapterIdsByIndex, `${path}.chapters`),
-        episodeRange: resolveEpisodeRange(alias.episodes, episodeIdsByIndex, `${path}.episodes`),
+        chapterRange: resolveChapterRange(alias.chapters, chapterIdsByIndex),
+        episodeRange: resolveEpisodeRange(alias.episodes, episodeIdsByIndex),
       });
     }
   }
@@ -486,14 +481,13 @@ async function importMarkerSets(
   chapterIdsByIndex: number[],
   episodeIdsByIndex: number[],
 ): Promise<void> {
-  for (const [markerSetIndex, markerSet] of markerSets.entries()) {
+  for (const markerSet of markerSets) {
     const createdMarkerSet = await createMarkerSet({
       storyId,
       name: markerSet.name,
       noIcons: markerSet.noIcons ?? false,
     });
-    for (const [markerIndex, marker] of markerSet.markers.entries()) {
-      const path = `markerSets[${markerSetIndex}].markers[${markerIndex}]`;
+    for (const marker of markerSet.markers) {
       await createMarker({
         markerSetId: createdMarkerSet.id,
         label: marker.label,
@@ -503,8 +497,8 @@ async function importMarkerSets(
         large: marker.large ?? false,
         position: { lat: marker.lat, lng: marker.lng },
         polygon: marker.polygon ?? null,
-        chapterRange: resolveChapterRange(marker.chapters, chapterIdsByIndex, `${path}.chapters`),
-        episodeRange: resolveEpisodeRange(marker.episodes, episodeIdsByIndex, `${path}.episodes`),
+        chapterRange: resolveChapterRange(marker.chapters, chapterIdsByIndex),
+        episodeRange: resolveEpisodeRange(marker.episodes, episodeIdsByIndex),
       });
     }
   }
