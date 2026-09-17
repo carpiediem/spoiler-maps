@@ -84,11 +84,12 @@ export interface EpisodeRange {
 }
 
 /**
- * A pin on the map. chapterRange and episodeRange say when it should
- * appear — once the reader/viewer has reached a given point in the story —
- * and are independent of each other, so a marker resolves regardless of
- * whether progress is tracked via books or the show. Both null means the
- * marker is always shown.
+ * A pin on the map. chapterRange and episodeRange say when it's visible —
+ * from its start through its end (each independently optional, leaving that
+ * side open-ended) — once the reader/viewer has reached a given point in
+ * the story, and are independent of each other, so a marker resolves
+ * regardless of whether progress is tracked via books or the show. Both
+ * null means the marker is always shown.
  */
 export interface Marker {
   id: number;
