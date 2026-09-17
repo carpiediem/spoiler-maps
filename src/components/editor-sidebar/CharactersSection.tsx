@@ -14,6 +14,7 @@ import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
 import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from '../../lib/tailConnection';
+import { useRenderLoopWatchdog } from '../../lib/renderLoopWatchdog';
 import { makeTimelineVisibilityChecker } from '../../lib/timelineVisibility';
 import type { TimelineMode } from '../MapTimelineControl';
 import { useRangeOptions } from './characters/rangeOptions';
@@ -61,6 +62,7 @@ export function CharactersSection({
   timelineIndex,
   sectionExpanded,
 }: CharactersSectionProps) {
+  useRenderLoopWatchdog('CharactersSection');
   // A character stays visible on the map (last position + tails) once
   // toggled on, independent of — and in addition to — whichever character's
   // accordion happens to be expanded.

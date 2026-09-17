@@ -20,6 +20,7 @@ import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characte
 import { downloadTextFile } from '../lib/downloadTextFile';
 import type { ActiveMarker, MarkerMapPin } from '../lib/markerPins';
 import { getLastViewedStoryId, setLastViewedStoryId } from '../lib/lastViewedStory';
+import { useRenderLoopWatchdog } from '../lib/renderLoopWatchdog';
 import { parseTimelineHash } from '../lib/timelineHash';
 import {
   DEFAULT_CENTER,
@@ -42,6 +43,7 @@ function parseStoryIdParam(param: string | undefined): number | null {
 }
 
 export function EditScreen() {
+  useRenderLoopWatchdog('EditScreen');
   const { storyId: storyIdParam } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
   const selectedStoryId = parseStoryIdParam(storyIdParam);

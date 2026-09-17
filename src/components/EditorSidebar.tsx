@@ -15,6 +15,7 @@ import { MarkersSection } from './editor-sidebar/MarkersSection';
 import { PositionPanel } from './editor-sidebar/PositionPanel';
 import { SidebarSection } from './editor-sidebar/SidebarSection';
 import { TelevisionSection } from './editor-sidebar/TelevisionSection';
+import { useRenderLoopWatchdog } from '../lib/renderLoopWatchdog';
 import { resolveTileUrlTemplate } from '../lib/tileUrl';
 import { StorySelector } from './StorySelector';
 
@@ -159,6 +160,7 @@ export function EditorSidebar({
   onCancelMarkerArea,
   onClearMarkerArea,
 }: EditorSidebarProps) {
+  useRenderLoopWatchdog('EditorSidebar');
   const {
     control,
     handleSubmit,

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetDatabaseForTests } from './client';
 import {
   createBook,
@@ -829,5 +829,34 @@ describe('character aliases', () => {
     await deleteCharacter(character.id);
 
     expect(await listAliasesForCharacter(character.id)).toEqual([]);
+  });
+});
+
+describe('slow query diagnostic', () => {
+  it('warns when a query takes at least 20ms', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const now = vi.spyOn(performance, 'now');
+    // selectAll reads performance.now() once before the query and once
+    // after; a 25ms gap between them should trip the warning.
+    now.mockReturnValueOnce(0).mockReturnValueOnce(25);
+
+    await listStories();
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('[db] slow query: 25.0ms for'),
+      expect.any(String),
+      undefined,
+    );
+    now.mockRestore();
+    warn.mockRestore();
+  });
+
+  it('does not warn for a fast query', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await listStories();
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

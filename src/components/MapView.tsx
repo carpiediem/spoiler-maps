@@ -19,6 +19,7 @@ import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characte
 import { DEFAULT_MARKER_COLOR } from '../lib/markerColor';
 import type { MarkerMapPin } from '../lib/markerPins';
 import { buildMarkerIcon, buildPinIcon, buildSkullIcon } from '../lib/pinIcon';
+import { useRenderLoopWatchdog } from '../lib/renderLoopWatchdog';
 import { attachTailFlowClass } from '../lib/tailFlowClass';
 import { detectTileUrlTemplateKind } from '../lib/tileUrl';
 import { QuadkeyTileLayer } from './QuadkeyTileLayer';
@@ -280,6 +281,7 @@ export function MapView({
   onAreaDraftPointsChange,
   areaDraftColor,
 }: MapViewProps) {
+  useRenderLoopWatchdog('MapView');
   const activeTileUrl = tileUrl ?? DEFAULT_TILE_URL;
   const kind = tileUrl ? detectTileUrlTemplateKind(tileUrl) : 'xyz';
   const resolvedAttribution = attribution ?? (tileUrl ? undefined : DEFAULT_ATTRIBUTION);

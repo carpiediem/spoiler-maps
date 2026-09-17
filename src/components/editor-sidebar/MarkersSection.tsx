@@ -14,6 +14,7 @@ import {
   type MarkerSet,
 } from '../../db';
 import type { ActiveMarker, MarkerMapPin } from '../../lib/markerPins';
+import { useRenderLoopWatchdog } from '../../lib/renderLoopWatchdog';
 import { useRangeOptions } from './characters/rangeOptions';
 import { MarkerSetItem } from './markers/MarkerSetItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
@@ -53,6 +54,7 @@ export function MarkersSection({
   onCancelMarkerArea,
   onClearMarkerArea,
 }: MarkersSectionProps) {
+  useRenderLoopWatchdog('MarkersSection');
   const [markersByMarkerSetId, setMarkersByMarkerSetId] = useState<Record<number, Marker[]>>({});
   const [visibleMarkerSetIds, setVisibleMarkerSetIds] = useState<Set<number>>(new Set());
   const [expandedMarkerId, setExpandedMarkerId] = useState<number | null>(null);

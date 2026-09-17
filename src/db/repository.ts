@@ -27,18 +27,38 @@ import type {
 
 type Row = Record<string, unknown>;
 
+// Diagnostic only: sql.js runs every query synchronously on the main thread
+// (it's SQLite compiled to WASM, not a real async driver), so a query slow
+// enough to matter here blocks the whole page for that long, with no
+// exception and no render involved at all — invisible to a React-focused
+// error boundary or render-loop watchdog. Warns about any single query at
+// or above this threshold, naming the SQL and row count, so a page that
+// "hangs" while loading a large story can be traced to the specific
+// culprit instead of guessed at.
+const SLOW_QUERY_WARNING_MS = 20;
+
 function selectAll<T>(
   db: SqlDatabase,
   sql: string,
   mapRow: (row: Row) => T,
   params?: unknown[],
 ): T[] {
+  const start = performance.now();
   const statement = db.prepare(sql);
   try {
     if (params) statement.bind(params as never);
     const rows: T[] = [];
     while (statement.step()) {
       rows.push(mapRow(statement.getAsObject()));
+    }
+    const elapsed = performance.now() - start;
+    if (elapsed >= SLOW_QUERY_WARNING_MS) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[db] slow query: ${elapsed.toFixed(1)}ms for ${rows.length} row(s):`,
+        sql,
+        params,
+      );
     }
     return rows;
   } finally {

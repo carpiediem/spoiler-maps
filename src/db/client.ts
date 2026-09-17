@@ -95,6 +95,7 @@ export function getDatabase(): Promise<SqlDatabase> {
  * mutate data are responsible for awaiting this afterward.
  */
 export async function persist(): Promise<void> {
+  const start = performance.now();
   const db = await getDatabase();
   const bytes = db.export();
   // db.export() drops connection-scoped state, including this pragma, so it
@@ -102,6 +103,19 @@ export async function persist(): Promise<void> {
   // turns off for the rest of the connection's lifetime.
   db.run('PRAGMA foreign_keys = ON;');
   await saveDatabaseBytes(bytes);
+  // Diagnostic only: every create/update/delete calls this, and it
+  // re-serializes and re-saves the *entire* database each time — its cost
+  // grows with total database size, so a story with a lot of data can make
+  // even a single unrelated edit take a noticeable, and growing, amount of
+  // time. Warns so that pattern is visible instead of just "saving feels
+  // slow" with no lead as to why.
+  const elapsed = performance.now() - start;
+  if (elapsed >= 100) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[db] persist() took ${elapsed.toFixed(1)}ms for a ${bytes.byteLength}-byte database.`,
+    );
+  }
 }
 
 /**
