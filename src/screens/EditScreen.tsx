@@ -70,6 +70,18 @@ export function EditScreen() {
   // Points of the marker area currently being drawn/edited; null when not
   // in that mode. Only ever applies to the currently selected marker.
   const [areaDraftPoints, setAreaDraftPoints] = useState<LatLng[] | null>(null);
+  // Mirrors activeMarker/areaDraftPoints for the marker-area handlers below,
+  // which read the *latest* value via these refs instead of closing over
+  // the state directly — activeMarker changes on every keystroke while
+  // editing a marker (to keep its map pin live), so a handler capturing it
+  // normally would get a new identity just as often, which (passed down
+  // through EditorSidebar to every marker's own row) would defeat
+  // MarkerItem/MarkerSetItem's memoization for the *entire* list on every
+  // keystroke, not just the one marker actually being edited.
+  const activeMarkerRef = useRef<ActiveMarker | null>(null);
+  activeMarkerRef.current = activeMarker;
+  const areaDraftPointsRef = useRef<LatLng[] | null>(null);
+  areaDraftPointsRef.current = areaDraftPoints;
   // When set, the sidebar slides its main content out to the left and
   // slides a Position form in from the right, in place of the accordion
   // list. Owned here (rather than by EditorSidebar) so a click on a map
@@ -301,9 +313,9 @@ export function EditScreen() {
   }
 
   /* v8 ignore next 3 -- MapView.test.tsx covers this wiring at the unit level (onActiveMarkerDragEnd); a real drag gesture isn't practical to simulate through jsdom's mouse events in a full-App integration test. */
-  function handleActiveMarkerDragEnd(position: LatLng) {
-    activeMarker?.onDrag(position);
-  }
+  const handleActiveMarkerDragEnd = useCallback((position: LatLng) => {
+    activeMarkerRef.current?.onDrag(position);
+  }, []);
 
   // An in-progress area draft only ever makes sense for the marker it was
   // started on — if the user selects a different marker (or deselects
@@ -314,23 +326,25 @@ export function EditScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMarker?.marker.id]);
 
-  function handleStartEditingMarkerArea() {
-    setAreaDraftPoints(activeMarker?.marker.polygon ?? []);
-  }
+  // Stable (see activeMarkerRef/areaDraftPointsRef above) so passing these
+  // down through every marker's own row doesn't defeat memoization there.
+  const handleStartEditingMarkerArea = useCallback(() => {
+    setAreaDraftPoints(activeMarkerRef.current?.marker.polygon ?? []);
+  }, []);
 
-  function handleSaveMarkerArea() {
-    activeMarker?.onAreaSave(areaDraftPoints);
+  const handleSaveMarkerArea = useCallback(() => {
+    activeMarkerRef.current?.onAreaSave(areaDraftPointsRef.current);
     setAreaDraftPoints(null);
-  }
+  }, []);
 
-  function handleCancelMarkerArea() {
+  const handleCancelMarkerArea = useCallback(() => {
     setAreaDraftPoints(null);
-  }
+  }, []);
 
-  function handleClearMarkerArea() {
-    activeMarker?.onAreaSave(null);
+  const handleClearMarkerArea = useCallback(() => {
+    activeMarkerRef.current?.onAreaSave(null);
     setAreaDraftPoints(null);
-  }
+  }, []);
 
   async function handleSave(input: {
     name: string;

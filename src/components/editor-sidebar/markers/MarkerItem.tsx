@@ -16,18 +16,20 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import type { SyntheticEvent } from 'react';
+import { memo, type SyntheticEvent } from 'react';
 import { updateMarker, type Marker } from '../../../db';
 import { DEFAULT_MARKER_COLOR } from '../../../lib/markerColor';
 import type { FlatOption } from '../characters/rangeOptions';
 import { RangeSelect } from '../RangeSelect';
 
 interface MarkerItemProps {
+  /** The id of the marker set this marker belongs to — passed as a plain value (not baked into onToggle/onMarkerChange/onDelete's closures) so those props can stay the exact same function reference across every marker, letting `memo` below actually skip re-rendering the ones unaffected by whichever single marker just changed. */
+  markerSetId: number;
   marker: Marker;
   expanded: boolean;
-  onToggle: (event: SyntheticEvent, isExpanded: boolean) => void;
-  onMarkerChange: (marker: Marker) => void;
-  onDelete: () => void;
+  onToggle: (markerSetId: number, markerId: number, event: SyntheticEvent, isExpanded: boolean) => void;
+  onMarkerChange: (markerSetId: number, marker: Marker) => void;
+  onDelete: (markerSetId: number, markerId: number) => void;
   chapterOptions: FlatOption[];
   episodeOptions: FlatOption[];
   hasBooks: boolean;
@@ -42,7 +44,8 @@ interface MarkerItemProps {
   onClearArea?: () => void;
 }
 
-export function MarkerItem({
+export const MarkerItem = memo(function MarkerItem({
+  markerSetId,
   marker,
   expanded,
   onToggle,
@@ -60,7 +63,7 @@ export function MarkerItem({
   onClearArea,
 }: MarkerItemProps) {
   function handleFieldChange(field: 'label' | 'icon' | 'url' | 'color', value: string) {
-    onMarkerChange({ ...marker, [field]: field === 'label' ? value : value || null });
+    onMarkerChange(markerSetId, { ...marker, [field]: field === 'label' ? value : value || null });
   }
 
   async function persistMarker(updated: Marker) {
@@ -94,7 +97,7 @@ export function MarkerItem({
         [boundary]: value,
       },
     };
-    onMarkerChange(updated);
+    onMarkerChange(markerSetId, updated);
     persistMarker(updated);
   }
 
@@ -110,20 +113,20 @@ export function MarkerItem({
         [boundary]: value,
       },
     };
-    onMarkerChange(updated);
+    onMarkerChange(markerSetId, updated);
     persistMarker(updated);
   }
 
   function handleLargeChange(checked: boolean) {
     const updated: Marker = { ...marker, large: checked };
-    onMarkerChange(updated);
+    onMarkerChange(markerSetId, updated);
     persistMarker(updated);
   }
 
   return (
     <Accordion
       expanded={expanded}
-      onChange={onToggle}
+      onChange={(event, isExpanded) => onToggle(markerSetId, marker.id, event, isExpanded)}
       disableGutters
       elevation={0}
       square
@@ -359,7 +362,11 @@ export function MarkerItem({
               {marker.position.lat.toFixed(4)}, {marker.position.lng.toFixed(4)} — drag the pin on
               the map to move it.
             </Typography>
-            <IconButton size="small" aria-label="Delete marker" onClick={onDelete}>
+            <IconButton
+              size="small"
+              aria-label="Delete marker"
+              onClick={() => onDelete(markerSetId, marker.id)}
+            >
               <DeleteOutlineOutlinedIcon fontSize="small" />
             </IconButton>
           </Stack>
@@ -367,4 +374,4 @@ export function MarkerItem({
       </AccordionDetails>
     </Accordion>
   );
-}
+});

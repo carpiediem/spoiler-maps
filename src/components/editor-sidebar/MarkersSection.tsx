@@ -1,6 +1,6 @@
 import AddIcon from '@mui/icons-material/Add';
 import { Button, Stack, Typography } from '@mui/material';
-import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import {
   createMarker,
   createMarkerSet,
@@ -78,6 +78,12 @@ export function MarkersSection({
   const [expandedMarkerId, setExpandedMarkerId] = useState<number | null>(null);
   const [expandedMarkerSetId, setExpandedMarkerSetId] = useState<number | null>(null);
   const { chapterOptions, episodeOptions, hasBooks, hasSeasons } = useRangeOptions(storyId);
+  // Read via handleAddMarker (a stable useCallback) instead of closing over
+  // the mapCenter prop directly, so panning the map — which changes
+  // mapCenter independently of anything about the markers themselves —
+  // doesn't hand every MarkerSetItem a new onAddMarker identity.
+  const mapCenterRef = useRef(mapCenter);
+  mapCenterRef.current = mapCenter;
 
   const load = useCallback(async (storyId: number, isCancelled: () => boolean) => {
     const loadedMarkerSets = await listMarkerSetsForStory(storyId);
@@ -241,22 +247,32 @@ export function MarkersSection({
     onActiveMarkerChange,
   ]);
 
-  function handleSetToggle(setId: number) {
-    return (event: SyntheticEvent, isExpanded: boolean) => {
+  // All of the handlers below are wrapped in useCallback (with the id of
+  // whichever marker set/marker they act on threaded through as a call-time
+  // argument, rather than curried per-item at the JSX .map() below) so that
+  // MarkerSetItem/MarkerItem — memoized, see those files — can actually
+  // skip re-rendering the other (unaffected) markers/sets whenever one of
+  // them changes, instead of every list item getting fresh callback props
+  // (and so re-rendering) on every keystroke into any single one's fields.
+
+  const handleSetToggle = useCallback(
+    (setId: number, event: SyntheticEvent, isExpanded: boolean) => {
       toggle(setId)(event, isExpanded);
       setExpandedMarkerId(null);
       setExpandedMarkerSetId(null);
-    };
-  }
+    },
+    [toggle],
+  );
 
-  function handleMarkerToggle(setId: number, markerId: number) {
-    return (_event: SyntheticEvent, isExpanded: boolean) => {
+  const handleMarkerToggle = useCallback(
+    (setId: number, markerId: number, _event: SyntheticEvent, isExpanded: boolean) => {
       setExpandedMarkerId(isExpanded ? markerId : null);
       setExpandedMarkerSetId(isExpanded ? setId : null);
-    };
-  }
+    },
+    [],
+  );
 
-  function handleToggleVisible(setId: number) {
+  const handleToggleVisible = useCallback((setId: number) => {
     setVisibleMarkerSetIds((previous) => {
       const next = new Set(previous);
       if (next.has(setId)) {
@@ -266,37 +282,40 @@ export function MarkersSection({
       }
       return next;
     });
-  }
+  }, []);
 
   // Only reachable once marker sets have loaded: the Loading/Add UI below
   // only renders handleAddMarkerSet's callers after the
   // `markerSets === null` early return.
-  async function handleAddMarkerSet() {
+  const handleAddMarkerSet = useCallback(async () => {
     const markerSet = await createMarkerSet({ storyId, name: '', noIcons: false });
     addEntity(markerSet);
     setMarkersByMarkerSetId((previous) => ({ ...previous, [markerSet.id]: [] }));
-  }
+  }, [storyId, addEntity]);
 
-  async function handleDeleteMarkerSet(setId: number) {
-    await deleteMarkerSet(setId);
-    removeEntity(setId);
-    setMarkersByMarkerSetId((previous) => {
-      const { [setId]: _removed, ...rest } = previous;
-      return rest;
-    });
-    setVisibleMarkerSetIds((previous) => {
-      if (!previous.has(setId)) return previous;
-      const next = new Set(previous);
-      next.delete(setId);
-      return next;
-    });
-    if (expandedMarkerSetId === setId) {
-      setExpandedMarkerId(null);
-      setExpandedMarkerSetId(null);
-    }
-  }
+  const handleDeleteMarkerSet = useCallback(
+    async (setId: number) => {
+      await deleteMarkerSet(setId);
+      removeEntity(setId);
+      setMarkersByMarkerSetId((previous) => {
+        const { [setId]: _removed, ...rest } = previous;
+        return rest;
+      });
+      setVisibleMarkerSetIds((previous) => {
+        if (!previous.has(setId)) return previous;
+        const next = new Set(previous);
+        next.delete(setId);
+        return next;
+      });
+      if (expandedMarkerSetId === setId) {
+        setExpandedMarkerId(null);
+        setExpandedMarkerSetId(null);
+      }
+    },
+    [removeEntity, expandedMarkerSetId],
+  );
 
-  async function handleAddMarker(setId: number) {
+  const handleAddMarker = useCallback(async (setId: number) => {
     const marker = await createMarker({
       markerSetId: setId,
       label: '',
@@ -304,7 +323,7 @@ export function MarkersSection({
       url: null,
       color: null,
       large: false,
-      position: mapCenter ?? { lat: 0, lng: 0 },
+      position: mapCenterRef.current ?? { lat: 0, lng: 0 },
       polygon: null,
       chapterRange: null,
       episodeRange: null,
@@ -316,22 +335,25 @@ export function MarkersSection({
     }));
     setExpandedMarkerId(marker.id);
     setExpandedMarkerSetId(setId);
-  }
+  }, []);
 
-  async function handleDeleteMarker(setId: number, markerId: number) {
-    await deleteMarker(markerId);
-    setMarkersByMarkerSetId((previous) => ({
-      ...previous,
-      /* v8 ignore next -- setId always has an entry by the time one of its markers can be deleted. */
-      [setId]: (previous[setId] ?? []).filter((marker) => marker.id !== markerId),
-    }));
-    if (expandedMarkerId === markerId) {
-      setExpandedMarkerId(null);
-      setExpandedMarkerSetId(null);
-    }
-  }
+  const handleDeleteMarker = useCallback(
+    async (setId: number, markerId: number) => {
+      await deleteMarker(markerId);
+      setMarkersByMarkerSetId((previous) => ({
+        ...previous,
+        /* v8 ignore next -- setId always has an entry by the time one of its markers can be deleted. */
+        [setId]: (previous[setId] ?? []).filter((marker) => marker.id !== markerId),
+      }));
+      if (expandedMarkerId === markerId) {
+        setExpandedMarkerId(null);
+        setExpandedMarkerSetId(null);
+      }
+    },
+    [expandedMarkerId],
+  );
 
-  function handleMarkerChange(setId: number, marker: Marker) {
+  const handleMarkerChange = useCallback((setId: number, marker: Marker) => {
     setMarkersByMarkerSetId((previous) => ({
       ...previous,
       /* v8 ignore next -- setId always has an entry by the time one of its markers can be edited. */
@@ -339,7 +361,7 @@ export function MarkersSection({
         candidate.id === marker.id ? marker : candidate,
       ),
     }));
-  }
+  }, []);
 
   if (markerSets === null) {
     return (
@@ -364,16 +386,16 @@ export function MarkersSection({
           /* v8 ignore next -- every markerSet reaching this render has a loaded entry (see the load() comment above), so this fallback is never reached. */
           markers={markersByMarkerSetId[markerSet.id] ?? []}
           expanded={expandedMarkerSetIdFromList === markerSet.id}
-          onToggle={handleSetToggle(markerSet.id)}
+          onToggle={handleSetToggle}
           visible={visibleMarkerSetIds.has(markerSet.id)}
-          onToggleVisible={() => handleToggleVisible(markerSet.id)}
+          onToggleVisible={handleToggleVisible}
           onMarkerSetChange={updateEntity}
-          onDelete={() => handleDeleteMarkerSet(markerSet.id)}
+          onDelete={handleDeleteMarkerSet}
           expandedMarkerId={expandedMarkerSetId === markerSet.id ? expandedMarkerId : null}
-          onMarkerToggle={(markerId) => handleMarkerToggle(markerSet.id, markerId)}
-          onMarkerChange={(marker) => handleMarkerChange(markerSet.id, marker)}
-          onAddMarker={() => handleAddMarker(markerSet.id)}
-          onDeleteMarker={(markerId) => handleDeleteMarker(markerSet.id, markerId)}
+          onMarkerToggle={handleMarkerToggle}
+          onMarkerChange={handleMarkerChange}
+          onAddMarker={handleAddMarker}
+          onDeleteMarker={handleDeleteMarker}
           chapterOptions={chapterOptions}
           episodeOptions={episodeOptions}
           hasBooks={hasBooks}

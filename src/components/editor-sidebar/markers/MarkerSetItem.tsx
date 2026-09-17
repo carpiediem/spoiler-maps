@@ -18,7 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useState, type SyntheticEvent } from 'react';
+import { memo, useState, type SyntheticEvent } from 'react';
 import { updateMarkerSet, type Marker, type MarkerSet } from '../../../db';
 import type { FlatOption } from '../characters/rangeOptions';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
@@ -29,18 +29,27 @@ interface MarkerSetItemProps {
   markerSet: MarkerSet;
   markers: Marker[];
   expanded: boolean;
-  onToggle: (event: SyntheticEvent, isExpanded: boolean) => void;
+  /**
+   * Takes this set's own id (rather than being pre-curried with it by the
+   * caller) so MarkersSection can hand every MarkerSetItem the exact same
+   * function reference — required for `memo` below to actually skip
+   * re-rendering the ones unaffected by some other set's change.
+   */
+  onToggle: (setId: number, event: SyntheticEvent, isExpanded: boolean) => void;
   /** Whether this set's markers should show on the map even while collapsed. */
   visible: boolean;
-  onToggleVisible: () => void;
+  onToggleVisible: (setId: number) => void;
   onMarkerSetChange: (markerSet: MarkerSet) => void;
-  onDelete: () => void;
+  onDelete: (setId: number) => void;
   /** The id of the marker currently expanded within this set, if any. */
   expandedMarkerId: number | null;
-  onMarkerToggle: (markerId: number) => (event: SyntheticEvent, isExpanded: boolean) => void;
-  onMarkerChange: (marker: Marker) => void;
-  onAddMarker: () => void;
-  onDeleteMarker: (markerId: number) => void;
+  /** Passed straight through to each MarkerItem's own onToggle — see its doc comment. */
+  onMarkerToggle: (setId: number, markerId: number, event: SyntheticEvent, isExpanded: boolean) => void;
+  /** Passed straight through to each MarkerItem's own onMarkerChange — see its doc comment. */
+  onMarkerChange: (setId: number, marker: Marker) => void;
+  onAddMarker: (setId: number) => void;
+  /** Passed straight through to each MarkerItem's own onDelete — see its doc comment. */
+  onDeleteMarker: (setId: number, markerId: number) => void;
   chapterOptions: FlatOption[];
   episodeOptions: FlatOption[];
   hasBooks: boolean;
@@ -53,7 +62,7 @@ interface MarkerSetItemProps {
   onClearMarkerArea?: () => void;
 }
 
-export function MarkerSetItem({
+export const MarkerSetItem = memo(function MarkerSetItem({
   markerSet,
   markers,
   expanded,
@@ -105,7 +114,7 @@ export function MarkerSetItem({
   return (
     <Accordion
       expanded={expanded}
-      onChange={onToggle}
+      onChange={(event, isExpanded) => onToggle(markerSet.id, event, isExpanded)}
       disableGutters
       elevation={0}
       square
@@ -142,7 +151,7 @@ export function MarkerSetItem({
           <IconButton
             size="small"
             aria-label={visible ? 'Hide on map' : 'Show on map'}
-            onClick={onToggleVisible}
+            onClick={() => onToggleVisible(markerSet.id)}
             sx={{ position: 'absolute', right: 36, top: '50%', transform: 'translateY(-50%)' }}
           >
             {visible ? (
@@ -192,11 +201,12 @@ export function MarkerSetItem({
             {markers.map((marker) => (
               <MarkerItem
                 key={marker.id}
+                markerSetId={markerSet.id}
                 marker={marker}
                 expanded={expandedMarkerId === marker.id}
-                onToggle={onMarkerToggle(marker.id)}
+                onToggle={onMarkerToggle}
                 onMarkerChange={onMarkerChange}
-                onDelete={() => onDeleteMarker(marker.id)}
+                onDelete={onDeleteMarker}
                 chapterOptions={chapterOptions}
                 episodeOptions={episodeOptions}
                 hasBooks={hasBooks}
@@ -211,7 +221,11 @@ export function MarkerSetItem({
             ))}
           </Stack>
 
-          <Button size="small" startIcon={<AddIcon fontSize="small" />} onClick={onAddMarker}>
+          <Button
+            size="small"
+            startIcon={<AddIcon fontSize="small" />}
+            onClick={() => onAddMarker(markerSet.id)}
+          >
             Add Marker
           </Button>
           <Button size="small" color="error" onClick={() => setIsDeleteConfirmOpen(true)} fullWidth>
@@ -225,7 +239,7 @@ export function MarkerSetItem({
         onClose={() => setIsDeleteConfirmOpen(false)}
         onConfirm={() => {
           setIsDeleteConfirmOpen(false);
-          onDelete();
+          onDelete(markerSet.id);
         }}
         title={`Delete “${markerSet.name || 'Unnamed Collection'}”?`}
         description={
@@ -236,4 +250,4 @@ export function MarkerSetItem({
       />
     </Accordion>
   );
-}
+});
