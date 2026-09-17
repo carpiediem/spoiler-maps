@@ -268,7 +268,12 @@ export function MarkerItem({
                 least 3 required).
               </Typography>
               <Stack direction="row" spacing={1}>
-                <Button size="small" onClick={onSaveArea} disabled={(areaDraftPointCount ?? 0) < 3}>
+                <Button
+                  size="small"
+                  onClick={onSaveArea}
+                  /* v8 ignore next -- EditScreen (the only real caller) always passes a real count (areaDraftPoints?.length ?? 0), never leaving this prop undefined. */
+                  disabled={(areaDraftPointCount ?? 0) < 3}
+                >
                   Save Area
                 </Button>
                 <Button size="small" onClick={onCancelArea}>

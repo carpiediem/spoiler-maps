@@ -612,7 +612,7 @@ describe('MapView', () => {
 
   it('renders a "no icons" marker as an invisible but clickable marker', () => {
     const mapRef = createRef<LeafletMap | null>();
-    const { container } = render(
+    render(
       <MapView
         tileUrl={null}
         center={center}
@@ -634,14 +634,12 @@ describe('MapView', () => {
     expect(marker).toBeDefined();
     // A DivIcon with no visible content — not the usual colored pin/image.
     expect((marker!.options.icon!.options as { iconUrl?: string }).iconUrl).toBeUndefined();
-
-    act(() => marker!.openPopup());
-    expect(container.querySelector('.leaflet-popup-content')?.textContent).toBe('Winterfell');
   });
 
-  it('links a "no icons" marker’s popup to its wiki URL when set', () => {
+  it('opens a "no icons" marker’s wiki URL in a new tab on click', () => {
     const mapRef = createRef<LeafletMap | null>();
-    const { container } = render(
+    const windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);
+    render(
       <MapView
         tileUrl={null}
         center={center}
@@ -663,11 +661,69 @@ describe('MapView', () => {
     mapRef.current!.eachLayer((layer) => {
       if (layer instanceof LeafletMarker) marker = layer;
     });
-    act(() => marker!.openPopup());
+    act(() => marker!.fire('click'));
 
-    const link = container.querySelector('.leaflet-popup-content a');
-    expect(link).toHaveAttribute('href', 'https://wiki.example.com/winterfell');
-    expect(link).toHaveTextContent('Winterfell');
+    expect(windowOpen).toHaveBeenCalledWith(
+      'https://wiki.example.com/winterfell',
+      '_blank',
+      'noopener,noreferrer',
+    );
+    windowOpen.mockRestore();
+  });
+
+  it('does nothing on click when a "no icons" marker has no wiki URL', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[{ marker: makeMarker({ url: null }), noIcons: true }]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    act(() => marker!.fire('click'));
+
+    expect(windowOpen).not.toHaveBeenCalled();
+    windowOpen.mockRestore();
+  });
+
+  it('opens a regular (iconed) marker’s wiki URL in a new tab on click too', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[
+          {
+            marker: makeMarker({ url: 'https://wiki.example.com/winterfell' }),
+            noIcons: false,
+          },
+        ]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    act(() => marker!.fire('click'));
+
+    expect(windowOpen).toHaveBeenCalledWith(
+      'https://wiki.example.com/winterfell',
+      '_blank',
+      'noopener,noreferrer',
+    );
+    windowOpen.mockRestore();
   });
 
   it('renders a non-draggable pin for a marker whose set does show icons', () => {
@@ -1006,6 +1062,41 @@ describe('MapView', () => {
     // Only 3 points exist — removing one would leave fewer than a valid
     // triangle, so the click is a no-op.
     expect(onAreaDraftPointsChange).not.toHaveBeenCalled();
+  });
+
+  it('removes a vertex on click when more than 3 points exist', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onAreaDraftPointsChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[
+          { lat: 1, lng: 1 },
+          { lat: 2, lng: 2 },
+          { lat: 3, lng: 3 },
+          { lat: 4, lng: 4 },
+        ]}
+        onAreaDraftPointsChange={onAreaDraftPointsChange}
+      />,
+    );
+
+    const vertices: LeafletMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) vertices.push(layer);
+    });
+
+    act(() => {
+      vertices[1]!.fire('click');
+    });
+
+    expect(onAreaDraftPointsChange).toHaveBeenCalledWith([
+      { lat: 1, lng: 1 },
+      { lat: 3, lng: 3 },
+      { lat: 4, lng: 4 },
+    ]);
   });
 
   it('renders a dashed, translucent preview polygon for a 3+ point area draft', () => {

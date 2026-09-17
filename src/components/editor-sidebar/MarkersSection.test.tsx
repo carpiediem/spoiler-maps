@@ -170,6 +170,18 @@ describe('MarkersSection', () => {
     expect(screen.getByText(/12\.0000, 34\.0000/)).toBeInTheDocument();
   });
 
+  it('falls back to {0, 0} for a new marker when no map center is given', async () => {
+    const storyId = await seedStoryId();
+    await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(screen.getByRole('button', { name: /add marker/i }));
+
+    expect(await screen.findByText('Unnamed Marker')).toBeInTheDocument();
+    expect(screen.getByText(/0\.0000, 0\.0000/)).toBeInTheDocument();
+  });
+
   it('edits a marker’s name, icon URL, and wiki URL, and persists them', async () => {
     const storyId = await seedStoryId();
     const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
@@ -190,6 +202,11 @@ describe('MarkersSection', () => {
     fireEvent.click(await screen.findByText('Landmarks'));
     fireEvent.click(await screen.findByText('Winterfell'));
 
+    // Two "Name" fields are visible at once: the collection's own, and this
+    // marker's — the marker's renders second.
+    const [, nameField] = screen.getAllByLabelText('Name');
+    fireEvent.change(nameField!, { target: { value: 'The Wall' } });
+    fireEvent.blur(nameField!);
     const iconField = screen.getByLabelText('Icon URL');
     fireEvent.change(iconField, { target: { value: 'https://example.com/icon.png' } });
     fireEvent.blur(iconField);
@@ -202,6 +219,7 @@ describe('MarkersSection', () => {
 
     await vi.waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
+      expect(updated.label).toBe('The Wall');
       expect(updated.icon).toBe('https://example.com/icon.png');
       expect(updated.url).toBe('https://wiki.example.com/winterfell');
       expect(updated.color).toBe('#00ff00');
@@ -233,6 +251,47 @@ describe('MarkersSection', () => {
     await vi.waitFor(() => expect(screen.queryByText('Winterfell')).not.toBeInTheDocument());
   });
 
+  it('deletes a non-expanded marker, leaving the expanded one selected', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: "King's Landing",
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 2, lng: 2 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+    fireEvent.click(await screen.findByText("King's Landing"));
+    // Winterfell is no longer expanded (only one marker can be at a time) —
+    // deleting it exercises the "deleted marker isn't the expanded one"
+    // path, leaving King's Landing selected.
+    fireEvent.click(screen.getAllByRole('button', { name: /delete marker/i })[0]!);
+
+    await vi.waitFor(() => expect(screen.queryByText('Winterfell')).not.toBeInTheDocument());
+    expect(screen.getByLabelText('Wiki URL')).toBeInTheDocument();
+  });
+
   it('deletes a collection after confirming', async () => {
     const storyId = await seedStoryId();
     await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
@@ -245,6 +304,20 @@ describe('MarkersSection', () => {
 
     await vi.waitFor(() => expect(screen.queryByText('Landmarks')).not.toBeInTheDocument());
     expect(await screen.findByText(/no markers yet/i)).toBeInTheDocument();
+  });
+
+  it('keeps the collection when its delete confirmation is cancelled', async () => {
+    const storyId = await seedStoryId();
+    await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(screen.getByRole('button', { name: /delete collection/i }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: /cancel/i }));
+
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByText('Landmarks')).toBeInTheDocument();
   });
 
   it('reports visible markers only for a collection toggled "Show on map"', async () => {
@@ -401,6 +474,101 @@ describe('MarkersSection', () => {
     expect(image).toHaveAttribute('src', 'https://example.com/winterfell.png');
   });
 
+  it('falls back to "Unnamed Marker" as the icon’s alt text when the label is blank', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: '',
+      icon: 'https://example.com/winterfell.png',
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    const image = await screen.findByRole('img', { name: 'Unnamed Marker' });
+
+    expect(image).toHaveAttribute('src', 'https://example.com/winterfell.png');
+  });
+
+  it('clears a marker’s icon URL when emptied, persisting null rather than an empty string', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: 'https://example.com/winterfell.png',
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+
+    const iconField = screen.getByLabelText('Icon URL');
+    fireEvent.change(iconField, { target: { value: '' } });
+    fireEvent.blur(iconField);
+
+    await vi.waitFor(async () => {
+      const [updated] = await listMarkersForMarkerSet(markerSet.id);
+      expect(updated.icon).toBeNull();
+    });
+  });
+
+  it('edits one marker’s field without touching a sibling marker in the same collection', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: "King's Landing",
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 2, lng: 2 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+
+    const [, nameField] = screen.getAllByLabelText('Name');
+    fireEvent.change(nameField!, { target: { value: 'The Wall' } });
+    fireEvent.blur(nameField!);
+
+    await vi.waitFor(async () => {
+      const markers = await listMarkersForMarkerSet(markerSet.id);
+      expect(markers.map((marker) => marker.label).sort()).toEqual(["King's Landing", 'The Wall']);
+    });
+  });
+
   it('toggles a marker’s Large checkbox and persists it', async () => {
     const storyId = await seedStoryId();
     const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
@@ -467,6 +635,17 @@ describe('MarkersSection', () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.chapterRange).toEqual({ startChapterId: chapter.id, endChapterId: null });
     });
+
+    fireEvent.mouseDown(screen.getByLabelText('End Chapter'));
+    fireEvent.click(await screen.findByRole('option', { name: /bran/i }));
+
+    await vi.waitFor(async () => {
+      const [updated] = await listMarkersForMarkerSet(markerSet.id);
+      expect(updated.chapterRange).toEqual({
+        startChapterId: chapter.id,
+        endChapterId: chapter.id,
+      });
+    });
   });
 
   it('edits a marker’s episode range and persists it', async () => {
@@ -502,6 +681,17 @@ describe('MarkersSection', () => {
     await vi.waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.episodeRange).toEqual({ startEpisodeId: episode.id, endEpisodeId: null });
+    });
+
+    fireEvent.mouseDown(screen.getByLabelText('End Episode'));
+    fireEvent.click(await screen.findByRole('option', { name: /winter is coming/i }));
+
+    await vi.waitFor(async () => {
+      const [updated] = await listMarkersForMarkerSet(markerSet.id);
+      expect(updated.episodeRange).toEqual({
+        startEpisodeId: episode.id,
+        endEpisodeId: episode.id,
+      });
     });
   });
 
@@ -611,5 +801,117 @@ describe('MarkersSection', () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.polygon).toBeNull();
     });
+  });
+
+  it('exposes an onDrag handler on the active marker that persists a dragged position, leaving a sibling marker untouched', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: "King's Landing",
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 2, lng: 2 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onActiveMarkerChange = vi.fn();
+    render(<MarkersSection storyId={storyId} onActiveMarkerChange={onActiveMarkerChange} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+
+    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
+    const active = onActiveMarkerChange.mock.calls.at(-1)![0];
+
+    active.onDrag({ lat: 5, lng: 6 });
+
+    await vi.waitFor(async () => {
+      const markers = await listMarkersForMarkerSet(markerSet.id);
+      const winterfell = markers.find((marker) => marker.label === 'Winterfell')!;
+      const kingsLanding = markers.find((marker) => marker.label === "King's Landing")!;
+      expect(winterfell.position).toEqual({ lat: 5, lng: 6 });
+      expect(kingsLanding.position).toEqual({ lat: 2, lng: 2 });
+    });
+  });
+
+  it('re-hides a collection’s markers after toggling "Show on map" off again', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisibleMarkersChange = vi.fn();
+    render(<MarkersSection storyId={storyId} onVisibleMarkersChange={onVisibleMarkersChange} />);
+    await screen.findByText('Landmarks');
+
+    const toggle = screen.getByRole('button', { name: /show on map/i });
+    fireEvent.click(toggle);
+    await vi.waitFor(() =>
+      expect(onVisibleMarkersChange).toHaveBeenCalledWith([expect.anything()]),
+    );
+    onVisibleMarkersChange.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: /hide on map/i }));
+
+    await vi.waitFor(() => expect(onVisibleMarkersChange).toHaveBeenCalledWith(null));
+  });
+
+  it('deletes a visible, expanded collection, clearing its selection and visibility', async () => {
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onActiveMarkerChange = vi.fn();
+    render(<MarkersSection storyId={storyId} onActiveMarkerChange={onActiveMarkerChange} />);
+    await screen.findByText('Landmarks');
+
+    fireEvent.click(screen.getByRole('button', { name: /show on map/i }));
+    fireEvent.click(screen.getByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+    await vi.waitFor(() =>
+      expect(onActiveMarkerChange).toHaveBeenLastCalledWith(expect.anything()),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /delete collection/i }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: /delete/i }));
+
+    await vi.waitFor(() => expect(screen.queryByText('Landmarks')).not.toBeInTheDocument());
+    expect(onActiveMarkerChange).toHaveBeenLastCalledWith(null);
   });
 });

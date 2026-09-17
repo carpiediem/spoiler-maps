@@ -690,6 +690,95 @@ describe('App', () => {
     expect(marker!.polygon).toBeNull();
   });
 
+  it('discards the area draft on Cancel, leaving no polygon behind', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^markers$/i }));
+    await user.click(screen.getByRole('button', { name: /add collection/i }));
+    await screen.findByText('Unnamed Collection');
+    await user.click(screen.getByRole('button', { name: /add marker/i }));
+    await screen.findByText('Unnamed Marker');
+
+    await user.click(screen.getByRole('button', { name: /draw area/i }));
+    const mapContainer = container.querySelector('.leaflet-container')!;
+    fireEvent.click(mapContainer, { clientX: 120, clientY: 80 });
+    fireEvent.click(mapContainer, { clientX: 160, clientY: 80 });
+    fireEvent.click(mapContainer, { clientX: 160, clientY: 120 });
+    await screen.findByRole('button', { name: /save area/i });
+
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+    expect(await screen.findByRole('button', { name: /draw area/i })).toBeInTheDocument();
+    const [markerSet] = await listMarkerSetsForStory(story.id);
+    const [marker] = await listMarkersForMarkerSet(markerSet!.id);
+    expect(marker!.polygon).toBeNull();
+  });
+
+  it('clears a marker’s saved area via the Clear Area button', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: 'https://tile.example.com/{z}/{x}/{y}.png',
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 39.8283, lng: -98.5795 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+
+    const user = userEvent.setup();
+    const { container } = render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('button', { name: /a song of ice and fire/i });
+    await user.click(screen.getByRole('button', { name: /^markers$/i }));
+    await user.click(screen.getByRole('button', { name: /add collection/i }));
+    await screen.findByText('Unnamed Collection');
+    await user.click(screen.getByRole('button', { name: /add marker/i }));
+    await screen.findByText('Unnamed Marker');
+
+    await user.click(screen.getByRole('button', { name: /draw area/i }));
+    const mapContainer = container.querySelector('.leaflet-container')!;
+    fireEvent.click(mapContainer, { clientX: 120, clientY: 80 });
+    fireEvent.click(mapContainer, { clientX: 160, clientY: 80 });
+    fireEvent.click(mapContainer, { clientX: 160, clientY: 120 });
+    const saveButton = await screen.findByRole('button', { name: /save area/i });
+    await waitFor(() => expect(saveButton).toBeEnabled());
+    await user.click(saveButton);
+    await screen.findByRole('button', { name: /^edit area$/i });
+
+    await user.click(screen.getByRole('button', { name: /clear area/i }));
+
+    expect(await screen.findByRole('button', { name: /^draw area$/i })).toBeInTheDocument();
+    const [markerSet] = await listMarkerSetsForStory(story.id);
+    const [marker] = await listMarkersForMarkerSet(markerSet!.id);
+    expect(marker!.polygon).toBeNull();
+  });
+
   it('does not update state after unmounting while stories are still loading', async () => {
     const { unmount } = render(
       <MemoryRouter initialEntries={['/edit']}>

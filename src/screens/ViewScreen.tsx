@@ -94,9 +94,11 @@ export function ViewScreen() {
 
   const [checkedIndices, setCheckedIndices] = useState<Set<number>>(new Set());
   const [showFullPath, setShowFullPath] = useState(true);
-  // Empty by default — every marker collection starts visible, matching how
-  // markers behaved before this per-collection toggle existed.
-  const [hiddenMarkerSetIndices, setHiddenMarkerSetIndices] = useState<Set<number>>(new Set());
+  // null until the user first touches a checkbox; until then, every marker
+  // collection is hidden by default, matching characters' own "nothing
+  // revealed yet" default (see hiddenMarkerSetIndices below).
+  const [hiddenMarkerSetIndicesOverride, setHiddenMarkerSetIndicesOverride] =
+    useState<Set<number> | null>(null);
   const [timelineMode, setTimelineMode] = useState<TimelineMode>('book');
   const [timelineIndex, setTimelineIndex] = useState(1);
   // Seeded once from a #chapter-N or #episode-N URL fragment at first
@@ -121,6 +123,23 @@ export function ViewScreen() {
     () => (document ? buildDocumentEpisodeOptions(document) : []),
     [document],
   );
+
+  // Every listable (non-noIcons) marker collection's index, until the user
+  // overrides it by touching a checkbox — computed fresh each time rather
+  // than seeded via an effect, so there's no flash of "all visible" on the
+  // first render where the document becomes available. A noIcons collection
+  // is never included: it has no checkbox to hide it behind, so it's always
+  // visible.
+  const hiddenMarkerSetIndices = useMemo(() => {
+    if (hiddenMarkerSetIndicesOverride !== null) return hiddenMarkerSetIndicesOverride;
+    if (!document) return new Set<number>();
+    return new Set(
+      document.markerSets
+        .map((markerSet, index) => ({ markerSet, index }))
+        .filter(({ markerSet }) => !markerSet.noIcons)
+        .map(({ index }) => index),
+    );
+  }, [hiddenMarkerSetIndicesOverride, document]);
 
   const { pins, tails } = useMemo(() => {
     if (!document) return { pins: [], tails: [] };
@@ -247,7 +266,7 @@ export function ViewScreen() {
           <MarkersPanel
             markerSets={document!.markerSets}
             hiddenIndices={hiddenMarkerSetIndices}
-            onHiddenIndicesChange={setHiddenMarkerSetIndices}
+            onHiddenIndicesChange={setHiddenMarkerSetIndicesOverride}
           />
           <Divider sx={{ my: 2 }} />
           <CharacterPathsPanel

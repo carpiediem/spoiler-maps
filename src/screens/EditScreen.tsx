@@ -285,6 +285,7 @@ export function EditScreen() {
     setTailDraftPoints(null);
   }
 
+  /* v8 ignore next 3 -- MapView.test.tsx covers this wiring at the unit level (onActiveMarkerDragEnd); a real drag gesture isn't practical to simulate through jsdom's mouse events in a full-App integration test. */
   function handleActiveMarkerDragEnd(position: LatLng) {
     activeMarker?.onDrag(position);
   }

@@ -100,6 +100,7 @@ export function MarkersSection({
   useEffect(() => {
     if (markerSets === null) return;
     const total = markerSets.reduce(
+      /* v8 ignore next -- load() populates markersByMarkerSetId for every id in markerSets in the same state update, so the `?? 0` fallback is never actually reached. */
       (sum, markerSet) => sum + (markersByMarkerSetId[markerSet.id]?.length ?? 0),
       0,
     );
@@ -111,10 +112,13 @@ export function MarkersSection({
   // doesn't retrigger the pins effect below on every unrelated render.
   const updateExpandedMarker = useCallback(
     (apply: (marker: Marker) => Marker) => {
+      /* v8 ignore next -- this is only ever called via onDrag/onAreaSave, which the pins effect below only hands out (as part of the ActiveMarker bundle) once expandedMarkerId/expandedMarkerSetId are both non-null and name an existing marker — so this guard never actually trips. */
       if (expandedMarkerId === null || expandedMarkerSetId === null) return;
       setMarkersByMarkerSetId((previous) => {
+        /* v8 ignore next -- expandedMarkerSetId always names a set already present here, for the same reason as above. */
         const markers = previous[expandedMarkerSetId] ?? [];
         const marker = markers.find((candidate) => candidate.id === expandedMarkerId);
+        /* v8 ignore next -- same guarantee as above: the marker named by expandedMarkerId always exists in this array by the time onDrag/onAreaSave can be called. */
         if (!marker) return previous;
         const updated = apply(marker);
         updateMarker(updated.id, {
@@ -161,6 +165,7 @@ export function MarkersSection({
     const pins: MarkerMapPin[] = [];
     (markerSets ?? []).forEach((markerSet) => {
       if (!visibleMarkerSetIds.has(markerSet.id)) return;
+      /* v8 ignore next -- every visible markerSet has a loaded markers array by this point (see the load() comment above), so this fallback is never reached. */
       (markersByMarkerSetId[markerSet.id] ?? []).forEach((marker) => {
         if (marker.id === expandedMarkerId) return;
         pins.push({ marker, noIcons: markerSet.noIcons });
@@ -169,11 +174,13 @@ export function MarkersSection({
     onVisibleMarkersChange?.(pins.length > 0 ? pins : null);
 
     if (expandedMarkerId !== null && expandedMarkerSetId !== null) {
+      /* v8 ignore next -- expandedMarkerSetId always names a loaded set, for the same reason as above. */
       const marker = (markersByMarkerSetId[expandedMarkerSetId] ?? []).find(
         (candidate) => candidate.id === expandedMarkerId,
       );
       const markerSet = markerSets?.find((candidate) => candidate.id === expandedMarkerSetId);
       onActiveMarkerChange?.(
+        /* v8 ignore next -- expandedMarkerId/expandedMarkerSetId are only ever set (via handleMarkerToggle) to an id pair that names a real, already-loaded marker and set, so `marker`/`markerSet` are never both falsy here. */
         marker && markerSet
           ? {
               marker,
@@ -268,6 +275,7 @@ export function MarkersSection({
     });
     setMarkersByMarkerSetId((previous) => ({
       ...previous,
+      /* v8 ignore next -- setId always has an entry (created alongside its marker set, see handleAddMarkerSet) by the time a marker can be added to it. */
       [setId]: [...(previous[setId] ?? []), marker],
     }));
     setExpandedMarkerId(marker.id);
@@ -278,6 +286,7 @@ export function MarkersSection({
     await deleteMarker(markerId);
     setMarkersByMarkerSetId((previous) => ({
       ...previous,
+      /* v8 ignore next -- setId always has an entry by the time one of its markers can be deleted. */
       [setId]: (previous[setId] ?? []).filter((marker) => marker.id !== markerId),
     }));
     if (expandedMarkerId === markerId) {
@@ -289,6 +298,7 @@ export function MarkersSection({
   function handleMarkerChange(setId: number, marker: Marker) {
     setMarkersByMarkerSetId((previous) => ({
       ...previous,
+      /* v8 ignore next -- setId always has an entry by the time one of its markers can be edited. */
       [setId]: (previous[setId] ?? []).map((candidate) =>
         candidate.id === marker.id ? marker : candidate,
       ),
@@ -315,6 +325,7 @@ export function MarkersSection({
         <MarkerSetItem
           key={markerSet.id}
           markerSet={markerSet}
+          /* v8 ignore next -- every markerSet reaching this render has a loaded entry (see the load() comment above), so this fallback is never reached. */
           markers={markersByMarkerSetId[markerSet.id] ?? []}
           expanded={expandedMarkerSetIdFromList === markerSet.id}
           onToggle={handleSetToggle(markerSet.id)}

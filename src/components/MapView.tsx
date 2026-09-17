@@ -7,7 +7,6 @@ import {
   Marker,
   Polygon,
   Polyline,
-  Popup,
   TileLayer,
   Tooltip,
   useMap,
@@ -374,33 +373,34 @@ export function MapView({
           />
         ) : null,
       )}
-      {markerPins?.map((pin) =>
-        pin.noIcons ? (
+      {markerPins?.map((pin) => {
+        // Clicking any marker with a wiki URL opens it in a new tab — for a
+        // "no icons" marker especially, since its own icon is invisible and
+        // this is otherwise the only way to identify it.
+        const eventHandlers = pin.marker.url
+          ? {
+              click: () => window.open(pin.marker.url!, '_blank', 'noopener,noreferrer'),
+            }
+          : undefined;
+
+        return pin.noIcons ? (
           // The tiles already show an icon here — this stays invisible, but
-          // clickable, so its name/link is still reachable on click.
+          // keeps real (clickable) dimensions.
           <Marker
             key={pin.marker.id}
             position={[pin.marker.position.lat, pin.marker.position.lng]}
             icon={INVISIBLE_MARKER_ICON}
-          >
-            <Popup>
-              {pin.marker.url ? (
-                <a href={pin.marker.url} target="_blank" rel="noopener noreferrer">
-                  {pin.marker.label || 'Unnamed Marker'}
-                </a>
-              ) : (
-                pin.marker.label || 'Unnamed Marker'
-              )}
-            </Popup>
-          </Marker>
+            eventHandlers={eventHandlers}
+          />
         ) : (
           <Marker
             key={pin.marker.id}
             position={[pin.marker.position.lat, pin.marker.position.lng]}
             icon={buildMarkerIcon(pin.marker)}
+            eventHandlers={eventHandlers}
           />
-        ),
-      )}
+        );
+      })}
       {/* The active marker's saved area is hidden while its draft is being drawn/edited — the draft below stands in for it instead. */}
       {activeMarkerPin?.marker.polygon && !areaDraftPoints && (
         <Polygon

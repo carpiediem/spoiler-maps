@@ -272,7 +272,7 @@ describe('ViewScreen', () => {
     expect(within(dialog).queryByText(/\*\*Winter\*\*/)).not.toBeInTheDocument();
   });
 
-  it('shows a marker pin without needing to be checked, respecting the spoiler slider', async () => {
+  it('shows a marker pin once its collection is checked, respecting the spoiler slider', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -308,6 +308,11 @@ markerSets:
     await screen.findByText('A Song of Ice and Fire');
     await user.click(screen.getByRole('button', { name: /got it/i }));
     await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    // Every marker collection starts hidden by default.
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Cities' }));
 
     // Winterfell has no range, so it's always visible; The Wall's chapter
     // range hasn't been reached yet at the default (start of story) slider.
@@ -351,10 +356,10 @@ characters:
       .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent);
     expect(headings.indexOf('Markers')).toBeLessThan(headings.indexOf('Character Paths'));
-    expect(screen.getByRole('checkbox', { name: 'Cities' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Cities' })).not.toBeChecked();
   });
 
-  it('hides a marker collection’s pins once its checkbox is unchecked', async () => {
+  it('shows, then re-hides, a marker collection’s pins as its checkbox is toggled', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -381,6 +386,10 @@ markerSets:
     await screen.findByText('A Song of Ice and Fire');
     await user.click(screen.getByRole('button', { name: /got it/i }));
     await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Cities' }));
 
     await waitFor(() => {
       expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
@@ -460,6 +469,8 @@ markerSets:
     await screen.findByText('A Song of Ice and Fire');
     await user.click(screen.getByRole('button', { name: /got it/i }));
     await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    await user.click(screen.getByRole('checkbox', { name: 'Territories' }));
 
     await waitFor(() => {
       const area = container.querySelector('.leaflet-interactive');
