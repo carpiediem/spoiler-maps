@@ -85,6 +85,22 @@ export function MarkersSection({
     setExpandedMarkerSetId(null);
   }, []);
 
+  // useExpandableEntityList already collapses the marker *set* accordion
+  // (its own expandedId) when the outer Markers section collapses, but
+  // expandedMarkerId/expandedMarkerSetId are a second level of expansion
+  // nested inside that, tracked separately here — collapsing the section
+  // wouldn't otherwise clear them, leaving the active marker's draggable
+  // pin on the map with no visible sidebar row to explain it. Adjusted
+  // directly during render (React's documented pattern for this — see
+  // https://react.dev/learn/you-might-not-need-an-effect) rather than in a
+  // useEffect: sectionExpanded is already known synchronously, and this
+  // condition is false again as soon as the clear itself takes effect, so
+  // it can't loop.
+  if (sectionExpanded === false && (expandedMarkerId !== null || expandedMarkerSetId !== null)) {
+    setExpandedMarkerId(null);
+    setExpandedMarkerSetId(null);
+  }
+
   const {
     entities: markerSets,
     expandedId: expandedMarkerSetIdFromList,

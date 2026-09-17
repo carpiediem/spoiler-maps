@@ -227,6 +227,39 @@ describe('MarkersSection', () => {
     expect(marker.id).toBeGreaterThan(0);
   });
 
+  it('does not render a collapsed marker’s form fields, only its summary row', async () => {
+    // A collection can hold hundreds of markers, each with 4 chapter/episode
+    // range dropdowns built from the story's full chapter/episode list —
+    // rendering that eagerly for every marker regardless of its own expanded
+    // state is enough to freeze the tab (see the accordion's unmountOnExit
+    // below). Asserting the Wiki URL field's absence here is a proxy for
+    // that: it only exists once the marker's own accordion content mounts.
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    render(<MarkersSection storyId={storyId} />);
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    await screen.findByText('Winterfell');
+
+    expect(screen.queryByLabelText('Wiki URL')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Winterfell'));
+
+    expect(await screen.findByLabelText('Wiki URL')).toBeInTheDocument();
+  });
+
   it('deletes a marker from within its collection', async () => {
     const storyId = await seedStoryId();
     const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
@@ -449,6 +482,52 @@ describe('MarkersSection', () => {
     rerender(<MarkersSection storyId={storyId} sectionExpanded={false} />);
 
     await vi.waitFor(() => expect(screen.getByText('Winterfell')).not.toBeVisible());
+  });
+
+  it('removes the draggable marker pin from the map when the Markers section itself collapses', async () => {
+    // expandedMarkerId/expandedMarkerSetId are tracked separately from (and
+    // nested inside) the marker set's own expandedId, which the section
+    // collapsing already clears — without its own handling, the active
+    // marker (and its draggable map pin) would otherwise survive the whole
+    // section collapsing, with no visible sidebar row left to explain it.
+    const storyId = await seedStoryId();
+    const markerSet = await createMarkerSet({ storyId, name: 'Landmarks', noIcons: false });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onActiveMarkerChange = vi.fn();
+    const { rerender } = render(
+      <MarkersSection
+        storyId={storyId}
+        sectionExpanded
+        onActiveMarkerChange={onActiveMarkerChange}
+      />,
+    );
+
+    fireEvent.click(await screen.findByText('Landmarks'));
+    fireEvent.click(await screen.findByText('Winterfell'));
+    await vi.waitFor(() =>
+      expect(onActiveMarkerChange).toHaveBeenLastCalledWith(expect.anything()),
+    );
+
+    rerender(
+      <MarkersSection
+        storyId={storyId}
+        sectionExpanded={false}
+        onActiveMarkerChange={onActiveMarkerChange}
+      />,
+    );
+
+    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenLastCalledWith(null));
   });
 
   it('shows the marker’s icon in its header when one is set', async () => {

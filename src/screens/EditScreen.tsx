@@ -98,6 +98,9 @@ export function EditScreen() {
   const [initialTimeline] = useState(() => parseTimelineHash(location.hash));
   const mapRef = useRef<LeafletMap | null>(null);
   const rangeOptions = useRangeOptions(selectedStoryId);
+  // Diagnostic only: dedupes the "selected story" log below so it fires
+  // once per story, not once per render.
+  const loggedStorySelectionRef = useRef<number | null>(null);
 
   // Stable identity (functional setState form needs no deps) so it doesn't
   // re-trigger MapTimelineControl's onChange effect on every unrelated
@@ -220,20 +223,31 @@ export function EditScreen() {
   // Diagnostic only: logs the map-relevant fields of whichever story is
   // selected, so a story that renders a blank/unresponsive map can be
   // correlated with its own saved data (see MapView's own warnings for
-  // problems with individual markers/positions).
-  useEffect(() => {
-    if (!selectedStory) return;
+  // problems with individual markers/positions). Deliberately: (1) run
+  // directly in the render body, not a useEffect — a passive effect is
+  // scheduled to run only *after* this render commits, so if a child (e.g.
+  // MapView, or Leaflet itself) hangs while rendering, the effect never
+  // gets a turn and nothing is logged at all; (2) log a pre-stringified
+  // string, not a live object — expanding a logged object requires the
+  // devtools console to run more JS in the page's own (possibly about to
+  // hang) context, whereas a string that's already fully computed prints
+  // immediately and needs nothing further from the page.
+  if (selectedStory && loggedStorySelectionRef.current !== selectedStory.id) {
+    loggedStorySelectionRef.current = selectedStory.id;
     // eslint-disable-next-line no-console
-    console.debug('[EditScreen] selected story:', {
-      id: selectedStory.id,
-      name: selectedStory.name,
-      tileUrlTemplate: selectedStory.tileUrlTemplate,
-      initialCenter: selectedStory.initialCenter,
-      initialZoom: selectedStory.initialZoom,
-      minZoom: selectedStory.minZoom,
-      maxZoom: selectedStory.maxZoom,
-    });
-  }, [selectedStory]);
+    console.debug(
+      '[EditScreen] selected story:',
+      JSON.stringify({
+        id: selectedStory.id,
+        name: selectedStory.name,
+        tileUrlTemplate: selectedStory.tileUrlTemplate,
+        initialCenter: selectedStory.initialCenter,
+        initialZoom: selectedStory.initialZoom,
+        minZoom: selectedStory.minZoom,
+        maxZoom: selectedStory.maxZoom,
+      }),
+    );
+  }
 
   const mapCenter = selectedStory?.initialCenter ?? DEFAULT_CENTER;
   const mapZoom = selectedStory?.initialZoom ?? DEFAULT_ZOOM;

@@ -127,6 +127,14 @@ export function MarkerItem({
       disableGutters
       elevation={0}
       square
+      // A collection can hold hundreds of markers, each with 4 chapter/
+      // episode range dropdowns (one Select per boundary) built from the
+      // story's full chapter/episode list — rendered eagerly for every
+      // marker regardless of its own expanded state, that's enough
+      // MenuItems combined to visibly freeze the tab. unmountOnExit skips
+      // building all of that for every collapsed marker, only paying the
+      // cost for whichever one (at most) is actually open.
+      slotProps={{ transition: { unmountOnExit: true } }}
       sx={{ boxShadow: 'none', '&::before': { display: 'none' }, borderRadius: 1 }}
     >
       <AccordionSummary
@@ -137,7 +145,11 @@ export function MarkerItem({
           minHeight: 36,
         }}
       >
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minWidth: 0 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ alignItems: 'center', flexGrow: 1, minWidth: 0 }}
+        >
           {marker.icon && (
             <Box
               component="img"

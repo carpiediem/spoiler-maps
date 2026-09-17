@@ -1216,7 +1216,9 @@ describe('MapView', () => {
 
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('tileUrlTemplate matches neither'),
-        'https://tile.example.com/broken.png',
+      );
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('https://tile.example.com/broken.png'),
       );
       warn.mockRestore();
     });
@@ -1234,10 +1236,7 @@ describe('MapView', () => {
         </MapErrorBoundary>,
       );
 
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('non-finite center/zoom'),
-        expect.anything(),
-      );
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('non-finite center/zoom'));
       expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
       warn.mockRestore();
       consoleError.mockRestore();
@@ -1259,9 +1258,8 @@ describe('MapView', () => {
 
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('character position has a non-finite lat/lng'),
-        1,
-        expect.anything(),
       );
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('characterId=1'));
       expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
       warn.mockRestore();
       consoleError.mockRestore();
@@ -1284,10 +1282,7 @@ describe('MapView', () => {
       );
 
       expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('marker has a non-finite position'),
-        1,
-        'Winterfell',
-        expect.anything(),
+        expect.stringContaining('marker 1 (Winterfell) has a non-finite position'),
       );
       expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
       warn.mockRestore();
@@ -1316,10 +1311,7 @@ describe('MapView', () => {
       );
 
       expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('fewer than 3 points'),
-        1,
-        'Winterfell',
-        expect.anything(),
+        expect.stringContaining('marker 1 (Winterfell) has an area with fewer than 3 points'),
       );
       warn.mockRestore();
     });
@@ -1348,10 +1340,7 @@ describe('MapView', () => {
       );
 
       expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('marker area has a non-finite point'),
-        1,
-        'Winterfell',
-        expect.anything(),
+        expect.stringContaining('marker 1 (Winterfell) has an area with a non-finite point'),
       );
       expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
       warn.mockRestore();

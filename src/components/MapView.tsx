@@ -39,25 +39,21 @@ function isFiniteLatLng(point: LatLng): boolean {
 function describeMarkerProblems(marker: MarkerRecord): void {
   if (!isFiniteLatLng(marker.position)) {
     // eslint-disable-next-line no-console
-    console.warn('[MapView] marker has a non-finite position:', marker.id, marker.label, marker);
+    console.warn(
+      `[MapView] marker ${marker.id} (${marker.label}) has a non-finite position: ${JSON.stringify(marker.position)}`,
+    );
   }
   if (marker.polygon) {
     if (marker.polygon.length < 3) {
       // eslint-disable-next-line no-console
       console.warn(
-        '[MapView] marker area has fewer than 3 points, which Leaflet may render oddly or not at all:',
-        marker.id,
-        marker.label,
-        marker.polygon,
+        `[MapView] marker ${marker.id} (${marker.label}) has an area with fewer than 3 points, which Leaflet may render oddly or not at all: ${JSON.stringify(marker.polygon)}`,
       );
     }
     if (marker.polygon.some((point) => !isFiniteLatLng(point))) {
       // eslint-disable-next-line no-console
       console.warn(
-        '[MapView] marker area has a non-finite point:',
-        marker.id,
-        marker.label,
-        marker.polygon,
+        `[MapView] marker ${marker.id} (${marker.label}) has an area with a non-finite point: ${JSON.stringify(marker.polygon)}`,
       );
     }
   }
@@ -292,26 +288,27 @@ export function MapView({
   // and stops responding to pan/zoom — this surfaces exactly which one, and
   // for which entity, instead of leaving it a silent mystery. Run directly
   // in the render body (not a useEffect) so it's logged even when Leaflet
-  // itself throws synchronously while rendering a child (e.g. a NaN
-  // position) — a useEffect here would never get a chance to run first.
+  // itself throws/hangs synchronously while rendering a child (e.g. a NaN
+  // position, or a pathologically large zoom) — a useEffect here would
+  // never get a chance to run first. Logs a pre-stringified string, not a
+  // live object: expanding a logged object needs the devtools console to
+  // run more JS in the page's own (possibly about to hang) context, while
+  // an already-computed string needs nothing further from the page.
   if (tileUrl && kind === null) {
     // eslint-disable-next-line no-console
     console.warn(
-      '[MapView] tileUrlTemplate matches neither the {x}/{y}/{z} nor {q} scheme — tiles will fail to load:',
-      tileUrl,
+      `[MapView] tileUrlTemplate matches neither the {x}/{y}/{z} nor {q} scheme — tiles will fail to load: ${tileUrl}`,
     );
   }
   if (!Number.isFinite(center.lat) || !Number.isFinite(center.lng) || !Number.isFinite(zoom)) {
     // eslint-disable-next-line no-console
-    console.warn('[MapView] non-finite center/zoom:', { center, zoom });
+    console.warn(`[MapView] non-finite center/zoom: ${JSON.stringify({ center, zoom })}`);
   }
   characterPositionPins?.forEach((pin) => {
     if (!isFiniteLatLng(pin.characterPosition.position)) {
       // eslint-disable-next-line no-console
       console.warn(
-        '[MapView] character position has a non-finite lat/lng:',
-        pin.characterId,
-        pin.characterPosition,
+        `[MapView] character position has a non-finite lat/lng: characterId=${pin.characterId} ${JSON.stringify(pin.characterPosition)}`,
       );
     }
   });
