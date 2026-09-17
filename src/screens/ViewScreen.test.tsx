@@ -316,6 +316,83 @@ markerSets:
     });
   });
 
+  it('shows a Markers section above Character Paths, with a checkbox per collection', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () =>
+          Promise.resolve(`
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+markerSets:
+  - name: Cities
+    markers:
+      - label: Winterfell
+        lat: 10
+        lng: 10
+characters:
+  - name: Jon Snow
+    positions: []
+`),
+      }),
+    );
+    const user = userEvent.setup();
+    renderAt('/view?d=https://example.com/story.yaml');
+
+    await screen.findByText('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    const headings = screen
+      .getAllByRole('heading', { level: 2 })
+      .map((heading) => heading.textContent);
+    expect(headings.indexOf('Markers')).toBeLessThan(headings.indexOf('Character Paths'));
+    expect(screen.getByRole('checkbox', { name: 'Cities' })).toBeChecked();
+  });
+
+  it('hides a marker collection’s pins once its checkbox is unchecked', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () =>
+          Promise.resolve(`
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+markerSets:
+  - name: Cities
+    markers:
+      - label: Winterfell
+        lat: 10
+        lng: 10
+`),
+      }),
+    );
+    const user = userEvent.setup();
+    const { container } = renderAt('/view?d=https://example.com/story.yaml');
+
+    await screen.findByText('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+    });
+
+    await user.click(screen.getByRole('checkbox', { name: 'Cities' }));
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+    });
+  });
+
   it('renders a marker’s area at 50% opacity', async () => {
     vi.stubGlobal(
       'fetch',

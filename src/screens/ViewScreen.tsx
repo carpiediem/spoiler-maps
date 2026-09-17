@@ -1,8 +1,17 @@
-import { Alert, Box, CircularProgress, ThemeProvider, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  Divider,
+  Paper,
+  ThemeProvider,
+  Typography,
+} from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { CharacterPathsPanel } from '../components/view/CharacterPathsPanel';
 import { DescriptionDialog } from '../components/view/DescriptionDialog';
+import { MarkersPanel } from '../components/view/MarkersPanel';
 import { WelcomeDialog } from '../components/view/WelcomeDialog';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
 import { MapView } from '../components/MapView';
@@ -85,6 +94,9 @@ export function ViewScreen() {
 
   const [checkedIndices, setCheckedIndices] = useState<Set<number>>(new Set());
   const [showFullPath, setShowFullPath] = useState(true);
+  // Empty by default — every marker collection starts visible, matching how
+  // markers behaved before this per-collection toggle existed.
+  const [hiddenMarkerSetIndices, setHiddenMarkerSetIndices] = useState<Set<number>>(new Set());
   const [timelineMode, setTimelineMode] = useState<TimelineMode>('book');
   const [timelineIndex, setTimelineIndex] = useState(1);
   // Seeded once from a #chapter-N or #episode-N URL fragment at first
@@ -123,8 +135,8 @@ export function ViewScreen() {
 
   const markerPins = useMemo(() => {
     if (!document) return [];
-    return buildViewMarkerPins(document, timelineMode, timelineIndex);
-  }, [document, timelineMode, timelineIndex]);
+    return buildViewMarkerPins(document, timelineMode, timelineIndex, hiddenMarkerSetIndices);
+  }, [document, timelineMode, timelineIndex, hiddenMarkerSetIndices]);
 
   function handleCloseWelcome() {
     setIsWelcomeOpen(false);
@@ -218,15 +230,36 @@ export function ViewScreen() {
             }}
           />
         </main>
-        <CharacterPathsPanel
-          characters={document!.characters}
-          checkedIndices={checkedIndices}
-          onCheckedIndicesChange={setCheckedIndices}
-          showFullPath={showFullPath}
-          onShowFullPathChange={setShowFullPath}
-          timelineMode={timelineMode}
-          timelineIndex={timelineIndex}
-        />
+        <Paper
+          component="aside"
+          elevation={4}
+          sx={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            zIndex: 1000,
+            width: 280,
+            maxHeight: 'calc(100vh - 32px)',
+            overflowY: 'auto',
+            p: 2,
+          }}
+        >
+          <MarkersPanel
+            markerSets={document!.markerSets}
+            hiddenIndices={hiddenMarkerSetIndices}
+            onHiddenIndicesChange={setHiddenMarkerSetIndices}
+          />
+          <Divider sx={{ my: 2 }} />
+          <CharacterPathsPanel
+            characters={document!.characters}
+            checkedIndices={checkedIndices}
+            onCheckedIndicesChange={setCheckedIndices}
+            showFullPath={showFullPath}
+            onShowFullPathChange={setShowFullPath}
+            timelineMode={timelineMode}
+            timelineIndex={timelineIndex}
+          />
+        </Paper>
         {document!.description ? (
           <DescriptionDialog
             open={isWelcomeOpen}

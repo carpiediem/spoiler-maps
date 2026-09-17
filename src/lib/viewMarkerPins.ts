@@ -25,16 +25,19 @@ function toMapMarker(marker: StoryDocumentMarker, syntheticId: number): Marker {
  * The view-screen equivalent of CharactersSection's/buildViewPinsAndTails's
  * pin computation, but for markers: every marker whose chapter/episode
  * range (for the active medium) has been reached by the timeline's current
- * scrub position is shown, honoring its own set's noIcons flag.
+ * scrub position is shown, honoring its own set's noIcons flag — unless its
+ * whole marker set is hidden via the sidebar's per-collection checkbox.
  */
 export function buildViewMarkerPins(
   document: StoryDocument,
   mode: TimelineMode,
   currentIndex: number,
+  hiddenMarkerSetIndices: Set<number>,
 ): MarkerMapPin[] {
   const pins: MarkerMapPin[] = [];
 
   document.markerSets.forEach((markerSet, markerSetIndex) => {
+    if (hiddenMarkerSetIndices.has(markerSetIndex)) return;
     markerSet.markers.forEach((marker, markerIndex) => {
       if (!isPositionVisible(marker, mode, currentIndex)) return;
       const syntheticId = markerSetIndex * 100_000 + markerIndex;

@@ -9,7 +9,6 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
-  Paper,
   Stack,
   Tooltip,
   Typography,
@@ -30,10 +29,10 @@ interface CharacterPathsPanelProps {
 }
 
 /**
- * The view screen's sidebar: a checkbox per character (all off by default)
- * to toggle their positions on the map, a select-all control, and a toggle
- * for whether a checked character's full path (not just its current
- * location) is drawn.
+ * The Character Paths section of the view screen's sidebar: a checkbox per
+ * character (all off by default) to toggle their positions on the map, a
+ * select-all control, and a toggle for whether a checked character's full
+ * path (not just its current location) is drawn.
  */
 export function CharacterPathsPanel({
   characters,
@@ -64,20 +63,7 @@ export function CharacterPathsPanel({
   }
 
   return (
-    <Paper
-      component="aside"
-      elevation={4}
-      sx={{
-        position: 'absolute',
-        top: 16,
-        right: 16,
-        zIndex: 1000,
-        width: 280,
-        maxHeight: 'calc(100vh - 32px)',
-        overflowY: 'auto',
-        p: 2,
-      }}
-    >
+    <>
       <Stack
         direction="row"
         sx={{
@@ -191,6 +177,6 @@ export function CharacterPathsPanel({
           })}
         </List>
       )}
-    </Paper>
+    </>
   );
 }

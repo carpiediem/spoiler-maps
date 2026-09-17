@@ -32,7 +32,7 @@ describe('buildViewMarkerPins', () => {
       ],
     });
 
-    const pins = buildViewMarkerPins(document, 'book', 1);
+    const pins = buildViewMarkerPins(document, 'book', 1, new Set());
 
     expect(pins).toHaveLength(2);
     expect(pins[0]!.marker.label).toBe('Winterfell');
@@ -47,7 +47,7 @@ describe('buildViewMarkerPins', () => {
       ],
     });
 
-    const pins = buildViewMarkerPins(document, 'book', 1);
+    const pins = buildViewMarkerPins(document, 'book', 1, new Set());
 
     expect(pins[0]!.noIcons).toBe(true);
   });
@@ -62,8 +62,8 @@ describe('buildViewMarkerPins', () => {
       ],
     });
 
-    expect(buildViewMarkerPins(document, 'book', 2)).toEqual([]);
-    expect(buildViewMarkerPins(document, 'book', 3)).toHaveLength(1);
+    expect(buildViewMarkerPins(document, 'book', 2, new Set())).toEqual([]);
+    expect(buildViewMarkerPins(document, 'book', 3, new Set())).toHaveLength(1);
   });
 
   it('carries a marker’s icon, url, and color through to the synthesized Marker', () => {
@@ -85,10 +85,24 @@ describe('buildViewMarkerPins', () => {
       ],
     });
 
-    const [pin] = buildViewMarkerPins(document, 'book', 1);
+    const [pin] = buildViewMarkerPins(document, 'book', 1, new Set());
 
     expect(pin!.marker.icon).toBe('https://example.com/icon.png');
     expect(pin!.marker.url).toBe('https://wiki.example.com/winterfell');
     expect(pin!.marker.color).toBe('#00ff00');
+  });
+
+  it('omits every marker in a hidden marker set, leaving other sets untouched', () => {
+    const document = minimalDocument({
+      markerSets: [
+        { name: 'Cities', markers: [{ label: 'Winterfell', lat: 1, lng: 1 }] },
+        { name: 'Battles', markers: [{ label: 'The Blackwater', lat: 2, lng: 2 }] },
+      ],
+    });
+
+    const pins = buildViewMarkerPins(document, 'book', 1, new Set([0]));
+
+    expect(pins).toHaveLength(1);
+    expect(pins[0]!.marker.label).toBe('The Blackwater');
   });
 });
