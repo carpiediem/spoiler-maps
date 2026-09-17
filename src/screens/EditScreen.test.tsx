@@ -779,6 +779,78 @@ describe('App', () => {
     expect(marker!.polygon).toBeNull();
   });
 
+  it('warns when the URL names a story id that isn’t in the local database (singular story count)', async () => {
+    await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+    resetDatabaseForTests();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    render(
+      <MemoryRouter initialEntries={['/edit/999']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await vi.waitFor(() =>
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("/edit/999 names a story id that isn't in the local database"),
+      ),
+    );
+    warn.mockRestore();
+  });
+
+  it('warns when the URL names a story id that isn’t in the local database (plural story count)', async () => {
+    await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+    await createStory({
+      name: 'The Wheel of Time',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+    resetDatabaseForTests();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    render(
+      <MemoryRouter initialEntries={['/edit/999']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await vi.waitFor(() =>
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("/edit/999 names a story id that isn't in the local database"),
+      ),
+    );
+    warn.mockRestore();
+  });
+
   it('does not update state after unmounting while stories are still loading', async () => {
     const { unmount } = render(
       <MemoryRouter initialEntries={['/edit']}>

@@ -110,6 +110,15 @@ export function EditScreen() {
 
     listStories().then((loaded) => {
       if (cancelled) return;
+      // Diagnostic only: if this list is empty (or missing an id the URL
+      // names), the browser's local database has no stories in it — most
+      // often because site data/IndexedDB was cleared, not because
+      // anything in the app crashed.
+      // eslint-disable-next-line no-console
+      console.debug(
+        '[EditScreen] loaded stories from the local database:',
+        loaded.map((story) => ({ id: story.id, name: story.name })),
+      );
       setStories(loaded);
       setStoriesLoaded(true);
     });
@@ -118,6 +127,18 @@ export function EditScreen() {
       cancelled = true;
     };
   }, []);
+
+  // Diagnostic only: warns when the URL names a story id that isn't in the
+  // local database — the most common reason a map "won't load" with no
+  // console errors at all (there's nothing to render, and nothing crashed).
+  useEffect(() => {
+    if (selectedStoryId === null || stories.length === 0) return;
+    if (stories.some((story) => story.id === selectedStoryId)) return;
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[EditScreen] /edit/${selectedStoryId} names a story id that isn't in the local database (it has ${stories.length} other stor${stories.length === 1 ? 'y' : 'ies'}). It may have been deleted, or the browser's site data/IndexedDB was cleared — the editor will show a blank "New Map" form instead.`,
+    );
+  }, [selectedStoryId, stories]);
 
   // Redirects a bare /edit (no story id in the URL) to the last-viewed
   // story once the story list has finished loading, falling back to the
