@@ -5,11 +5,12 @@ import {
   Polyline as LeafletPolyline,
   type Map as LeafletMap,
 } from 'leaflet';
-import { act, render } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Marker } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
+import { MapErrorBoundary } from './MapErrorBoundary';
 import { MapView } from './MapView';
 
 const center = { lat: 40, lng: -100 };
@@ -1206,5 +1207,155 @@ describe('MapView', () => {
     expect(mapRef.current!.getZoom()).toBe(6);
     expect(mapRef.current!.getCenter().lat).toBeCloseTo(center.lat);
     expect(mapRef.current!.getCenter().lng).toBeCloseTo(center.lng);
+  });
+
+  describe('diagnostic warnings', () => {
+    it('warns when the tile URL template matches neither the {x}/{y}/{z} nor {q} scheme', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      render(<MapView tileUrl="https://tile.example.com/broken.png" center={center} zoom={5} />);
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('tileUrlTemplate matches neither'),
+        'https://tile.example.com/broken.png',
+      );
+      warn.mockRestore();
+    });
+
+    // A non-finite lat/lng is invalid enough that Leaflet itself throws
+    // synchronously while rendering the affected layer — these wrap in
+    // MapErrorBoundary (as EditScreen/ViewScreen do) so that's contained,
+    // and confirm the diagnostic still logged first, before the crash.
+    it('warns about a non-finite center/zoom, then contains the resulting crash', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(
+        <MapErrorBoundary>
+          <MapView tileUrl={null} center={{ lat: NaN, lng: -100 }} zoom={5} />
+        </MapErrorBoundary>,
+      );
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('non-finite center/zoom'),
+        expect.anything(),
+      );
+      expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
+      warn.mockRestore();
+      consoleError.mockRestore();
+    });
+
+    it('warns about a character position with a non-finite lat/lng, then contains the resulting crash', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(
+        <MapErrorBoundary>
+          <MapView
+            tileUrl={null}
+            center={center}
+            zoom={5}
+            characterPositionPins={[makePin(1, { lat: NaN, lng: -101 }, '1')]}
+          />
+        </MapErrorBoundary>,
+      );
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('character position has a non-finite lat/lng'),
+        1,
+        expect.anything(),
+      );
+      expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
+      warn.mockRestore();
+      consoleError.mockRestore();
+    });
+
+    it('warns about a marker with a non-finite position, then contains the resulting crash', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(
+        <MapErrorBoundary>
+          <MapView
+            tileUrl={null}
+            center={center}
+            zoom={5}
+            markerPins={[
+              { marker: makeMarker({ position: { lat: NaN, lng: 1 } }), noIcons: false },
+            ]}
+          />
+        </MapErrorBoundary>,
+      );
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('marker has a non-finite position'),
+        1,
+        'Winterfell',
+        expect.anything(),
+      );
+      expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
+      warn.mockRestore();
+      consoleError.mockRestore();
+    });
+
+    it('warns about a marker area with fewer than 3 points', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      render(
+        <MapView
+          tileUrl={null}
+          center={center}
+          zoom={5}
+          markerPins={[
+            {
+              marker: makeMarker({
+                polygon: [
+                  { lat: 1, lng: 1 },
+                  { lat: 2, lng: 2 },
+                ],
+              }),
+              noIcons: false,
+            },
+          ]}
+        />,
+      );
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('fewer than 3 points'),
+        1,
+        'Winterfell',
+        expect.anything(),
+      );
+      warn.mockRestore();
+    });
+
+    it('warns about a marker area with a non-finite point, then contains the resulting crash', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(
+        <MapErrorBoundary>
+          <MapView
+            tileUrl={null}
+            center={center}
+            zoom={5}
+            activeMarkerPin={{
+              marker: makeMarker({
+                polygon: [
+                  { lat: 1, lng: 1 },
+                  { lat: NaN, lng: 2 },
+                  { lat: 3, lng: 3 },
+                ],
+              }),
+              noIcons: false,
+            }}
+          />
+        </MapErrorBoundary>,
+      );
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('marker area has a non-finite point'),
+        1,
+        'Winterfell',
+        expect.anything(),
+      );
+      expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
+      warn.mockRestore();
+      consoleError.mockRestore();
+    });
   });
 });

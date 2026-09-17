@@ -13,6 +13,7 @@ import { CharacterPathsPanel } from '../components/view/CharacterPathsPanel';
 import { DescriptionDialog } from '../components/view/DescriptionDialog';
 import { MarkersPanel } from '../components/view/MarkersPanel';
 import { WelcomeDialog } from '../components/view/WelcomeDialog';
+import { MapErrorBoundary } from '../components/MapErrorBoundary';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
 import { MapView } from '../components/MapView';
 import { buildTileAttribution } from '../lib/attribution';
@@ -217,17 +218,19 @@ export function ViewScreen() {
           <Typography component="h1" sx={visuallyHidden}>
             {document!.name}
           </Typography>
-          <MapView
-            tileUrl={document!.tileUrlTemplate ?? null}
-            attribution={tileAttribution}
-            center={document!.initialCenter}
-            zoom={document!.initialZoom}
-            minZoom={document!.minZoom}
-            maxZoom={document!.maxZoom}
-            characterPositionPins={pins.length > 0 ? pins : null}
-            characterTails={tails}
-            markerPins={markerPins.length > 0 ? markerPins : null}
-          />
+          <MapErrorBoundary key={timelineKey}>
+            <MapView
+              tileUrl={document!.tileUrlTemplate ?? null}
+              attribution={tileAttribution}
+              center={document!.initialCenter}
+              zoom={document!.initialZoom}
+              minZoom={document!.minZoom}
+              maxZoom={document!.maxZoom}
+              characterPositionPins={pins.length > 0 ? pins : null}
+              characterTails={tails}
+              markerPins={markerPins.length > 0 ? markerPins : null}
+            />
+          </MapErrorBoundary>
           <MapTimelineControl
             key={timelineKey}
             chapterOptions={chapterOptions}

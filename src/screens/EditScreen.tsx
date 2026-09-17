@@ -3,6 +3,7 @@ import type { Map as LeafletMap } from 'leaflet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { EditorSidebar } from '../components/EditorSidebar';
+import { MapErrorBoundary } from '../components/MapErrorBoundary';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
 import { MapView } from '../components/MapView';
 import {
@@ -191,6 +192,24 @@ export function EditScreen() {
 
   useEffect(() => {
     setTileUrl(selectedStory?.tileUrlTemplate ?? null);
+  }, [selectedStory]);
+
+  // Diagnostic only: logs the map-relevant fields of whichever story is
+  // selected, so a story that renders a blank/unresponsive map can be
+  // correlated with its own saved data (see MapView's own warnings for
+  // problems with individual markers/positions).
+  useEffect(() => {
+    if (!selectedStory) return;
+    // eslint-disable-next-line no-console
+    console.debug('[EditScreen] selected story:', {
+      id: selectedStory.id,
+      name: selectedStory.name,
+      tileUrlTemplate: selectedStory.tileUrlTemplate,
+      initialCenter: selectedStory.initialCenter,
+      initialZoom: selectedStory.initialZoom,
+      minZoom: selectedStory.minZoom,
+      maxZoom: selectedStory.maxZoom,
+    });
   }, [selectedStory]);
 
   const mapCenter = selectedStory?.initialCenter ?? DEFAULT_CENTER;
@@ -403,32 +422,33 @@ export function EditScreen() {
           <Typography component="h1" sx={visuallyHidden}>
             {selectedStory ? `Editing ${selectedStory.name}` : 'Spoiler Maps Editor'}
           </Typography>
-          <MapView
-            key={selectedStoryId ?? 'new'}
-            mapRef={mapRef}
-            tileUrl={tileUrl}
-            attribution={tileAttribution}
-            center={mapCenter}
-            zoom={mapZoom}
-            minZoom={mapMinZoom}
-            maxZoom={mapMaxZoom}
-            onPositionChange={setMapPosition}
-            draftPosition={draftPosition}
-            onDraftPositionChange={setDraftPosition}
-            characterPositionPins={characterPositionPins}
-            characterTails={characterTails}
-            editingPositionId={activePosition?.existing?.id ?? null}
-            onCharacterPositionPinClick={handlePinClick}
-            tailDraftPoints={tailDraftPoints}
-            onTailPointClick={handleTailPointClick}
-            tailColor={activePosition?.color ?? null}
-            markerPins={markerPins}
-            activeMarkerPin={activeMarker}
-            onActiveMarkerDragEnd={handleActiveMarkerDragEnd}
-            areaDraftPoints={areaDraftPoints}
-            onAreaDraftPointsChange={setAreaDraftPoints}
-            areaDraftColor={activeMarker?.marker.color ?? null}
-          />
+          <MapErrorBoundary key={selectedStoryId ?? 'new'}>
+            <MapView
+              mapRef={mapRef}
+              tileUrl={tileUrl}
+              attribution={tileAttribution}
+              center={mapCenter}
+              zoom={mapZoom}
+              minZoom={mapMinZoom}
+              maxZoom={mapMaxZoom}
+              onPositionChange={setMapPosition}
+              draftPosition={draftPosition}
+              onDraftPositionChange={setDraftPosition}
+              characterPositionPins={characterPositionPins}
+              characterTails={characterTails}
+              editingPositionId={activePosition?.existing?.id ?? null}
+              onCharacterPositionPinClick={handlePinClick}
+              tailDraftPoints={tailDraftPoints}
+              onTailPointClick={handleTailPointClick}
+              tailColor={activePosition?.color ?? null}
+              markerPins={markerPins}
+              activeMarkerPin={activeMarker}
+              onActiveMarkerDragEnd={handleActiveMarkerDragEnd}
+              areaDraftPoints={areaDraftPoints}
+              onAreaDraftPointsChange={setAreaDraftPoints}
+              areaDraftColor={activeMarker?.marker.color ?? null}
+            />
+          </MapErrorBoundary>
           <MapTimelineControl
             key={`timeline-${selectedStoryId ?? 'new'}`}
             {...rangeOptions}

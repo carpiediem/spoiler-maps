@@ -13,7 +13,7 @@ import {
   useMapEvents,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { LatLng } from '../db';
+import type { LatLng, Marker as MarkerRecord } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import { DEFAULT_MARKER_COLOR } from '../lib/markerColor';
@@ -27,6 +27,40 @@ import './MapView.css';
 const DEFAULT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const DEFAULT_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+function isFiniteLatLng(point: LatLng): boolean {
+  return Number.isFinite(point.lat) && Number.isFinite(point.lng);
+}
+
+// Diagnostic helper (see MapView's own render body below) — warns about a
+// marker whose position/polygon can't be rendered, naming the marker so
+// it's easy to track down in the editor.
+function describeMarkerProblems(marker: MarkerRecord): void {
+  if (!isFiniteLatLng(marker.position)) {
+    // eslint-disable-next-line no-console
+    console.warn('[MapView] marker has a non-finite position:', marker.id, marker.label, marker);
+  }
+  if (marker.polygon) {
+    if (marker.polygon.length < 3) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[MapView] marker area has fewer than 3 points, which Leaflet may render oddly or not at all:',
+        marker.id,
+        marker.label,
+        marker.polygon,
+      );
+    }
+    if (marker.polygon.some((point) => !isFiniteLatLng(point))) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[MapView] marker area has a non-finite point:',
+        marker.id,
+        marker.label,
+        marker.polygon,
+      );
+    }
+  }
+}
 
 // Shared so a 'dot'-style position marker's diameter (2 * radius) works out
 // to exactly double a tail polyline's width, as they're drawn together for
@@ -249,6 +283,38 @@ export function MapView({
   const activeTileUrl = tileUrl ?? DEFAULT_TILE_URL;
   const kind = tileUrl ? detectTileUrlTemplateKind(tileUrl) : 'xyz';
   const resolvedAttribution = attribution ?? (tileUrl ? undefined : DEFAULT_ATTRIBUTION);
+
+  // Diagnostic only (no effect on rendering): a malformed tile URL template
+  // or a marker/character position with non-finite coordinates or a
+  // degenerate polygon is the most common cause of a map that renders blank
+  // and stops responding to pan/zoom — this surfaces exactly which one, and
+  // for which entity, instead of leaving it a silent mystery. Run directly
+  // in the render body (not a useEffect) so it's logged even when Leaflet
+  // itself throws synchronously while rendering a child (e.g. a NaN
+  // position) — a useEffect here would never get a chance to run first.
+  if (tileUrl && kind === null) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[MapView] tileUrlTemplate matches neither the {x}/{y}/{z} nor {q} scheme — tiles will fail to load:',
+      tileUrl,
+    );
+  }
+  if (!Number.isFinite(center.lat) || !Number.isFinite(center.lng) || !Number.isFinite(zoom)) {
+    // eslint-disable-next-line no-console
+    console.warn('[MapView] non-finite center/zoom:', { center, zoom });
+  }
+  characterPositionPins?.forEach((pin) => {
+    if (!isFiniteLatLng(pin.characterPosition.position)) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[MapView] character position has a non-finite lat/lng:',
+        pin.characterId,
+        pin.characterPosition,
+      );
+    }
+  });
+  markerPins?.forEach((pin) => describeMarkerProblems(pin.marker));
+  if (activeMarkerPin) describeMarkerProblems(activeMarkerPin.marker);
 
   return (
     <MapContainer
