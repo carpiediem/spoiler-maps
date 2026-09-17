@@ -166,7 +166,7 @@ export function MarkerItem({
               }}
             />
           )}
-          <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+          <Typography variant="body2" noWrap sx={{ fontWeight: 500, maxWidth: 200 }}>
             {marker.label || 'Unnamed Marker'}
           </Typography>
         </Stack>
