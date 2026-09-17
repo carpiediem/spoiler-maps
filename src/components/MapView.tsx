@@ -7,6 +7,7 @@ import {
   Marker,
   Polygon,
   Polyline,
+  Popup,
   TileLayer,
   Tooltip,
   useMap,
@@ -43,6 +44,17 @@ const DRAFT_POSITION_ICON = divIcon({
   html: '<div style="width: 20px; height: 20px; border-radius: 50% 50% 50% 0; background: #d32f2f; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5); transform: rotate(-45deg);"></div>',
   iconSize: [20, 20],
   iconAnchor: [10, 20],
+});
+
+// For a marker whose set has noIcons set — the tiles already show an icon
+// at this spot, so this stays invisible, but keeps real (clickable)
+// dimensions rather than a zero-size icon, and is anchored at its own
+// center rather than a pin's point, since there's no visual tip to line up.
+const INVISIBLE_MARKER_ICON = divIcon({
+  className: '',
+  html: '<div style="width: 28px; height: 28px;"></div>',
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
 });
 
 // A small draggable dot for each vertex of a marker area being drawn/edited
@@ -363,7 +375,25 @@ export function MapView({
         ) : null,
       )}
       {markerPins?.map((pin) =>
-        pin.noIcons ? null : (
+        pin.noIcons ? (
+          // The tiles already show an icon here — this stays invisible, but
+          // clickable, so its name/link is still reachable on click.
+          <Marker
+            key={pin.marker.id}
+            position={[pin.marker.position.lat, pin.marker.position.lng]}
+            icon={INVISIBLE_MARKER_ICON}
+          >
+            <Popup>
+              {pin.marker.url ? (
+                <a href={pin.marker.url} target="_blank" rel="noopener noreferrer">
+                  {pin.marker.label || 'Unnamed Marker'}
+                </a>
+              ) : (
+                pin.marker.label || 'Unnamed Marker'
+              )}
+            </Popup>
+          </Marker>
+        ) : (
           <Marker
             key={pin.marker.id}
             position={[pin.marker.position.lat, pin.marker.position.lng]}

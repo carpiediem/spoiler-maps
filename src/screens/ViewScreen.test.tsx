@@ -393,6 +393,41 @@ markerSets:
     });
   });
 
+  it('never lists a noIcons collection in the Markers section, and always keeps its markers on the map', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () =>
+          Promise.resolve(`
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+markerSets:
+  - name: Landmarks
+    noIcons: true
+    markers:
+      - label: Winterfell
+        lat: 10
+        lng: 10
+`),
+      }),
+    );
+    const user = userEvent.setup();
+    const { container } = renderAt('/view?d=https://example.com/story.yaml');
+
+    await screen.findByText('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    expect(screen.queryByText('Landmarks')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+    });
+  });
+
   it('renders a marker’s area at 50% opacity', async () => {
     vi.stubGlobal(
       'fetch',

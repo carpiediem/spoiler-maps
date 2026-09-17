@@ -610,9 +610,9 @@ describe('MapView', () => {
     expect(polylines[0]!.getElement()?.classList.contains('character-tail-flow')).toBe(true);
   });
 
-  it('does not render a marker icon for a "no icons" marker pin', () => {
+  it('renders a "no icons" marker as an invisible but clickable marker', () => {
     const mapRef = createRef<LeafletMap | null>();
-    render(
+    const { container } = render(
       <MapView
         tileUrl={null}
         center={center}
@@ -620,30 +620,54 @@ describe('MapView', () => {
         mapRef={mapRef}
         markerPins={[
           {
-            marker: {
-              id: 1,
-              markerSetId: 1,
-              label: 'Winterfell',
-              icon: null,
-              url: null,
-              color: null,
-              large: false,
-              position: { lat: 41, lng: -101 },
-              polygon: null,
-              chapterRange: null,
-              episodeRange: null,
-            },
+            marker: makeMarker({ label: 'Winterfell', position: { lat: 41, lng: -101 } }),
             noIcons: true,
           },
         ]}
       />,
     );
 
-    let markerCount = 0;
+    let marker: LeafletMarker | undefined;
     mapRef.current!.eachLayer((layer) => {
-      if (layer instanceof LeafletMarker) markerCount += 1;
+      if (layer instanceof LeafletMarker) marker = layer;
     });
-    expect(markerCount).toBe(0);
+    expect(marker).toBeDefined();
+    // A DivIcon with no visible content — not the usual colored pin/image.
+    expect((marker!.options.icon!.options as { iconUrl?: string }).iconUrl).toBeUndefined();
+
+    act(() => marker!.openPopup());
+    expect(container.querySelector('.leaflet-popup-content')?.textContent).toBe('Winterfell');
+  });
+
+  it('links a "no icons" marker’s popup to its wiki URL when set', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const { container } = render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[
+          {
+            marker: makeMarker({
+              label: 'Winterfell',
+              url: 'https://wiki.example.com/winterfell',
+            }),
+            noIcons: true,
+          },
+        ]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    act(() => marker!.openPopup());
+
+    const link = container.querySelector('.leaflet-popup-content a');
+    expect(link).toHaveAttribute('href', 'https://wiki.example.com/winterfell');
+    expect(link).toHaveTextContent('Winterfell');
   });
 
   it('renders a non-draggable pin for a marker whose set does show icons', () => {
@@ -796,14 +820,14 @@ describe('MapView', () => {
     expect(area!.getLatLngs()).toHaveLength(1);
   });
 
-  it('renders a "no icons" marker’s area even though its icon is suppressed', () => {
+  it('renders a "no icons" marker’s area alongside its invisible marker', () => {
     const mapRef = createRef<LeafletMap | null>();
     const polygon = [
       { lat: 41, lng: -101 },
       { lat: 42, lng: -101 },
       { lat: 42, lng: -102 },
     ];
-    const { container } = render(
+    render(
       <MapView
         tileUrl={null}
         center={center}
@@ -814,11 +838,13 @@ describe('MapView', () => {
     );
 
     let areaCount = 0;
+    let markerCount = 0;
     mapRef.current!.eachLayer((layer) => {
       if (layer instanceof LeafletPolygon) areaCount += 1;
+      if (layer instanceof LeafletMarker) markerCount += 1;
     });
     expect(areaCount).toBe(1);
-    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+    expect(markerCount).toBe(1);
   });
 
   it('renders the active marker’s saved area, hiding it once a draft takes over', () => {
