@@ -145,11 +145,7 @@ export function MarkerItem({
           minHeight: 36,
         }}
       >
-        <Stack
-          direction="row"
-          spacing={1}
-          sx={{ alignItems: 'center', flexGrow: 1, minWidth: 0 }}
-        >
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexGrow: 1, minWidth: 0 }}>
           {marker.icon && (
             <Box
               component="img"
@@ -166,7 +162,15 @@ export function MarkerItem({
               }}
             />
           )}
-          <Typography variant="body2" noWrap sx={{ fontWeight: 500, maxWidth: 200 }}>
+          <Typography
+            variant="body2"
+            noWrap
+            // The icon (plus the Stack's spacing before it) isn't available
+            // to the label when one is set, so it gets a smaller cap —
+            // otherwise a marker without an icon would truncate its name
+            // well short of the space actually free for it.
+            sx={{ fontWeight: 500, maxWidth: marker.icon ? 150 : 176 }}
+          >
             {marker.label || 'Unnamed Marker'}
           </Typography>
         </Stack>
