@@ -511,6 +511,25 @@ export const listMarkersForMarkerSet = markerCrud.listForParent;
 export const updateMarker = markerCrud.update;
 export const deleteMarker = markerCrud.delete;
 
+/**
+ * The total marker count across every marker set in a story, without
+ * loading any of the sets or markers themselves — for a sidebar count chip
+ * that should be accurate even before the Markers section (and the data it
+ * would otherwise need to load in full) has ever been expanded.
+ */
+export async function countMarkersForStory(storyId: number): Promise<number> {
+  const db = await getDatabase();
+  const row = selectOne<{ count: number }>(
+    db,
+    `SELECT COUNT(*) AS count FROM markers
+     WHERE marker_set_id IN (SELECT id FROM marker_sets WHERE story_id = ?);`,
+    (row) => ({ count: row.count as number }),
+    [storyId],
+  );
+  /* v8 ignore next -- COUNT(*) always returns exactly one row, even for zero matching markers. */
+  return row?.count ?? 0;
+}
+
 const characterCrud = makeCrud<Character, NewCharacter>({
   table: 'characters',
   columns: ['story_id', 'name', '"group"', 'icon', 'color', 'sort_order', 'url'],

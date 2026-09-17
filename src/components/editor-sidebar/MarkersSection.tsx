@@ -55,6 +55,24 @@ export function MarkersSection({
   onClearMarkerArea,
 }: MarkersSectionProps) {
   useRenderLoopWatchdog('MarkersSection');
+
+  // This section lazy-mounts (its SidebarSection unmounts it on every
+  // collapse, not just the first time), which is new: every other sidebar
+  // section stays mounted for the app's whole lifetime once first rendered.
+  // Without this, a marker set left toggled "visible on map" (or a marker
+  // left selected) when the section collapses would leave its pins stuck
+  // showing with no way to turn them off, since the component reporting
+  // them would simply be gone. Runs only on unmount (empty deps): the
+  // props are stable setState functions from EditScreen, not meant to
+  // retrigger this on every render.
+  useEffect(() => {
+    return () => {
+      onVisibleMarkersChange?.(null);
+      onActiveMarkerChange?.(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [markersByMarkerSetId, setMarkersByMarkerSetId] = useState<Record<number, Marker[]>>({});
   const [visibleMarkerSetIds, setVisibleMarkerSetIds] = useState<Set<number>>(new Set());
   const [expandedMarkerId, setExpandedMarkerId] = useState<number | null>(null);

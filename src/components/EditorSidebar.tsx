@@ -2,7 +2,7 @@ import { Box, Button, Paper } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
-import type { CharacterPosition, LatLng, Story } from '../db';
+import { countMarkersForStory, type CharacterPosition, type LatLng, type Story } from '../db';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import type { ActiveMarker, MarkerMapPin } from '../lib/markerPins';
 import { BooksSection } from './editor-sidebar/BooksSection';
@@ -185,6 +185,25 @@ export function EditorSidebar({
   const [markersCount, setMarkersCount] = useState<number>();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
+  // The Markers section lazy-mounts (see its SidebarSection below), so it
+  // won't call onCountChange with the real total until the user expands it
+  // at least once — this keeps the header chip accurate before that, with a
+  // count-only query that doesn't need to load any marker set's full marker
+  // list. Superseded by MarkersSection's own onCountChange once it mounts.
+  useEffect(() => {
+    if (selectedStoryId === null) {
+      setMarkersCount(undefined);
+      return;
+    }
+    let cancelled = false;
+    countMarkersForStory(selectedStoryId).then((count) => {
+      if (!cancelled) setMarkersCount(count);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedStoryId]);
+
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
   // from under whatever the user is typing — only an actual change of
@@ -364,6 +383,7 @@ export function EditorSidebar({
                   count={markersCount}
                   expanded={expandedSection === 'markers'}
                   onChange={handleAccordionChange('markers')}
+                  lazy
                 >
                   <MarkersSection
                     storyId={selectedStoryId}

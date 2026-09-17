@@ -36,6 +36,18 @@ interface SidebarSectionProps {
   count?: number;
   expanded: boolean;
   onChange: (event: SyntheticEvent, isExpanded: boolean) => void;
+  /**
+   * Skips mounting `children` at all until this section is expanded for the
+   * first time, and unmounts them again on every subsequent collapse — for
+   * a section whose content does its own (potentially expensive) data
+   * fetching on mount, so a story never pays for it unless the user
+   * actually opens that section. Only opt in a section whose content
+   * already copes with being unmounted/remounted (e.g. clearing whatever
+   * it reported to the map on unmount) — every other section here stays
+   * mounted for the app's whole lifetime once first rendered, so this is
+   * the first real unmount/remount cycle they'd see.
+   */
+  lazy?: boolean;
   children: ReactNode;
 }
 
@@ -45,6 +57,7 @@ export function SidebarSection({
   count,
   expanded,
   onChange,
+  lazy,
   children,
 }: SidebarSectionProps) {
   return (
@@ -54,6 +67,7 @@ export function SidebarSection({
       disableGutters
       elevation={0}
       square
+      slotProps={lazy ? { transition: { mountOnEnter: true, unmountOnExit: true } } : undefined}
       // MUI wraps AccordionSummary in an <h3> by default; this section
       // heading is one level under the page's own (visually hidden) <h1>,
       // so it should be an <h2> — the nested per-item accordions (BookItem/

@@ -7,6 +7,7 @@ import {
   createCharacterAlias,
   createCharacterPosition,
   createEpisode,
+  countMarkersForStory,
   createMarker,
   createMarkerSet,
   createStory,
@@ -302,6 +303,43 @@ describe('marker sets and markers', () => {
     });
 
     expect(await listMarkersForMarkerSet(markerSet.id)).toEqual([marker]);
+  });
+
+  it('counts markers across every marker set in a story, without loading any of them', async () => {
+    const story = await seedStory();
+    expect(await countMarkersForStory(story.id)).toBe(0);
+
+    const setA = await createMarkerSet({ storyId: story.id, name: 'Houses', noIcons: false });
+    const setB = await createMarkerSet({ storyId: story.id, name: 'Battles', noIcons: false });
+    await createMarker({
+      markerSetId: setA.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 54.5, lng: -1.5 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createMarker({
+      markerSetId: setB.id,
+      label: 'Battle of the Blackwater',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 51.5, lng: -0.1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+
+    expect(await countMarkersForStory(story.id)).toBe(2);
+
+    const otherStory = await seedStory();
+    expect(await countMarkersForStory(otherStory.id)).toBe(0);
   });
 });
 
