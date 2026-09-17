@@ -60,7 +60,7 @@ export function MarkersPanel({
 
   return (
     <>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
+      <Stack direction="row" sx={{ alignItems: 'center', mb: 1 }}>
         <Checkbox
           checked={allChecked}
           indeterminate={someChecked}
