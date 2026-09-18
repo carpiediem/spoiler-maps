@@ -16,6 +16,7 @@ import {
   createEpisode,
   createStory,
   createTvSeason,
+  listAliasesForCharacter,
   listCharactersForStory,
   type Character,
   type CharacterPosition,
@@ -625,5 +626,72 @@ describe('CharacterItem', () => {
     render(<Wrapper initialCharacter={character} />);
 
     expect(screen.getByRole('img', { name: /unnamed character/i })).toBeInTheDocument();
+  });
+
+  describe('aliases', () => {
+    it('shows a placeholder when there are no aliases yet', async () => {
+      const character = await seedCharacter();
+      render(<Wrapper initialCharacter={character} />);
+
+      expect(await screen.findByText(/no aliases yet/i)).toBeInTheDocument();
+    });
+
+    it('adds an alias and expands it', async () => {
+      const character = await seedCharacter();
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+
+      expect(await screen.findByText('Unnamed Alias')).toBeInTheDocument();
+      // Two "Name" fields are visible at once: the character's own, and
+      // this alias's — the alias's renders second.
+      const [, aliasNameField] = screen.getAllByLabelText('Name');
+      expect(aliasNameField).toBeInTheDocument();
+    });
+
+    it('edits an alias’s name, group, icon URL, and color, and persists them', async () => {
+      const character = await seedCharacter();
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+      await screen.findByText('Unnamed Alias');
+
+      const [, nameField] = screen.getAllByLabelText('Name');
+      fireEvent.change(nameField!, { target: { value: 'Arry' } });
+      fireEvent.blur(nameField!);
+      const [, groupField] = screen.getAllByLabelText('Group');
+      fireEvent.change(groupField!, { target: { value: 'No One' } });
+      fireEvent.blur(groupField!);
+      const [, iconField] = screen.getAllByLabelText('Icon URL');
+      fireEvent.change(iconField!, { target: { value: 'https://example.com/arry.png' } });
+      fireEvent.blur(iconField!);
+
+      await waitFor(() => expect(screen.getByText('Arry')).toBeInTheDocument());
+
+      await waitFor(async () => {
+        const [alias] = await listAliasesForCharacter(character.id);
+        expect(alias).toMatchObject({
+          name: 'Arry',
+          group: 'No One',
+          icon: 'https://example.com/arry.png',
+        });
+      });
+    });
+
+    it('deletes an alias', async () => {
+      const character = await seedCharacter();
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+      await screen.findByText('Unnamed Alias');
+
+      await user.click(screen.getByRole('button', { name: /delete alias/i }));
+
+      await waitFor(() => expect(screen.queryByText('Unnamed Alias')).not.toBeInTheDocument());
+      expect(await screen.findByText(/no aliases yet/i)).toBeInTheDocument();
+    });
   });
 });

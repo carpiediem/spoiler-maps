@@ -4,17 +4,12 @@ import {
   Box,
   Button,
   Checkbox,
-  FormControl,
   FormControlLabel,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
   TextField,
   Tooltip,
   Typography,
-  type SelectChangeEvent,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -23,48 +18,8 @@ import {
   type CharacterPosition,
   type LatLng,
 } from '../../db';
-import { useRangeOptions, type FlatOption } from './characters/rangeOptions';
-
-const OPEN_END_VALUE = '';
-
-interface RangeSelectProps {
-  label: string;
-  options: FlatOption[];
-  value: number | null;
-  onChange: (value: number | null) => void;
-}
-
-function RangeSelect({ label, options, value, onChange }: RangeSelectProps) {
-  const labelId = `${label.replace(/\s+/g, '-').toLowerCase()}-label`;
-
-  function handleChange(event: SelectChangeEvent) {
-    onChange(event.target.value === OPEN_END_VALUE ? null : Number(event.target.value));
-  }
-
-  return (
-    <FormControl size="small" fullWidth>
-      <InputLabel id={labelId} shrink>
-        {label}
-      </InputLabel>
-      <Select
-        labelId={labelId}
-        label={label}
-        value={value === null ? OPEN_END_VALUE : String(value)}
-        onChange={handleChange}
-        displayEmpty
-      >
-        <MenuItem value={OPEN_END_VALUE}>
-          <em>Open</em>
-        </MenuItem>
-        {options.map((option) => (
-          <MenuItem key={option.id} value={String(option.id)}>
-            {option.label}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  );
-}
+import { useRangeOptions } from './characters/rangeOptions';
+import { RangeSelect } from './RangeSelect';
 
 interface PositionPanelProps {
   storyId: number;

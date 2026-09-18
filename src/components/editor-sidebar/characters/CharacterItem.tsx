@@ -16,17 +16,22 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useEffect, useState, type DragEvent, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useState, type DragEvent, type SyntheticEvent } from 'react';
 import {
+  createCharacterAlias,
+  deleteCharacterAlias,
+  listAliasesForCharacter,
   listCharacterPositionsForCharacter,
   updateCharacter,
   type Character,
+  type CharacterAlias,
   type CharacterPosition,
 } from '../../../db';
 import { DEFAULT_CHARACTER_COLOR } from '../../../lib/characterColor';
 import type { TimelineMode } from '../../MapTimelineControl';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
 import { SIDEBAR_SECTION_HEADER_HEIGHT, SIDEBAR_SECTION_HEADER_Z_INDEX } from '../SidebarSection';
+import { AliasList } from './AliasList';
 import { PositionList } from './PositionList';
 
 interface CharacterItemProps {
@@ -80,6 +85,8 @@ export function CharacterItem({
 }: CharacterItemProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [positions, setPositions] = useState<CharacterPosition[] | null>(null);
+  const [aliases, setAliases] = useState<CharacterAlias[] | null>(null);
+  const [expandedAliasId, setExpandedAliasId] = useState<number | null>(null);
   const characterColor = character.color ?? DEFAULT_CHARACTER_COLOR;
 
   useEffect(() => {
@@ -97,6 +104,53 @@ export function CharacterItem({
     if (positions === null) return;
     onPositionsChange(character.id, positions);
   }, [character.id, positions, onPositionsChange]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listAliasesForCharacter(character.id).then((loadedAliases) => {
+      if (cancelled) return;
+      setAliases(loadedAliases);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [character.id]);
+
+  // Stable (id threaded through as a call-time argument, not curried) so
+  // handing these to AliasItem — memoized, see that file — doesn't defeat
+  // its memoization just by this component re-rendering for an unrelated
+  // reason. See MarkersSection's identical rationale for MarkerItem.
+  const handleAliasToggle = useCallback(
+    (_characterId: number, aliasId: number, _event: SyntheticEvent, isExpanded: boolean) => {
+      setExpandedAliasId(isExpanded ? aliasId : null);
+    },
+    [],
+  );
+
+  const handleAliasChange = useCallback((_characterId: number, alias: CharacterAlias) => {
+    setAliases((previous) => previous!.map((candidate) => (candidate.id === alias.id ? alias : candidate)));
+  }, []);
+
+  const handleDeleteAlias = useCallback(async (_characterId: number, aliasId: number) => {
+    await deleteCharacterAlias(aliasId);
+    setAliases((previous) => previous!.filter((candidate) => candidate.id !== aliasId));
+    setExpandedAliasId((current) => (current === aliasId ? null : current));
+  }, []);
+
+  const handleAddAlias = useCallback(async (characterId: number) => {
+    const created = await createCharacterAlias({
+      characterId,
+      name: '',
+      group: null,
+      icon: null,
+      color: null,
+      url: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    setAliases((previous) => [...(previous ?? []), created]);
+    setExpandedAliasId(created.id);
+  }, []);
 
   function handleFieldChange(field: 'name' | 'group' | 'icon' | 'color' | 'url', value: string) {
     onCharacterChange({
@@ -333,6 +387,16 @@ export function CharacterItem({
             timelineIndex={timelineIndex}
             onAddPosition={onAddPosition}
             onEditPosition={onEditPosition}
+          />
+          <AliasList
+            storyId={character.storyId}
+            characterId={character.id}
+            aliases={aliases}
+            expandedAliasId={expandedAliasId}
+            onToggle={handleAliasToggle}
+            onAliasChange={handleAliasChange}
+            onDelete={handleDeleteAlias}
+            onAddAlias={handleAddAlias}
           />
           <Button size="small" color="error" onClick={() => setIsDeleteConfirmOpen(true)} fullWidth>
             Delete Character
