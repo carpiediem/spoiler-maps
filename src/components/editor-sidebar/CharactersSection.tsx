@@ -7,6 +7,7 @@ import {
   listCharactersForStory,
   updateCharacter,
   type Character,
+  type CharacterAlias,
   type CharacterPosition,
 } from '../../db';
 import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
@@ -71,11 +72,17 @@ export function CharactersSection({
   const [positionsByCharacterId, setPositionsByCharacterId] = useState<
     Record<number, CharacterPosition[]>
   >({});
+  // Keyed the same way, for resolving which alias (if any) is currently
+  // active for a character — see the pins effect below.
+  const [aliasesByCharacterId, setAliasesByCharacterId] = useState<
+    Record<number, CharacterAlias[]>
+  >({});
 
   const load = useCallback((storyId: number) => listCharactersForStory(storyId), []);
   const onReset = useCallback(() => {
     setVisibleCharacterIds(new Set());
     setPositionsByCharacterId({});
+    setAliasesByCharacterId({});
   }, []);
 
   const {
@@ -105,13 +112,24 @@ export function CharactersSection({
       episodeOptions,
     );
 
+    // The first alias (in array order) whose own chapter/episode range is
+    // currently active, if any — a character displays that alias's own
+    // name/color instead of its real ones for as long as it stays active,
+    // resolved once per character for the whole map (not per position), so
+    // every pin/tail shown for them right now reflects the same identity.
+    function resolveActiveAlias(characterId: number): CharacterAlias | null {
+      const aliases = aliasesByCharacterId[characterId];
+      return aliases?.find((alias) => isPositionVisible(alias)) ?? null;
+    }
+
     const pins: CharacterPositionPin[] = [];
     const tails: CharacterTailOverlay[] = [];
 
     if (expandedCharacterId !== null) {
       const positions = positionsByCharacterId[expandedCharacterId];
       const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
-      const color = character?.color ?? null;
+      const activeAlias = resolveActiveAlias(expandedCharacterId);
+      const color = activeAlias?.color ?? character?.color ?? null;
       const characterTails: CharacterTailOverlay[] = [];
       let precedingPosition: CharacterPosition | undefined;
       positions?.forEach((position, positionIndex) => {
@@ -148,8 +166,9 @@ export function CharactersSection({
       const positions = positionsByCharacterId[characterId];
       if (!positions || positions.length === 0) return;
       const character = characters?.find((candidate) => candidate.id === characterId);
+      const activeAlias = resolveActiveAlias(characterId);
       /* v8 ignore next -- character can only be undefined here if visibleCharacterIds still names a just-deleted character, but handleDeleteCharacter clears both in the same batched update. */
-      const color = character?.color ?? null;
+      const color = activeAlias?.color ?? character?.color ?? null;
 
       const lastVisiblePositionIndex = positions.reduce(
         (lastIndex, position, positionIndex) =>
@@ -166,7 +185,7 @@ export function CharactersSection({
           characterId,
           characterPosition: position,
           /* v8 ignore next -- see the v8 ignore above; same unreachable-in-practice fallback. */
-          label: isLast ? characterInitials(character?.name ?? '') : '',
+          label: isLast ? characterInitials(activeAlias?.name ?? character?.name ?? '') : '',
           positionIndex: positionIndex + 1,
           color,
           style: isLast ? 'pin' : 'dot',
@@ -191,6 +210,7 @@ export function CharactersSection({
     expandedCharacterId,
     visibleCharacterIds,
     positionsByCharacterId,
+    aliasesByCharacterId,
     characters,
     timelineMode,
     timelineIndex,
@@ -209,6 +229,10 @@ export function CharactersSection({
     },
     [],
   );
+
+  const handleAliasesChange = useCallback((characterId: number, aliases: CharacterAlias[]) => {
+    setAliasesByCharacterId((previous) => ({ ...previous, [characterId]: aliases }));
+  }, []);
 
   // Only reachable once characters have loaded: the Loading/Add Character UI
   // below only renders handleAddCharacter's/handleCharacterChange's callers
@@ -330,6 +354,7 @@ export function CharactersSection({
           }
           positionsVersion={positionsVersion}
           onPositionsChange={handlePositionsChange}
+          onAliasesChange={handleAliasesChange}
           timelineMode={timelineMode}
           timelineIndex={timelineIndex}
         />
