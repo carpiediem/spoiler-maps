@@ -320,6 +320,29 @@ describe('App', () => {
     expect(await screen.findByLabelText(/map name/i)).toHaveValue('');
   });
 
+  it('redirects to the create-new flow for a URL naming a numeric story id that does not exist', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/edit/99']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    const mapNameField = await screen.findByLabelText(/map name/i);
+    expect(mapNameField).toHaveValue('');
+
+    // Saving here only creates a brand-new story (rather than silently
+    // no-op'ing, as it would if the URL's bogus id had stuck around) once
+    // the redirect to /edit/new has actually taken effect.
+    await user.type(mapNameField, 'A New Map');
+    fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
+      target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
+    });
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(await screen.findByRole('button', { name: /a new map/i })).toBeInTheDocument();
+  });
+
   it('shows the pushpin only once the map has moved, and captures its live position', async () => {
     const user = userEvent.setup();
     const { container } = render(
