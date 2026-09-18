@@ -104,6 +104,43 @@ describe('makeTimelineVisibilityChecker', () => {
     expect(isVisibleInTv(position)).toBe(true);
   });
 
+  it('is visible when the timeline index is at its end chapter', () => {
+    const isVisible = makeTimelineVisibilityChecker('book', 2, chapterOptions, episodeOptions);
+    const position = makePosition({
+      chapterRange: { startChapterId: 1, endChapterId: 2 },
+    });
+    expect(isVisible(position)).toBe(true);
+  });
+
+  it('is hidden once the timeline index passes its end chapter', () => {
+    const isVisible = makeTimelineVisibilityChecker(
+      'book',
+      3,
+      [...chapterOptions, { id: 3, index: 3, label: '3. AGOT: Catelyn', url: null }],
+      episodeOptions,
+    );
+    const position = makePosition({
+      chapterRange: { startChapterId: 1, endChapterId: 2 },
+    });
+    expect(isVisible(position)).toBe(false);
+  });
+
+  it('is visible when the end chapter is open (null)', () => {
+    const isVisible = makeTimelineVisibilityChecker('book', 999, chapterOptions, episodeOptions);
+    const position = makePosition({
+      chapterRange: { startChapterId: 1, endChapterId: null },
+    });
+    expect(isVisible(position)).toBe(true);
+  });
+
+  it('is visible when the end chapter id is not in the options list', () => {
+    const isVisible = makeTimelineVisibilityChecker('book', 999, chapterOptions, episodeOptions);
+    const position = makePosition({
+      chapterRange: { startChapterId: 1, endChapterId: 999 },
+    });
+    expect(isVisible(position)).toBe(true);
+  });
+
   it('checks the episode range instead of the chapter range in tv mode', () => {
     const isVisible = makeTimelineVisibilityChecker('tv', 1, chapterOptions, episodeOptions);
     const position = makePosition({
