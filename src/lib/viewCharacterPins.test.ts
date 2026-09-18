@@ -30,7 +30,7 @@ describe('buildViewPinsAndTails', () => {
     expect(tails).toEqual([]);
   });
 
-  it('shows the last reached position as a pin and earlier ones as dots', () => {
+  it('with showFullPath, shows the last reached position as a pin and earlier ones as dots', () => {
     const document = minimalDocument({
       characters: [
         {
@@ -45,7 +45,7 @@ describe('buildViewPinsAndTails', () => {
       ],
     });
 
-    const { pins } = buildViewPinsAndTails(document, new Set([0]), false, 'book', 1);
+    const { pins } = buildViewPinsAndTails(document, new Set([0]), true, 'book', 1);
 
     expect(pins).toEqual([
       expect.objectContaining({ positionIndex: 1, style: 'dot', label: '' }),
@@ -53,6 +53,31 @@ describe('buildViewPinsAndTails', () => {
       expect.objectContaining({ positionIndex: 3, style: 'pin', label: 'JS' }),
     ]);
     expect(pins.every((pin) => pin.color === '#ff0000')).toBe(true);
+  });
+
+  it('without showFullPath, shows only the last reached position, no intermediate stops', () => {
+    // Collapsed mode is meant to answer just "where is this character right
+    // now" for a reader who doesn't want to see (or scroll past) every
+    // earlier stop — unlike the editor, which always shows a visible
+    // character's whole reached path.
+    const document = minimalDocument({
+      characters: [
+        {
+          name: 'Jon Snow',
+          color: '#ff0000',
+          positions: [
+            { lat: 1, lng: 1 },
+            { lat: 2, lng: 2 },
+            { lat: 3, lng: 3 },
+          ],
+        },
+      ],
+    });
+
+    const { pins, tails } = buildViewPinsAndTails(document, new Set([0]), false, 'book', 1);
+
+    expect(pins).toEqual([expect.objectContaining({ positionIndex: 3, style: 'pin', label: 'JS' })]);
+    expect(tails).toEqual([]);
   });
 
   it('hides positions the timeline scrub has not reached yet', () => {
