@@ -435,6 +435,10 @@ describe('importStoryDocument', () => {
                 color: '#808080',
                 chapters: [0, 1],
               },
+              // No group/color/url at all, to exercise their `?? null`
+              // fallback (the alias above exercises the opposite, having
+              // them all set).
+              { name: 'Nan' },
             ],
           },
         ],
@@ -442,9 +446,10 @@ describe('importStoryDocument', () => {
     );
 
     const [character] = await listCharactersForStory(story.id);
-    const [alias] = await listAliasesForCharacter(character!.id);
-    expect(alias).toMatchObject({ name: 'Arry', icon: 'https://example.com/arry.png' });
-    expect(alias!.chapterRange).not.toBeNull();
+    const [arry, nan] = await listAliasesForCharacter(character!.id);
+    expect(arry).toMatchObject({ name: 'Arry', icon: 'https://example.com/arry.png' });
+    expect(arry!.chapterRange).not.toBeNull();
+    expect(nan).toMatchObject({ name: 'Nan', group: null, color: null, url: null });
   });
 
   it('deletes the partially created story and rethrows when a range references an out-of-bounds index', async () => {

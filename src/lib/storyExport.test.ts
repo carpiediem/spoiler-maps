@@ -374,8 +374,18 @@ describe('buildStoryDocument', () => {
       url: null,
       sortOrder: 0,
     });
-    const chapter1 = await createChapter({ bookId: book.id, name: 'Arya I', url: null, sortOrder: 0 });
-    const chapter2 = await createChapter({ bookId: book.id, name: 'Arya II', url: null, sortOrder: 1 });
+    const chapter1 = await createChapter({
+      bookId: book.id,
+      name: 'Arya I',
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Arya II',
+      url: null,
+      sortOrder: 1,
+    });
     const character = await createCharacter({
       storyId,
       name: 'Arya Stark',
@@ -388,12 +398,31 @@ describe('buildStoryDocument', () => {
     await createCharacterAlias({
       characterId: character.id,
       name: 'Arry',
-      group: null,
+      group: 'No One',
       icon: 'https://example.com/arry.png',
       color: '#808080',
-      url: null,
+      url: 'https://example.com/arry',
       chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
       episodeRange: null,
+    });
+    const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
+    const episode = await createEpisode({
+      seasonId: season.id,
+      name: 'Winter Is Coming',
+      url: null,
+      sortOrder: 0,
+    });
+    // The opposite combination of unset/set fields from the alias above —
+    // no group/icon/color/url/chapterRange, but with an episodeRange.
+    await createCharacterAlias({
+      characterId: character.id,
+      name: 'Nan',
+      group: null,
+      icon: null,
+      color: null,
+      url: null,
+      chapterRange: null,
+      episodeRange: { startEpisodeId: episode.id, endEpisodeId: episode.id },
     });
 
     const document = await buildStoryDocument(storyId);
@@ -401,9 +430,15 @@ describe('buildStoryDocument', () => {
     expect(document.characters[0]!.aliases).toEqual([
       {
         name: 'Arry',
+        group: 'No One',
         icon: 'https://example.com/arry.png',
         color: '#808080',
+        url: 'https://example.com/arry',
         chapters: [0, 1],
+      },
+      {
+        name: 'Nan',
+        episodes: [0, 0],
       },
     ]);
 

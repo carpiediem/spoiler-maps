@@ -10,7 +10,12 @@ interface AliasListProps {
   characterId: number;
   aliases: CharacterAlias[] | null;
   expandedAliasId: number | null;
-  onToggle: (characterId: number, aliasId: number, event: SyntheticEvent, isExpanded: boolean) => void;
+  onToggle: (
+    characterId: number,
+    aliasId: number,
+    event: SyntheticEvent,
+    isExpanded: boolean,
+  ) => void;
   onAliasChange: (characterId: number, alias: CharacterAlias) => void;
   onDelete: (characterId: number, aliasId: number) => void;
   onAddAlias: (characterId: number) => void;

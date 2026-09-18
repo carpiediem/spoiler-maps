@@ -24,7 +24,12 @@ interface AliasItemProps {
   characterId: number;
   alias: CharacterAlias;
   expanded: boolean;
-  onToggle: (characterId: number, aliasId: number, event: SyntheticEvent, isExpanded: boolean) => void;
+  onToggle: (
+    characterId: number,
+    aliasId: number,
+    event: SyntheticEvent,
+    isExpanded: boolean,
+  ) => void;
   onAliasChange: (characterId: number, alias: CharacterAlias) => void;
   onDelete: (characterId: number, aliasId: number) => void;
   chapterOptions: FlatOption[];

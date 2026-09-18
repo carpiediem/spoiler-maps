@@ -57,6 +57,8 @@ interface CharacterItemProps {
   positionsVersion: number;
   /** Called once this character's positions have (re)loaded, so the map pins can be kept in sync. */
   onPositionsChange: (characterId: number, positions: CharacterPosition[]) => void;
+  /** Called once this character's aliases have (re)loaded, or one changes, so an active alias can override its map pins' name/color. */
+  onAliasesChange: (characterId: number, aliases: CharacterAlias[]) => void;
   /** The map timeline control's current mode, used to tell which positions it currently shows on the map. */
   timelineMode: TimelineMode;
   /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
@@ -80,6 +82,7 @@ export function CharacterItem({
   onEditPosition,
   positionsVersion,
   onPositionsChange,
+  onAliasesChange,
   timelineMode,
   timelineIndex,
 }: CharacterItemProps) {
@@ -116,6 +119,11 @@ export function CharacterItem({
     };
   }, [character.id]);
 
+  useEffect(() => {
+    if (aliases === null) return;
+    onAliasesChange(character.id, aliases);
+  }, [character.id, aliases, onAliasesChange]);
+
   // Stable (id threaded through as a call-time argument, not curried) so
   // handing these to AliasItem — memoized, see that file — doesn't defeat
   // its memoization just by this component re-rendering for an unrelated
@@ -128,12 +136,15 @@ export function CharacterItem({
   );
 
   const handleAliasChange = useCallback((_characterId: number, alias: CharacterAlias) => {
-    setAliases((previous) => previous!.map((candidate) => (candidate.id === alias.id ? alias : candidate)));
+    setAliases((previous) =>
+      previous!.map((candidate) => (candidate.id === alias.id ? alias : candidate)),
+    );
   }, []);
 
   const handleDeleteAlias = useCallback(async (_characterId: number, aliasId: number) => {
     await deleteCharacterAlias(aliasId);
     setAliases((previous) => previous!.filter((candidate) => candidate.id !== aliasId));
+    /* v8 ignore next -- the Delete button that triggers this only renders inside its own alias's AccordionDetails, which unmountOnExit removes entirely while collapsed — so aliasId always names the currently-expanded one. */
     setExpandedAliasId((current) => (current === aliasId ? null : current));
   }, []);
 
@@ -148,6 +159,7 @@ export function CharacterItem({
       chapterRange: null,
       episodeRange: null,
     });
+    /* v8 ignore next -- Add Alias is only reachable once aliases have loaded (disabled={aliases === null} on the button), so previous is never actually null here. */
     setAliases((previous) => [...(previous ?? []), created]);
     setExpandedAliasId(created.id);
   }, []);
