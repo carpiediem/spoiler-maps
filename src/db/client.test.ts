@@ -31,6 +31,7 @@ describe('getDatabase', () => {
     expect(tables).toEqual([
       'books',
       'chapters',
+      'character_aliases',
       'character_positions',
       'characters',
       'episodes',
@@ -119,17 +120,44 @@ describe('migrations', () => {
     expect(userVersion).toBe(MIGRATIONS[MIGRATIONS.length - 1]!.version);
   });
 
-  it('survives a migration whose column was already applied without being recorded', async () => {
+  it('survives a migration whose effects were already applied without being recorded', async () => {
     // Simulate the drift bug this fix was written for: bytes that already
-    // have the last migration's ADD COLUMN applied, but with a legacy
-    // schemaVersion recorded as one version behind — so that migration
-    // reruns and hits "duplicate column name" instead of crashing.
+    // have the last migration's SQL applied (whatever it is — an ADD
+    // COLUMN or a CREATE TABLE), but with a legacy schemaVersion recorded
+    // as one version behind — so that migration reruns and hits "duplicate
+    // column name" or "already exists" instead of crashing.
     const lastMigration = MIGRATIONS[MIGRATIONS.length - 1]!;
     const oldDb = await createRawDatabaseForTests();
     for (const migration of MIGRATIONS) {
       oldDb.run(migration.sql);
     }
     await saveLegacyDatabaseBytesForTests(lastMigration.version - 1, oldDb.export());
+    oldDb.close();
+
+    resetDatabaseForTests();
+
+    await expect(getDatabase()).resolves.toBeDefined();
+  });
+
+  it('survives a migration whose column was already applied without being recorded', async () => {
+    // Same drift scenario as above, but specifically for an ADD COLUMN
+    // migration's "duplicate column name" failure — kept as its own case
+    // regardless of whether the *last* migration happens to be one, since
+    // both failure messages are tolerated for different reasons. Finds the
+    // most recent ADD COLUMN-only migration rather than hardcoding one, so
+    // this doesn't silently stop exercising that path as new migrations
+    // are added.
+    const lastAddColumnMigration = [...MIGRATIONS]
+      .reverse()
+      .find(
+        (migration) =>
+          migration.sql.includes('ADD COLUMN') && !migration.sql.includes('CREATE TABLE'),
+      )!;
+    const oldDb = await createRawDatabaseForTests();
+    for (const migration of MIGRATIONS) {
+      oldDb.run(migration.sql);
+    }
+    await saveLegacyDatabaseBytesForTests(lastAddColumnMigration.version - 1, oldDb.export());
     oldDb.close();
 
     resetDatabaseForTests();

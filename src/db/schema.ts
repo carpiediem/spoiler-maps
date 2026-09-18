@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 
 export interface Migration {
   version: number;
@@ -225,6 +225,31 @@ export const MIGRATIONS: Migration[] = [
       -- unrecognized key just falls back to the default theme.
       ALTER TABLE stories ADD COLUMN description TEXT;
       ALTER TABLE stories ADD COLUMN palette_key TEXT;
+    `,
+  },
+  {
+    version: 13,
+    sql: `
+      -- A character's alternate identity for part of the story (e.g.
+      -- introduced in disguise) — during chapter_range/episode_range, the
+      -- character displays this alias's name/group/icon/color instead of
+      -- its own. Ranges use the same open-ended-when-null semantics as
+      -- character_positions/markers above.
+      CREATE TABLE character_aliases (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        character_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        "group" TEXT,
+        icon TEXT,
+        color TEXT,
+        url TEXT,
+        chapter_range_start_chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
+        chapter_range_end_chapter_id INTEGER REFERENCES chapters(id) ON DELETE SET NULL,
+        episode_range_start_episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL,
+        episode_range_end_episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL
+      );
+
+      CREATE INDEX idx_character_aliases_character_id ON character_aliases(character_id);
     `,
   },
 ];

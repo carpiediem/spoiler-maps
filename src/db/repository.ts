@@ -2,6 +2,7 @@ import { getDatabase, persist, type SqlDatabase } from './client';
 import type {
   Book,
   Character,
+  CharacterAlias,
   CharacterPosition,
   Chapter,
   ChapterRange,
@@ -12,6 +13,7 @@ import type {
   MarkerSet,
   NewBook,
   NewCharacter,
+  NewCharacterAlias,
   NewCharacterPosition,
   NewChapter,
   NewEpisode,
@@ -566,3 +568,49 @@ export const createCharacterPosition = characterPositionCrud.create;
 export const listCharacterPositionsForCharacter = characterPositionCrud.listForParent;
 export const updateCharacterPosition = characterPositionCrud.update;
 export const deleteCharacterPosition = characterPositionCrud.delete;
+
+const characterAliasCrud = makeCrud<CharacterAlias, NewCharacterAlias>({
+  table: 'character_aliases',
+  columns: [
+    'character_id',
+    'name',
+    '"group"',
+    'icon',
+    'color',
+    'url',
+    'chapter_range_start_chapter_id',
+    'chapter_range_end_chapter_id',
+    'episode_range_start_episode_id',
+    'episode_range_end_episode_id',
+  ],
+  toParams: (input) => [
+    input.characterId,
+    input.name,
+    input.group,
+    input.icon,
+    input.color,
+    input.url,
+    ...chapterRangeColumns(input.chapterRange),
+    ...episodeRangeColumns(input.episodeRange),
+  ],
+  fromRow: (row) => ({
+    id: row.id as number,
+    characterId: row.character_id as number,
+    name: row.name as string,
+    group: row.group as string | null,
+    icon: row.icon as string | null,
+    color: row.color as string | null,
+    url: row.url as string | null,
+    chapterRange: rowToChapterRange(row),
+    episodeRange: rowToEpisodeRange(row),
+  }),
+  parentColumn: 'character_id',
+  orderBy: 'id',
+  beforeWrite: assertRanges,
+  buildResult: withNormalizedRanges<CharacterAlias>,
+});
+
+export const createCharacterAlias = characterAliasCrud.create;
+export const listAliasesForCharacter = characterAliasCrud.listForParent;
+export const updateCharacterAlias = characterAliasCrud.update;
+export const deleteCharacterAlias = characterAliasCrud.delete;
