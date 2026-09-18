@@ -76,7 +76,9 @@ describe('buildViewPinsAndTails', () => {
 
     const { pins, tails } = buildViewPinsAndTails(document, new Set([0]), false, 'book', 1);
 
-    expect(pins).toEqual([expect.objectContaining({ positionIndex: 3, style: 'pin', label: 'JS' })]);
+    expect(pins).toEqual([
+      expect.objectContaining({ positionIndex: 3, style: 'pin', label: 'JS' }),
+    ]);
     expect(tails).toEqual([]);
   });
 
