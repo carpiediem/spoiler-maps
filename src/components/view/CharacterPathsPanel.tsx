@@ -73,7 +73,6 @@ export function CharacterPathsPanel({
     >
       <Stack
         direction="row"
-        spacing={1}
         sx={{
           alignItems: 'center',
           mb: 1,
