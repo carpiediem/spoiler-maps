@@ -3,12 +3,14 @@ import {
   createBook,
   createChapter,
   createCharacter,
+  createCharacterAlias,
   createCharacterPosition,
   createEpisode,
   createMarker,
   createMarkerSet,
   createStory,
   createTvSeason,
+  listAliasesForCharacter,
   listBooksForStory,
   listChaptersForBook,
   listCharacterPositionsForCharacter,
@@ -222,6 +224,38 @@ markerSets:
     ]);
   });
 
+  it('parses a character’s aliases', () => {
+    const yamlText = `
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+characters:
+  - name: Arya Stark
+    aliases:
+      - name: Arry
+        group: No One
+        icon: https://example.com/arry.png
+        color: "#808080"
+        url: https://example.com/arry
+        chapters: [0, 5]
+`;
+    const document = parseStoryDocument(yamlText);
+
+    expect(document.characters[0]!.aliases).toEqual([
+      {
+        name: 'Arry',
+        group: 'No One',
+        icon: 'https://example.com/arry.png',
+        color: '#808080',
+        url: 'https://example.com/arry',
+        chapters: [0, 5],
+        episodes: undefined,
+      },
+    ]);
+  });
+
   it('defaults each nested list to empty when its key is omitted entirely', () => {
     const yamlText = `
 name: Test
@@ -247,6 +281,7 @@ markerSets:
     expect(document.books[0]!.chapters).toEqual([]);
     expect(document.television[0]!.episodes).toEqual([]);
     expect(document.characters[0]!.positions).toEqual([]);
+    expect(document.characters[0]!.aliases).toEqual([]);
     expect(document.markerSets[0]!.markers[0]!.polygon).toBeUndefined();
   });
 
@@ -385,6 +420,33 @@ describe('importStoryDocument', () => {
     expect(marker!.chapterRange).not.toBeNull();
   });
 
+  it('creates a character’s aliases, resolving their chapter ranges', async () => {
+    const story = await importStoryDocument(
+      minimalDocument({
+        books: [{ name: 'A Game of Thrones', chapters: [{ name: 'Arya I' }, { name: 'Arya II' }] }],
+        characters: [
+          {
+            name: 'Arya Stark',
+            positions: [],
+            aliases: [
+              {
+                name: 'Arry',
+                icon: 'https://example.com/arry.png',
+                color: '#808080',
+                chapters: [0, 1],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    const [character] = await listCharactersForStory(story.id);
+    const [alias] = await listAliasesForCharacter(character!.id);
+    expect(alias).toMatchObject({ name: 'Arry', icon: 'https://example.com/arry.png' });
+    expect(alias!.chapterRange).not.toBeNull();
+  });
+
   it('deletes the partially created story and rethrows when a range references an out-of-bounds index', async () => {
     await expect(
       importStoryDocument(
@@ -460,6 +522,16 @@ describe('round trip', () => {
       tail: [{ lat: 0.9, lng: 0.9 }],
       chapterRange: { startChapterId: chapter1.id, endChapterId: null },
       episodeRange: { startEpisodeId: episode.id, endEpisodeId: episode.id },
+    });
+    await createCharacterAlias({
+      characterId: character.id,
+      name: 'Ned',
+      group: null,
+      icon: null,
+      color: '#808080',
+      url: null,
+      chapterRange: { startChapterId: chapter1.id, endChapterId: null },
+      episodeRange: null,
     });
     const markerSet = await createMarkerSet({ storyId: story.id, name: 'Cities' });
     await createMarker({

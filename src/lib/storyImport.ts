@@ -2,6 +2,7 @@ import { parse } from 'yaml';
 import {
   createBook,
   createCharacter,
+  createCharacterAlias,
   createCharacterPosition,
   createChapter,
   createEpisode,
@@ -203,6 +204,43 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
           ),
         };
       });
+      const aliases = assertArray(
+        character.aliases ?? [],
+        `characters[${characterIndex}].aliases`,
+      ).map((rawAlias, aliasIndex) => {
+        assert(
+          rawAlias && typeof rawAlias === 'object',
+          `characters[${characterIndex}].aliases[${aliasIndex}] must be a mapping.`,
+        );
+        const alias = rawAlias as Record<string, unknown>;
+        return {
+          name: assertString(alias.name, `characters[${characterIndex}].aliases[${aliasIndex}].name`),
+          group: assertOptionalString(
+            alias.group,
+            `characters[${characterIndex}].aliases[${aliasIndex}].group`,
+          ),
+          icon: assertOptionalString(
+            alias.icon,
+            `characters[${characterIndex}].aliases[${aliasIndex}].icon`,
+          ),
+          color: assertOptionalString(
+            alias.color,
+            `characters[${characterIndex}].aliases[${aliasIndex}].color`,
+          ),
+          url: assertOptionalString(
+            alias.url,
+            `characters[${characterIndex}].aliases[${aliasIndex}].url`,
+          ),
+          chapters: assertRangeTuple(
+            alias.chapters,
+            `characters[${characterIndex}].aliases[${aliasIndex}].chapters`,
+          ),
+          episodes: assertRangeTuple(
+            alias.episodes,
+            `characters[${characterIndex}].aliases[${aliasIndex}].episodes`,
+          ),
+        };
+      });
       return {
         name: assertString(character.name, `characters[${characterIndex}].name`),
         group: assertOptionalString(character.group, `characters[${characterIndex}].group`),
@@ -210,6 +248,7 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
         color: assertOptionalString(character.color, `characters[${characterIndex}].color`),
         url: assertOptionalString(character.url, `characters[${characterIndex}].url`),
         positions,
+        aliases,
       };
     },
   );
@@ -411,6 +450,19 @@ async function importCharacters(
         tail: position.tail ?? null,
         chapterRange: resolveChapterRange(position.chapters, chapterIdsByIndex, `${path}.chapters`),
         episodeRange: resolveEpisodeRange(position.episodes, episodeIdsByIndex, `${path}.episodes`),
+      });
+    }
+    for (const [aliasIndex, alias] of (character.aliases ?? []).entries()) {
+      const path = `characters[${characterIndex}].aliases[${aliasIndex}]`;
+      await createCharacterAlias({
+        characterId: createdCharacter.id,
+        name: alias.name,
+        group: alias.group ?? null,
+        icon: alias.icon ?? null,
+        color: alias.color ?? null,
+        url: alias.url ?? null,
+        chapterRange: resolveChapterRange(alias.chapters, chapterIdsByIndex, `${path}.chapters`),
+        episodeRange: resolveEpisodeRange(alias.episodes, episodeIdsByIndex, `${path}.episodes`),
       });
     }
   }
