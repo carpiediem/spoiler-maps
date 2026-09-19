@@ -452,14 +452,14 @@ export function MapView({
           // The tiles already show an icon here — this stays invisible, but
           // keeps real (clickable) dimensions.
           <Marker
-            key={pin.marker.id}
+            key={`marker-${pin.marker.id}`}
             position={[pin.marker.position.lat, pin.marker.position.lng]}
             icon={INVISIBLE_MARKER_ICON}
             eventHandlers={eventHandlers}
           />
         ) : (
           <Marker
-            key={pin.marker.id}
+            key={`marker-${pin.marker.id}`}
             position={[pin.marker.position.lat, pin.marker.position.lng]}
             icon={buildMarkerIcon(pin.marker)}
             eventHandlers={eventHandlers}
@@ -510,7 +510,7 @@ export function MapView({
       )}
       {areaDraftPoints?.map((point, index) => (
         <Marker
-          key={index}
+          key={`area-vertex-${index}`}
           position={[point.lat, point.lng]}
           icon={AREA_VERTEX_ICON}
           draggable
