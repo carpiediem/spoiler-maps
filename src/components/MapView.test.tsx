@@ -637,6 +637,28 @@ describe('MapView', () => {
     expect((marker!.options.icon!.options as { iconUrl?: string }).iconUrl).toBeUndefined();
   });
 
+  it('sets each marker’s label as its hover title, with or without an icon', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[
+          { marker: makeMarker({ id: 1, label: 'Winterfell' }), noIcons: false },
+          { marker: makeMarker({ id: 2, label: 'Castle Black' }), noIcons: true },
+        ]}
+      />,
+    );
+
+    const titles: (string | undefined)[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) titles.push(layer.getElement()?.title);
+    });
+    expect(titles.sort()).toEqual(['Castle Black', 'Winterfell']);
+  });
+
   it('opens a "no icons" marker’s wiki URL in a new tab on click', () => {
     const mapRef = createRef<LeafletMap | null>();
     const windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);

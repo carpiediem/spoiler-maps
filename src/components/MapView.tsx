@@ -455,6 +455,7 @@ export function MapView({
             key={`marker-${pin.marker.id}`}
             position={[pin.marker.position.lat, pin.marker.position.lng]}
             icon={INVISIBLE_MARKER_ICON}
+            title={pin.marker.label}
             eventHandlers={eventHandlers}
           />
         ) : (
@@ -462,6 +463,7 @@ export function MapView({
             key={`marker-${pin.marker.id}`}
             position={[pin.marker.position.lat, pin.marker.position.lng]}
             icon={buildMarkerIcon(pin.marker)}
+            title={pin.marker.label}
             eventHandlers={eventHandlers}
           />
         );
