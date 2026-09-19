@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -87,7 +87,9 @@ describe('accessibility: all content is contained by a landmark', () => {
       </MemoryRouter>,
     );
     await screen.findByDisplayValue('A Song of Ice and Fire');
-    await user.click(screen.getByRole('heading', { level: 2, name: /books/i }));
+    await user.click(
+      within(screen.getByRole('heading', { level: 2, name: /books/i })).getByRole('button'),
+    );
     await screen.findByText('A Game of Thrones');
 
     expect(findOrphanedContent()).toEqual([]);

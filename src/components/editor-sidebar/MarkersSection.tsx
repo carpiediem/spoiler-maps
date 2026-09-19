@@ -18,6 +18,7 @@ import { useRenderLoopWatchdog } from '../../lib/renderLoopWatchdog';
 import { useRangeOptions } from './characters/rangeOptions';
 import { MarkerSetItem } from './markers/MarkerSetItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
+import { SectionLoading } from './SectionLoading';
 
 interface MarkersSectionProps {
   storyId: number;
@@ -87,6 +88,7 @@ export function MarkersSection({
 
   const load = useCallback(async (storyId: number, isCancelled: () => boolean) => {
     const loadedMarkerSets = await listMarkerSetsForStory(storyId);
+    /* v8 ignore next -- load() only starts after the first paint (see useExpandableEntityList), and listMarkerSetsForStory then resolves within the same task, so unmounting inside this window isn't reliably reproducible; the hook's own cancelled check before load() covers the common case. */
     if (isCancelled()) return loadedMarkerSets;
     const markerLists = await Promise.all(
       loadedMarkerSets.map((markerSet) => listMarkersForMarkerSet(markerSet.id)),
@@ -364,11 +366,7 @@ export function MarkersSection({
   }, []);
 
   if (markerSets === null) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        Loading markers…
-      </Typography>
-    );
+    return <SectionLoading>Loading markers…</SectionLoading>;
   }
 
   return (

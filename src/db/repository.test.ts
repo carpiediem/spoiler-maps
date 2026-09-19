@@ -7,7 +7,10 @@ import {
   createCharacterAlias,
   createCharacterPosition,
   createEpisode,
+  countBooksForStory,
+  countCharactersForStory,
   countMarkersForStory,
+  countTvSeasonsForStory,
   createMarker,
   createMarkerSet,
   createStory,
@@ -896,5 +899,43 @@ describe('slow query diagnostic', () => {
 
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+
+  it('counts books, tv seasons, and characters per story without loading them', async () => {
+    const story = await seedStory();
+    const otherStory = await seedStory();
+    expect(await countBooksForStory(story.id)).toBe(0);
+    expect(await countTvSeasonsForStory(story.id)).toBe(0);
+    expect(await countCharactersForStory(story.id)).toBe(0);
+
+    await createBook({
+      storyId: story.id,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createBook({
+      storyId: story.id,
+      name: 'A Clash of Kings',
+      author: null,
+      url: null,
+      sortOrder: 1,
+    });
+    await createTvSeason({ storyId: story.id, url: null, sortOrder: 0 });
+    await createCharacter({
+      storyId: story.id,
+      name: 'Arya',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+      url: null,
+    });
+
+    expect(await countBooksForStory(story.id)).toBe(2);
+    expect(await countTvSeasonsForStory(story.id)).toBe(1);
+    expect(await countCharactersForStory(story.id)).toBe(1);
+    expect(await countBooksForStory(otherStory.id)).toBe(0);
   });
 });

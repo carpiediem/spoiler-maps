@@ -20,6 +20,7 @@ import type { TimelineMode } from '../MapTimelineControl';
 import { useRangeOptions } from './characters/rangeOptions';
 import { CharacterItem } from './characters/CharacterItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
+import { SectionLoading } from './SectionLoading';
 
 interface CharactersSectionProps {
   storyId: number;
@@ -63,6 +64,22 @@ export function CharactersSection({
   sectionExpanded,
 }: CharactersSectionProps) {
   useRenderLoopWatchdog('CharactersSection');
+
+  // This section lazy-mounts (its SidebarSection unmounts it on every
+  // collapse, not just the first time). Without this, a character left
+  // toggled "visible on map" (or expanded, showing its position pins) when
+  // the section collapses would leave its pins and tails stuck on the map
+  // with no way to turn them off, since the component reporting them would
+  // be gone. Runs only on unmount (empty deps): the props are stable
+  // setState functions from EditScreen, not meant to retrigger this.
+  useEffect(() => {
+    return () => {
+      onVisiblePositionsChange(null);
+      onVisibleTailsChange([]);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // A character stays visible on the map (last position + tails) once
   // toggled on, independent of — and in addition to — whichever character's
   // accordion happens to be expanded.
@@ -324,11 +341,7 @@ export function CharactersSection({
   }
 
   if (characters === null) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        Loading characters…
-      </Typography>
-    );
+    return <SectionLoading>Loading characters…</SectionLoading>;
   }
 
   return (
