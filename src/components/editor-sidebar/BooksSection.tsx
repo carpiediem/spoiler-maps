@@ -13,6 +13,7 @@ import { sortOrderAfter } from '../../db/ordering';
 import { useRenderLoopWatchdog } from '../../lib/renderLoopWatchdog';
 import { BookItem } from './books/BookItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
+import { SectionLoading } from './SectionLoading';
 
 interface BooksSectionProps {
   storyId: number;
@@ -27,6 +28,7 @@ export function BooksSection({ storyId, initialExpandedIndex, onCountChange }: B
 
   const load = useCallback(async (storyId: number, isCancelled: () => boolean) => {
     const loadedBooks = await listBooksForStory(storyId);
+    /* v8 ignore next -- load() only starts after the first paint (see useExpandableEntityList), and listBooksForStory then resolves within the same task, so unmounting inside this window isn't reliably reproducible; the hook's own cancelled check before load() covers the common case. */
     if (isCancelled()) return loadedBooks;
     const chapterLists = await Promise.all(loadedBooks.map((book) => listChaptersForBook(book.id)));
     /* v8 ignore next -- exercising this specific unmount window (after listBooksForStory resolves but before the chapter Promise.all does) is too timing-dependent to test reliably; the outer isCancelled() check above covers the same defensive purpose. */
@@ -85,11 +87,7 @@ export function BooksSection({ storyId, initialExpandedIndex, onCountChange }: B
   }
 
   if (books === null) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        Loading books…
-      </Typography>
-    );
+    return <SectionLoading>Loading books…</SectionLoading>;
   }
 
   return (

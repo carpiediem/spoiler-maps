@@ -395,7 +395,7 @@ describe('App', () => {
 
     await screen.findByRole('button', { name: /a song of ice and fire/i });
     await user.click(screen.getByRole('button', { name: /^characters$/i }));
-    await user.click(screen.getByRole('button', { name: /add character/i }));
+    await user.click(await screen.findByRole('button', { name: /add character/i }));
     await screen.findByLabelText(/^name$/i);
 
     expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
@@ -570,7 +570,7 @@ describe('App', () => {
 
     await screen.findByRole('button', { name: /a song of ice and fire/i });
     await user.click(screen.getByRole('button', { name: /^characters$/i }));
-    await user.click(screen.getByRole('button', { name: /add character/i }));
+    await user.click(await screen.findByRole('button', { name: /add character/i }));
     await screen.findByLabelText(/^name$/i);
     await user.click(screen.getByRole('button', { name: /^position$/i }));
 
@@ -620,7 +620,7 @@ describe('App', () => {
 
     await screen.findByRole('button', { name: /a song of ice and fire/i });
     await user.click(screen.getByRole('button', { name: /^markers$/i }));
-    await user.click(screen.getByRole('button', { name: /add collection/i }));
+    await user.click(await screen.findByRole('button', { name: /add collection/i }));
     await screen.findByText('Unnamed Collection');
     await user.click(screen.getByRole('button', { name: /add marker/i }));
     await screen.findByText('Unnamed Marker');
@@ -674,7 +674,7 @@ describe('App', () => {
 
     await screen.findByRole('button', { name: /a song of ice and fire/i });
     await user.click(screen.getByRole('button', { name: /^markers$/i }));
-    await user.click(screen.getByRole('button', { name: /add collection/i }));
+    await user.click(await screen.findByRole('button', { name: /add collection/i }));
     await screen.findByText('Unnamed Collection');
     const markerButton = screen.getByRole('button', { name: /add marker/i });
     await user.click(markerButton);
@@ -719,7 +719,7 @@ describe('App', () => {
 
     await screen.findByRole('button', { name: /a song of ice and fire/i });
     await user.click(screen.getByRole('button', { name: /^markers$/i }));
-    await user.click(screen.getByRole('button', { name: /add collection/i }));
+    await user.click(await screen.findByRole('button', { name: /add collection/i }));
     await screen.findByText('Unnamed Collection');
     await user.click(screen.getByRole('button', { name: /add marker/i }));
     await screen.findByText('Unnamed Marker');
@@ -762,7 +762,7 @@ describe('App', () => {
 
     await screen.findByRole('button', { name: /a song of ice and fire/i });
     await user.click(screen.getByRole('button', { name: /^markers$/i }));
-    await user.click(screen.getByRole('button', { name: /add collection/i }));
+    await user.click(await screen.findByRole('button', { name: /add collection/i }));
     await screen.findByText('Unnamed Collection');
     await user.click(screen.getByRole('button', { name: /add marker/i }));
     await screen.findByText('Unnamed Marker');

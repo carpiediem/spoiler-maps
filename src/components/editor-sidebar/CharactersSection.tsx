@@ -20,6 +20,7 @@ import type { TimelineMode } from '../MapTimelineControl';
 import { useRangeOptions } from './characters/rangeOptions';
 import { CharacterItem } from './characters/CharacterItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
+import { SectionLoading } from './SectionLoading';
 
 interface CharactersSectionProps {
   storyId: number;
@@ -340,11 +341,7 @@ export function CharactersSection({
   }
 
   if (characters === null) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        Loading characters…
-      </Typography>
-    );
+    return <SectionLoading>Loading characters…</SectionLoading>;
   }
 
   return (

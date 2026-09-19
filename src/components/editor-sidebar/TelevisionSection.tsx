@@ -12,6 +12,7 @@ import {
 import { sortOrderAfter } from '../../db/ordering';
 import { SeasonItem } from './television/SeasonItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
+import { SectionLoading } from './SectionLoading';
 
 interface TelevisionSectionProps {
   storyId: number;
@@ -29,6 +30,7 @@ export function TelevisionSection({
 
   const load = useCallback(async (storyId: number, isCancelled: () => boolean) => {
     const loadedSeasons = await listTvSeasonsForStory(storyId);
+    /* v8 ignore next -- load() only starts after the first paint (see useExpandableEntityList), and listTvSeasonsForStory then resolves within the same task, so unmounting inside this window isn't reliably reproducible; the hook's own cancelled check before load() covers the common case. */
     if (isCancelled()) return loadedSeasons;
     const episodeLists = await Promise.all(
       loadedSeasons.map((season) => listEpisodesForSeason(season.id)),
@@ -89,11 +91,7 @@ export function TelevisionSection({
   }
 
   if (seasons === null) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        Loading television seasons…
-      </Typography>
-    );
+    return <SectionLoading>Loading television seasons…</SectionLoading>;
   }
 
   return (

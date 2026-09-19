@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { nextPaint } from '../../lib/nextPaint';
 
 interface UseExpandableEntityListOptions<T extends { id: number }> {
   storyId: number;
@@ -25,7 +26,7 @@ interface UseExpandableEntityListOptions<T extends { id: number }> {
 /**
  * Manages the load/expand/add/update/remove shape shared by the sidebar's
  * accordion-style entity lists (books, tv seasons, characters): fetch the
- * list for the current story (cancelling if the story changes or the
+ * list for the current story (after the next paint, cancelling if the story changes or the
  * component unmounts first), track a single expanded entity id, apply an
  * initialExpandedIndex once per story, and report the list's count.
  */
@@ -56,10 +57,15 @@ export function useExpandableEntityList<T extends { id: number }>({
     }
     resetForNewStory();
 
-    load(storyId, () => cancelled).then((loaded) => {
-      if (cancelled) return;
-      setEntities(loaded);
-    });
+    // Waits for a paint first, so a lazily-mounted section shows as open
+    // with its loading state right away instead of only after the
+    // (synchronous, potentially slow) queries finish.
+    nextPaint()
+      .then(() => (cancelled ? null : load(storyId, () => cancelled)))
+      .then((loaded) => {
+        if (cancelled || loaded === null) return;
+        setEntities(loaded);
+      });
 
     return () => {
       cancelled = true;
