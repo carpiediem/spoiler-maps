@@ -218,7 +218,7 @@ export function ViewScreen() {
           <Typography component="h1" sx={visuallyHidden}>
             {document!.name}
           </Typography>
-          <MapErrorBoundary key={timelineKey}>
+          <MapErrorBoundary key={`map-${timelineKey}`}>
             <MapView
               tileUrl={document!.tileUrlTemplate ?? null}
               attribution={tileAttribution}
@@ -232,7 +232,7 @@ export function ViewScreen() {
             />
           </MapErrorBoundary>
           <MapTimelineControl
-            key={timelineKey}
+            key={`timeline-${timelineKey}`}
             chapterOptions={chapterOptions}
             episodeOptions={episodeOptions}
             hasBooks={chapterOptions.length > 0}
