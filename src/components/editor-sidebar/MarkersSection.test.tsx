@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createBook,
@@ -797,7 +797,9 @@ describe('MarkersSection', () => {
       { lat: 3, lng: 3 },
     ];
 
-    active.onAreaSave(polygon);
+    act(() => {
+      active.onAreaSave(polygon);
+    });
 
     await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
@@ -829,10 +831,12 @@ describe('MarkersSection', () => {
     await waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
     const active = onActiveMarkerChange.mock.calls.at(-1)![0];
 
-    active.onAreaSave([
-      { lat: 1, lng: 1 },
-      { lat: 2, lng: 2 },
-    ]);
+    act(() => {
+      active.onAreaSave([
+        { lat: 1, lng: 1 },
+        { lat: 2, lng: 2 },
+      ]);
+    });
 
     await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
@@ -868,7 +872,9 @@ describe('MarkersSection', () => {
     await waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
     const active = onActiveMarkerChange.mock.calls.at(-1)![0];
 
-    active.onAreaSave(null);
+    act(() => {
+      active.onAreaSave(null);
+    });
 
     await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
@@ -912,7 +918,9 @@ describe('MarkersSection', () => {
     await waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
     const active = onActiveMarkerChange.mock.calls.at(-1)![0];
 
-    active.onDrag({ lat: 5, lng: 6 });
+    act(() => {
+      active.onDrag({ lat: 5, lng: 6 });
+    });
 
     await waitFor(async () => {
       const markers = await listMarkersForMarkerSet(markerSet.id);

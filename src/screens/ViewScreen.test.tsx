@@ -144,8 +144,9 @@ describe('ViewScreen', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
-  it('has a main landmark in the error state (no story id or data URL given)', () => {
+  it('has a main landmark in the error state (no story id or data URL given)', async () => {
     renderAt('/view');
+    expect(await screen.findByText(/no map specified/i)).toBeInTheDocument();
     expect(screen.getAllByRole('main')).toHaveLength(1);
   });
 
