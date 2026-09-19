@@ -1,6 +1,7 @@
 import { stringify } from 'yaml';
 import {
   getStory,
+  listAliasesForCharacter,
   listBooksForStory,
   listChaptersForBook,
   listCharacterPositionsForCharacter,
@@ -15,6 +16,7 @@ import {
 import {
   STORY_DOCUMENT_FORMAT_VERSION,
   type StoryDocument,
+  type StoryDocumentAlias,
   type StoryDocumentCharacter,
   type StoryDocumentMarker,
   type StoryDocumentMarkerSet,
@@ -126,6 +128,20 @@ export async function buildStoryDocument(storyId: number): Promise<StoryDocument
           ...(episodes ? { episodes } : {}),
         };
       });
+      const aliases = await listAliasesForCharacter(character.id);
+      const aliasDocs: StoryDocumentAlias[] = aliases.map((alias) => {
+        const chapters = chapterRangeToTuple(alias.chapterRange, chapterIndexById);
+        const episodes = episodeRangeToTuple(alias.episodeRange, episodeIndexById);
+        return {
+          name: alias.name,
+          ...(alias.group ? { group: alias.group } : {}),
+          ...(alias.icon ? { icon: alias.icon } : {}),
+          ...(alias.color ? { color: alias.color } : {}),
+          ...(alias.url ? { url: alias.url } : {}),
+          ...(chapters ? { chapters } : {}),
+          ...(episodes ? { episodes } : {}),
+        };
+      });
       return {
         name: character.name,
         ...(character.group ? { group: character.group } : {}),
@@ -133,6 +149,7 @@ export async function buildStoryDocument(storyId: number): Promise<StoryDocument
         ...(character.color ? { color: character.color } : {}),
         ...(character.url ? { url: character.url } : {}),
         positions: positionDocs,
+        ...(aliasDocs.length > 0 ? { aliases: aliasDocs } : {}),
       };
     }),
   );

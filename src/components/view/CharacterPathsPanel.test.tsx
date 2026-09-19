@@ -18,6 +18,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={vi.fn()}
         showFullPath={false}
         onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -33,6 +35,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={vi.fn()}
         showFullPath={false}
         onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -54,6 +58,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={vi.fn()}
         showFullPath={false}
         onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -77,6 +83,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={vi.fn()}
         showFullPath={false}
         onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -88,6 +96,84 @@ describe('CharacterPathsPanel', () => {
     expect(screen.getByText('Ghost')).toBeInTheDocument();
   });
 
+  it('shows an active alias’s name/icon/color/url instead of the character’s own, reverting once its range ends', () => {
+    const { rerender } = render(
+      <CharacterPathsPanel
+        characters={[
+          {
+            name: 'Aegon Targaryen',
+            icon: 'https://example.com/aegon.png',
+            color: '#000000',
+            url: 'https://awoiaf.westeros.org/index.php/Aegon_Targaryen_(son_of_Rhaegar)',
+            positions: [],
+            aliases: [
+              {
+                name: 'Young Griff',
+                icon: 'https://example.com/griff.png',
+                color: '#0000ff',
+                url: 'https://awoiaf.westeros.org/index.php/Young_Griff',
+                chapters: [0, 0],
+              },
+            ],
+          },
+        ]}
+        checkedIndices={new Set()}
+        onCheckedIndicesChange={vi.fn()}
+        showFullPath={false}
+        onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+      />,
+    );
+
+    expect(screen.getByRole('link', { name: 'Young Griff' })).toHaveAttribute(
+      'href',
+      'https://awoiaf.westeros.org/index.php/Young_Griff',
+    );
+    expect(screen.getByRole('img', { name: 'Young Griff' })).toHaveAttribute(
+      'src',
+      'https://example.com/griff.png',
+    );
+
+    rerender(
+      <CharacterPathsPanel
+        characters={[
+          {
+            name: 'Aegon Targaryen',
+            icon: 'https://example.com/aegon.png',
+            color: '#000000',
+            url: 'https://awoiaf.westeros.org/index.php/Aegon_Targaryen_(son_of_Rhaegar)',
+            positions: [],
+            aliases: [
+              {
+                name: 'Young Griff',
+                icon: 'https://example.com/griff.png',
+                color: '#0000ff',
+                url: 'https://awoiaf.westeros.org/index.php/Young_Griff',
+                chapters: [0, 0],
+              },
+            ],
+          },
+        ]}
+        checkedIndices={new Set()}
+        onCheckedIndicesChange={vi.fn()}
+        showFullPath={false}
+        onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={2}
+      />,
+    );
+
+    expect(screen.getByRole('link', { name: 'Aegon Targaryen' })).toHaveAttribute(
+      'href',
+      'https://awoiaf.westeros.org/index.php/Aegon_Targaryen_(son_of_Rhaegar)',
+    );
+    expect(screen.getByRole('img', { name: 'Aegon Targaryen' })).toHaveAttribute(
+      'src',
+      'https://example.com/aegon.png',
+    );
+  });
+
   it('lists every character, unchecked by default', () => {
     render(
       <CharacterPathsPanel
@@ -96,6 +182,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={vi.fn()}
         showFullPath={false}
         onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -115,6 +203,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={onCheckedIndicesChange}
         showFullPath={false}
         onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -133,6 +223,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={onCheckedIndicesChange}
         showFullPath={false}
         onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -151,6 +243,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={onCheckedIndicesChange}
         showFullPath={false}
         onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -165,6 +259,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={onCheckedIndicesChange}
         showFullPath={false}
         onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
     expect(selectAll).toHaveAttribute('data-indeterminate', 'true');
@@ -180,6 +276,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={onCheckedIndicesChange}
         showFullPath={false}
         onShowFullPathChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -198,6 +296,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={vi.fn()}
         showFullPath={false}
         onShowFullPathChange={onShowFullPathChange}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 
@@ -217,6 +317,8 @@ describe('CharacterPathsPanel', () => {
         onCheckedIndicesChange={vi.fn()}
         showFullPath
         onShowFullPathChange={onShowFullPathChange}
+        timelineMode="book"
+        timelineIndex={1}
       />,
     );
 

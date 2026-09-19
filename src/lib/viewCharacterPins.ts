@@ -58,7 +58,17 @@ export function buildViewPinsAndTails(
       .filter(({ position }) => isPositionVisible(position, mode, currentIndex));
     if (reachedPositionIndices.length === 0) return;
 
-    const color = character.color ?? null;
+    // The first alias (in array order) whose own chapter/episode range is
+    // currently active, if any — the character displays that alias's own
+    // name/color instead of its real ones for as long as it stays active.
+    const activeAlias = character.aliases?.find((alias) =>
+      isPositionVisible(alias, mode, currentIndex),
+    );
+    const name = activeAlias?.name ?? character.name;
+    // An active alias's own color entirely replaces the character's — not
+    // just filling in when the alias left it unset — matching
+    // CharacterPathsPanel's identical rule for its own icon/color/url.
+    const color = activeAlias ? (activeAlias.color ?? null) : (character.color ?? null);
     const { position: lastPosition, positionIndex: lastPositionIndex } =
       reachedPositionIndices[reachedPositionIndices.length - 1]!;
 
@@ -69,7 +79,7 @@ export function buildViewPinsAndTails(
           lastPosition,
           characterIndex * 100_000 + lastPositionIndex,
         ),
-        label: characterInitials(character.name),
+        label: characterInitials(name),
         positionIndex: lastPositionIndex + 1,
         color,
         style: 'pin',
@@ -86,7 +96,7 @@ export function buildViewPinsAndTails(
       pins.push({
         characterId: characterIndex,
         characterPosition: toMapCharacterPosition(position, syntheticId),
-        label: isLast ? characterInitials(character.name) : '',
+        label: isLast ? characterInitials(name) : '',
         positionIndex: positionIndex + 1,
         color,
         style: isLast ? 'pin' : 'dot',

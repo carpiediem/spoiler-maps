@@ -12,10 +12,12 @@ import {
   createBook,
   createChapter,
   createCharacter,
+  createCharacterAlias,
   createCharacterPosition,
   createEpisode,
   createStory,
   createTvSeason,
+  listAliasesForCharacter,
   listCharactersForStory,
   type Character,
   type CharacterPosition,
@@ -105,6 +107,7 @@ function Wrapper({
       onAddPosition={onAddPosition ?? vi.fn()}
       onEditPosition={onEditPosition ?? vi.fn()}
       onPositionsChange={onPositionsChange ?? vi.fn()}
+      onAliasesChange={vi.fn()}
       positionsVersion={0}
       timelineMode={timelineMode ?? 'book'}
       timelineIndex={timelineIndex ?? Number.MAX_SAFE_INTEGER}
@@ -141,6 +144,7 @@ describe('CharacterItem', () => {
         onAddPosition={vi.fn()}
         onEditPosition={vi.fn()}
         onPositionsChange={vi.fn()}
+        onAliasesChange={vi.fn()}
         positionsVersion={0}
         timelineMode="book"
         timelineIndex={Number.MAX_SAFE_INTEGER}
@@ -178,6 +182,7 @@ describe('CharacterItem', () => {
         onAddPosition={vi.fn()}
         onEditPosition={vi.fn()}
         onPositionsChange={vi.fn()}
+        onAliasesChange={vi.fn()}
         positionsVersion={0}
         timelineMode="book"
         timelineIndex={Number.MAX_SAFE_INTEGER}
@@ -223,6 +228,7 @@ describe('CharacterItem', () => {
         onAddPosition={vi.fn()}
         onEditPosition={vi.fn()}
         onPositionsChange={vi.fn()}
+        onAliasesChange={vi.fn()}
         positionsVersion={0}
         timelineMode="book"
         timelineIndex={Number.MAX_SAFE_INTEGER}
@@ -261,6 +267,7 @@ describe('CharacterItem', () => {
         onAddPosition={vi.fn()}
         onEditPosition={vi.fn()}
         onPositionsChange={vi.fn()}
+        onAliasesChange={vi.fn()}
         positionsVersion={0}
         timelineMode="book"
         timelineIndex={Number.MAX_SAFE_INTEGER}
@@ -625,5 +632,232 @@ describe('CharacterItem', () => {
     render(<Wrapper initialCharacter={character} />);
 
     expect(screen.getByRole('img', { name: /unnamed character/i })).toBeInTheDocument();
+  });
+
+  describe('aliases', () => {
+    it('shows a placeholder when there are no aliases yet', async () => {
+      const character = await seedCharacter();
+      render(<Wrapper initialCharacter={character} />);
+
+      expect(await screen.findByText(/no aliases yet/i)).toBeInTheDocument();
+    });
+
+    it('adds an alias and expands it', async () => {
+      const character = await seedCharacter();
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+
+      expect(await screen.findByText('Unnamed Alias')).toBeInTheDocument();
+      // Two "Name" fields are visible at once: the character's own, and
+      // this alias's — the alias's renders second.
+      const [, aliasNameField] = screen.getAllByLabelText('Name');
+      expect(aliasNameField).toBeInTheDocument();
+    });
+
+    it('edits an alias’s name, group, icon URL, and color, and persists them', async () => {
+      const character = await seedCharacter();
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+      await screen.findByText('Unnamed Alias');
+
+      const [, nameField] = screen.getAllByLabelText('Name');
+      fireEvent.change(nameField!, { target: { value: 'Arry' } });
+      fireEvent.blur(nameField!);
+      const [, groupField] = screen.getAllByLabelText('Group');
+      fireEvent.change(groupField!, { target: { value: 'No One' } });
+      fireEvent.blur(groupField!);
+      const [, iconField] = screen.getAllByLabelText('Icon URL');
+      fireEvent.change(iconField!, { target: { value: 'https://example.com/arry.png' } });
+      fireEvent.blur(iconField!);
+
+      await waitFor(() => expect(screen.getByText('Arry')).toBeInTheDocument());
+
+      await waitFor(async () => {
+        const [alias] = await listAliasesForCharacter(character.id);
+        expect(alias).toMatchObject({
+          name: 'Arry',
+          group: 'No One',
+          icon: 'https://example.com/arry.png',
+        });
+      });
+    });
+
+    it('edits an alias’s color and URL, and persists them', async () => {
+      const character = await seedCharacter();
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+      await screen.findByText('Unnamed Alias');
+
+      const [, colorField] = screen.getAllByLabelText('Color');
+      fireEvent.change(colorField!, { target: { value: '#123456' } });
+      fireEvent.blur(colorField!);
+      const [, urlField] = screen.getAllByLabelText('URL');
+      fireEvent.change(urlField!, { target: { value: 'https://example.com/arry' } });
+      fireEvent.blur(urlField!);
+
+      await waitFor(async () => {
+        const [alias] = await listAliasesForCharacter(character.id);
+        expect(alias).toMatchObject({
+          color: '#123456',
+          url: 'https://example.com/arry',
+        });
+      });
+    });
+
+    it('edits an alias’s chapter and episode ranges, and persists them', async () => {
+      const character = await seedCharacter();
+      const book = await createBook({
+        storyId: character.storyId,
+        name: 'A Game of Thrones',
+        author: null,
+        url: null,
+        sortOrder: 0,
+      });
+      const chapter = await createChapter({
+        bookId: book.id,
+        name: 'Bran',
+        url: null,
+        sortOrder: 0,
+      });
+      const season = await createTvSeason({ storyId: character.storyId, url: null, sortOrder: 0 });
+      const episode = await createEpisode({
+        seasonId: season.id,
+        name: 'Winter Is Coming',
+        url: null,
+        sortOrder: 0,
+      });
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+      await screen.findByText('Unnamed Alias');
+
+      await user.click(screen.getByLabelText('Start Chapter'));
+      await user.click(await screen.findByRole('option', { name: /bran/i }));
+      await user.click(screen.getByLabelText('End Chapter'));
+      await user.click(await screen.findByRole('option', { name: /bran/i }));
+      await user.click(screen.getByLabelText('Start Episode'));
+      await user.click(await screen.findByRole('option', { name: /winter is coming/i }));
+      await user.click(screen.getByLabelText('End Episode'));
+      await user.click(await screen.findByRole('option', { name: /winter is coming/i }));
+
+      await waitFor(async () => {
+        const [alias] = await listAliasesForCharacter(character.id);
+        expect(alias!.chapterRange).toEqual({
+          startChapterId: chapter.id,
+          endChapterId: chapter.id,
+        });
+        expect(alias!.episodeRange).toEqual({
+          startEpisodeId: episode.id,
+          endEpisodeId: episode.id,
+        });
+      });
+    });
+
+    it('collapses an alias when its header is clicked again, and re-expands it on a further click', async () => {
+      const character = await seedCharacter();
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+      await screen.findAllByLabelText('Name');
+
+      // Adding an alias auto-expands it via handleAddAlias directly, not
+      // handleAliasToggle — collapse and re-expand it here specifically to
+      // exercise that handler's own toggle logic in both directions.
+      await user.click(screen.getByText('Unnamed Alias'));
+      await waitFor(() => expect(screen.getAllByLabelText('Name')).toHaveLength(1));
+
+      await user.click(screen.getByText('Unnamed Alias'));
+      await waitFor(() => expect(screen.getAllByLabelText('Name')).toHaveLength(2));
+    });
+
+    it('edits the newly-expanded second alias without disturbing the first, now-collapsed one', async () => {
+      const character = await seedCharacter();
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+      await screen.findByText('Unnamed Alias');
+      // Adding a second alias expands it, collapsing (and unmounting, via
+      // AliasItem's own unmountOnExit) the first one's fields.
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+
+      const nameFields = screen.getAllByLabelText('Name');
+      const secondAliasName = nameFields[nameFields.length - 1]!;
+      fireEvent.change(secondAliasName, { target: { value: 'Nan' } });
+      fireEvent.blur(secondAliasName);
+
+      await waitFor(async () => {
+        const aliases = await listAliasesForCharacter(character.id);
+        expect(aliases).toHaveLength(2);
+        // Order-independent: which alias actually finished being created
+        // first isn't guaranteed, only that exactly one was renamed and
+        // one wasn't.
+        expect(aliases.filter((alias) => alias.name === 'Nan')).toHaveLength(1);
+        expect(aliases.filter((alias) => alias.name === '')).toHaveLength(1);
+      });
+    });
+
+    it('falls back to "Unnamed Alias" as the icon alt text for a blank name', async () => {
+      const character = await seedCharacter();
+      await createCharacterAlias({
+        characterId: character.id,
+        name: '',
+        group: null,
+        icon: 'https://example.com/arry.png',
+        color: null,
+        url: null,
+        chapterRange: null,
+        episodeRange: null,
+      });
+      render(<Wrapper initialCharacter={character} />);
+
+      expect(await screen.findByRole('img', { name: /unnamed alias/i })).toBeInTheDocument();
+    });
+
+    it('clears a non-name field (e.g. group) back to null when emptied', async () => {
+      const character = await seedCharacter();
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+      await screen.findByText('Unnamed Alias');
+
+      const [, groupField] = screen.getAllByLabelText('Group');
+      fireEvent.change(groupField!, { target: { value: 'No One' } });
+      fireEvent.blur(groupField!);
+      await waitFor(async () => {
+        const [alias] = await listAliasesForCharacter(character.id);
+        expect(alias!.group).toBe('No One');
+      });
+
+      fireEvent.change(groupField!, { target: { value: '' } });
+      fireEvent.blur(groupField!);
+      await waitFor(async () => {
+        const [alias] = await listAliasesForCharacter(character.id);
+        expect(alias!.group).toBeNull();
+      });
+    });
+
+    it('deletes an alias', async () => {
+      const character = await seedCharacter();
+      const user = userEvent.setup();
+      render(<Wrapper initialCharacter={character} />);
+
+      await user.click(await screen.findByRole('button', { name: /add alias/i }));
+      await screen.findByText('Unnamed Alias');
+
+      await user.click(screen.getByRole('button', { name: /delete alias/i }));
+
+      await waitFor(() => expect(screen.queryByText('Unnamed Alias')).not.toBeInTheDocument());
+      expect(await screen.findByText(/no aliases yet/i)).toBeInTheDocument();
+    });
   });
 });
