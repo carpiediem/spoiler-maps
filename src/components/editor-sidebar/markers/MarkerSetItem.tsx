@@ -44,7 +44,12 @@ interface MarkerSetItemProps {
   /** The id of the marker currently expanded within this set, if any. */
   expandedMarkerId: number | null;
   /** Passed straight through to each MarkerItem's own onToggle — see its doc comment. */
-  onMarkerToggle: (setId: number, markerId: number, event: SyntheticEvent, isExpanded: boolean) => void;
+  onMarkerToggle: (
+    setId: number,
+    markerId: number,
+    event: SyntheticEvent,
+    isExpanded: boolean,
+  ) => void;
   /** Passed straight through to each MarkerItem's own onMarkerChange — see its doc comment. */
   onMarkerChange: (setId: number, marker: Marker) => void;
   onAddMarker: (setId: number) => void;

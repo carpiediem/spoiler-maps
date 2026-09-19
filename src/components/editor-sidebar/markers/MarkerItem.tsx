@@ -27,7 +27,12 @@ interface MarkerItemProps {
   markerSetId: number;
   marker: Marker;
   expanded: boolean;
-  onToggle: (markerSetId: number, markerId: number, event: SyntheticEvent, isExpanded: boolean) => void;
+  onToggle: (
+    markerSetId: number,
+    markerId: number,
+    event: SyntheticEvent,
+    isExpanded: boolean,
+  ) => void;
   onMarkerChange: (markerSetId: number, marker: Marker) => void;
   onDelete: (markerSetId: number, markerId: number) => void;
   chapterOptions: FlatOption[];

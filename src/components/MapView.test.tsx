@@ -1214,9 +1214,7 @@ describe('MapView', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       render(<MapView tileUrl="https://tile.example.com/broken.png" center={center} zoom={5} />);
 
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining('tileUrlTemplate matches neither'),
-      );
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('tileUrlTemplate matches neither'));
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('https://tile.example.com/broken.png'),
       );

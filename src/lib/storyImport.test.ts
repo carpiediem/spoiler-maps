@@ -491,9 +491,7 @@ describe('importStoryDocument', () => {
     await expect(
       importStoryDocument(
         minimalDocument({
-          books: [
-            { name: 'A Game of Thrones', chapters: [{ name: 'Bran' }, { name: 'Catelyn' }] },
-          ],
+          books: [{ name: 'A Game of Thrones', chapters: [{ name: 'Bran' }, { name: 'Catelyn' }] }],
           characters: [{ name: 'Jon Snow', positions: [{ lat: 1, lng: 1, chapters: [1, 0] }] }],
         }),
       ),

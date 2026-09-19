@@ -1707,7 +1707,11 @@ describe('EditorSidebar', () => {
       description: null,
       paletteKey: null,
     });
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Landmarks', noIcons: false });
+    const markerSet = await createMarkerSet({
+      storyId: story.id,
+      name: 'Landmarks',
+      noIcons: false,
+    });
     await createMarker({
       markerSetId: markerSet.id,
       label: 'Winterfell',
@@ -1788,7 +1792,11 @@ describe('EditorSidebar', () => {
       description: null,
       paletteKey: null,
     });
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Landmarks', noIcons: false });
+    const markerSet = await createMarkerSet({
+      storyId: story.id,
+      name: 'Landmarks',
+      noIcons: false,
+    });
     await createMarker({
       markerSetId: markerSet.id,
       label: 'Winterfell',
@@ -1847,9 +1855,7 @@ describe('EditorSidebar', () => {
     await screen.findByText('Winterfell');
 
     await user.click(screen.getByRole('button', { name: /show on map/i }));
-    await waitFor(() =>
-      expect(onVisibleMarkersChange).toHaveBeenCalledWith([expect.anything()]),
-    );
+    await waitFor(() => expect(onVisibleMarkersChange).toHaveBeenCalledWith([expect.anything()]));
 
     await user.click(markersHeader);
 
