@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   listBooksForStory,
   listChaptersForBook,
@@ -169,20 +169,14 @@ export function summarizePositionRange(
   };
 }
 
-interface RangeOptions {
+export interface RangeOptions {
   chapterOptions: FlatOption[];
   episodeOptions: FlatOption[];
   hasBooks: boolean;
   hasSeasons: boolean;
 }
 
-/**
- * Loads every chapter/episode in a story, flattened into option lists for
- * the Chapter Range / Episode Range selects — shared between the Position
- * form (to pick a range) and each character's position list (to label an
- * already-picked range).
- */
-export function useRangeOptions(storyId: number | null): RangeOptions {
+function useLoadRangeOptions(storyId: number | null): RangeOptions {
   const [books, setBooks] = useState<Book[] | null>(null);
   const [chaptersByBookId, setChaptersByBookId] = useState<Record<number, Chapter[]>>({});
   const [seasons, setSeasons] = useState<TvSeason[] | null>(null);
@@ -251,10 +245,36 @@ export function useRangeOptions(storyId: number | null): RangeOptions {
     [seasons, episodesBySeasonId],
   );
 
-  return {
-    chapterOptions,
-    episodeOptions,
-    hasBooks: !!books?.length,
-    hasSeasons: !!seasons?.length,
-  };
+  const hasBooks = !!books?.length;
+  const hasSeasons = !!seasons?.length;
+  // Memoized so it can be handed to a context provider without re-rendering
+  // every consumer whenever the owner re-renders for an unrelated reason.
+  return useMemo(
+    () => ({ chapterOptions, episodeOptions, hasBooks, hasSeasons }),
+    [chapterOptions, episodeOptions, hasBooks, hasSeasons],
+  );
+}
+
+const RangeOptionsContext = createContext<RangeOptions | null>(null);
+
+/**
+ * Shares one story's already-loaded range options with everything below
+ * it, so each `useRangeOptions` there reuses them instead of re-querying
+ * every book/chapter and season/episode itself.
+ */
+export const RangeOptionsProvider = RangeOptionsContext.Provider;
+
+/**
+ * Loads every chapter/episode in a story, flattened into option lists for
+ * the Chapter Range / Episode Range selects — shared between the Position
+ * form (to pick a range) and each character's position list (to label an
+ * already-picked range).
+ *
+ * Under a `RangeOptionsProvider` this just returns the provider's value and
+ * does no loading of its own; without one it loads them itself.
+ */
+export function useRangeOptions(storyId: number | null): RangeOptions {
+  const shared = useContext(RangeOptionsContext);
+  const own = useLoadRangeOptions(shared ? null : storyId);
+  return shared ?? own;
 }
