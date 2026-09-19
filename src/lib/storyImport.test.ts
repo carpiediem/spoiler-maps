@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createBook,
   createChapter,
@@ -20,7 +20,7 @@ import {
   listStories,
   listTvSeasonsForStory,
 } from '../db';
-import { resetDatabaseForTests } from '../db/client';
+import { getDatabase, resetDatabaseForTests } from '../db/client';
 import { buildStoryDocument } from './storyExport';
 import { importStoryDocument, importStoryFromYaml, parseStoryDocument } from './storyImport';
 import type { StoryDocument } from './storyDocument';
@@ -485,6 +485,23 @@ describe('importStoryDocument', () => {
     const [position] = await listCharacterPositionsForCharacter(character!.id);
 
     expect(position!.chapterRange).toBeNull();
+  });
+
+  it('saves the database once for the whole import, not once per record', async () => {
+    const db = await getDatabase();
+    const exportSpy = vi.spyOn(db, 'export');
+
+    await importStoryDocument(
+      minimalDocument({
+        books: [{ name: 'A Game of Thrones', chapters: [{ name: 'Bran' }, { name: 'Catelyn' }] }],
+        characters: [
+          { name: 'Jon Snow', positions: [{ lat: 1, lng: 1 }] },
+          { name: 'Arya Stark', positions: [{ lat: 2, lng: 2 }] },
+        ],
+      }),
+    );
+
+    expect(exportSpy).toHaveBeenCalledTimes(1);
   });
 
   it('deletes the partially created story and rethrows when a range ends before it starts', async () => {
