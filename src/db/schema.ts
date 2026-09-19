@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;
 
 export interface Migration {
   version: number;
@@ -265,7 +265,7 @@ export const MIGRATIONS: Migration[] = [
     `,
   },
   {
-    version: 14,
+    version: 15,
     sql: `
       -- Stored as 0/1, since SQLite has no native boolean type. Renders a
       -- marker's icon at a larger size on the map.

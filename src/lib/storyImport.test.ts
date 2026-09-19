@@ -17,6 +17,7 @@ import {
   listCharactersForStory,
   listMarkerSetsForStory,
   listMarkersForMarkerSet,
+  listStories,
   listTvSeasonsForStory,
 } from '../db';
 import { resetDatabaseForTests } from '../db/client';
@@ -484,6 +485,21 @@ describe('importStoryDocument', () => {
     const [position] = await listCharacterPositionsForCharacter(character!.id);
 
     expect(position!.chapterRange).toBeNull();
+  });
+
+  it('deletes the partially created story and rethrows when a range ends before it starts', async () => {
+    await expect(
+      importStoryDocument(
+        minimalDocument({
+          books: [
+            { name: 'A Game of Thrones', chapters: [{ name: 'Bran' }, { name: 'Catelyn' }] },
+          ],
+          characters: [{ name: 'Jon Snow', positions: [{ lat: 1, lng: 1, chapters: [1, 0] }] }],
+        }),
+      ),
+    ).rejects.toThrow(/endChapterId must not come before/);
+
+    expect(await listStories()).toEqual([]);
   });
 });
 
