@@ -1,9 +1,16 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBook, createStory, listBooksForStory } from '../../db';
 import { resetDatabaseForTests } from '../../db/client';
+import { nextPaint } from '../../lib/nextPaint';
 import { BooksSection } from './BooksSection';
+
+// Wraps the real nextPaint so one test can hold it open.
+vi.mock('../../lib/nextPaint', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../lib/nextPaint')>();
+  return { nextPaint: vi.fn(original.nextPaint) };
+});
 
 async function deleteStoredDatabase(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
@@ -45,6 +52,27 @@ describe('BooksSection', () => {
 
     expect(screen.getByText(/loading books/i)).toBeInTheDocument();
     expect(await screen.findByText(/no books yet/i)).toBeInTheDocument();
+  });
+
+  it('shows the loading state, and waits to load its data, until the next paint', async () => {
+    // A click's effects flush before the browser paints, so loading
+    // straight away would delay the section visibly opening.
+    const storyId = await seedStoryId();
+    await createBook({ storyId, name: 'A Game of Thrones', author: null, url: null, sortOrder: 0 });
+    let paint!: () => void;
+    vi.mocked(nextPaint).mockImplementationOnce(
+      () => new Promise<void>((resolve) => (paint = resolve)),
+    );
+    render(<BooksSection storyId={storyId} />);
+
+    // Long enough for the query to have finished had it started.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByText(/loading books/i)).toBeInTheDocument();
+    expect(screen.queryByText('A Game of Thrones')).not.toBeInTheDocument();
+
+    paint();
+
+    expect(await screen.findByText('A Game of Thrones')).toBeInTheDocument();
   });
 
   it('lists existing books with their chapter counts', async () => {
