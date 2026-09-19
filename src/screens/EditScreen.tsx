@@ -28,7 +28,10 @@ import {
   DEFAULT_MIN_ZOOM,
   DEFAULT_ZOOM,
 } from '../lib/mapDefaults';
-import { useRangeOptions } from '../components/editor-sidebar/characters/rangeOptions';
+import {
+  RangeOptionsProvider,
+  useRangeOptions,
+} from '../components/editor-sidebar/characters/rangeOptions';
 import { exportStoryToYaml } from '../lib/storyExport';
 import { importStoryFromYaml } from '../lib/storyImport';
 import { buildStoryTheme } from '../theme';
@@ -467,40 +470,44 @@ export function EditScreen() {
             onChange={handleTimelineChange}
           />
         </main>
-        <EditorSidebar
-          stories={stories}
-          selectedStoryId={selectedStoryId}
-          onSelectStory={handleSelectStory}
-          onExportStory={handleExportStory}
-          onImportFile={handleImportFile}
-          onDeleteStory={handleDeleteStory}
-          onSave={handleSave}
-          onSaveDescription={handleSaveDescription}
-          onCaptureMapPosition={getCurrentMapPosition}
-          mapPosition={mapPosition}
-          draftPosition={draftPosition}
-          activePosition={activePosition}
-          onAddPosition={handleAddPosition}
-          onEditPosition={handleEditPosition}
-          onBackFromPosition={handleBackFromPosition}
-          positionsVersion={positionsVersion}
-          onVisiblePositionsChange={setCharacterPositionPins}
-          onVisibleTailsChange={setCharacterTails}
-          isDrawingTail={tailDraftPoints !== null}
-          tailDraftPoints={tailDraftPoints ?? []}
-          onStartDrawingTail={handleStartDrawingTail}
-          onFinishDrawingTail={handleFinishDrawingTail}
-          timelineMode={timelineMode}
-          timelineIndex={timelineIndex}
-          onVisibleMarkersChange={setMarkerPins}
-          onActiveMarkerChange={setActiveMarker}
-          isEditingMarkerArea={areaDraftPoints !== null}
-          areaDraftPointCount={areaDraftPoints?.length ?? 0}
-          onStartEditingMarkerArea={handleStartEditingMarkerArea}
-          onSaveMarkerArea={handleSaveMarkerArea}
-          onCancelMarkerArea={handleCancelMarkerArea}
-          onClearMarkerArea={handleClearMarkerArea}
-        />
+        {/* One load of the story's chapters/episodes, shared with the sidebar's
+            Characters and Markers sections instead of each fetching its own. */}
+        <RangeOptionsProvider value={rangeOptions}>
+          <EditorSidebar
+            stories={stories}
+            selectedStoryId={selectedStoryId}
+            onSelectStory={handleSelectStory}
+            onExportStory={handleExportStory}
+            onImportFile={handleImportFile}
+            onDeleteStory={handleDeleteStory}
+            onSave={handleSave}
+            onSaveDescription={handleSaveDescription}
+            onCaptureMapPosition={getCurrentMapPosition}
+            mapPosition={mapPosition}
+            draftPosition={draftPosition}
+            activePosition={activePosition}
+            onAddPosition={handleAddPosition}
+            onEditPosition={handleEditPosition}
+            onBackFromPosition={handleBackFromPosition}
+            positionsVersion={positionsVersion}
+            onVisiblePositionsChange={setCharacterPositionPins}
+            onVisibleTailsChange={setCharacterTails}
+            isDrawingTail={tailDraftPoints !== null}
+            tailDraftPoints={tailDraftPoints ?? []}
+            onStartDrawingTail={handleStartDrawingTail}
+            onFinishDrawingTail={handleFinishDrawingTail}
+            timelineMode={timelineMode}
+            timelineIndex={timelineIndex}
+            onVisibleMarkersChange={setMarkerPins}
+            onActiveMarkerChange={setActiveMarker}
+            isEditingMarkerArea={areaDraftPoints !== null}
+            areaDraftPointCount={areaDraftPoints?.length ?? 0}
+            onStartEditingMarkerArea={handleStartEditingMarkerArea}
+            onSaveMarkerArea={handleSaveMarkerArea}
+            onCancelMarkerArea={handleCancelMarkerArea}
+            onClearMarkerArea={handleClearMarkerArea}
+          />
+        </RangeOptionsProvider>
         <Snackbar open={importError !== null} onClose={handleDismissImportError}>
           <Alert severity="error" onClose={handleDismissImportError}>
             {importError}
