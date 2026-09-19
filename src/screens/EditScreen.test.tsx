@@ -49,8 +49,9 @@ describe('App', () => {
       </MemoryRouter>,
     );
 
+    // The screen is a lazy chunk, so wait for it to load before asserting.
+    expect(await screen.findByRole('button', { name: /new map/i })).toBeInTheDocument();
     expect(container.querySelector('.leaflet-container')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /new map/i })).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
     fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
@@ -73,7 +74,7 @@ describe('App', () => {
     );
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Spoiler Maps Editor' }),
+      await screen.findByRole('heading', { level: 1, name: 'Spoiler Maps Editor' }),
     ).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/map name/i), 'A Song of Ice and Fire');
