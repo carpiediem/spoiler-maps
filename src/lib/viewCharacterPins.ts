@@ -32,10 +32,13 @@ function toLatLngPosition(position: StoryDocumentPosition): {
 
 /**
  * The view screen's equivalent of CharactersSection's visible-but-collapsed
- * pin/tail computation: every checked character shows its last-reached
- * position as an initialed pin and every earlier reached position as a
- * plain dot, plus (only when `showFullPath`) each reached position's tail,
- * connected to the one before it.
+ * pin/tail computation. When `showFullPath` is true, every checked
+ * character shows its last-reached position as an initialed pin, every
+ * earlier reached position as a plain dot, and each reached position's
+ * tail connected to the one before it — matching the editor's own
+ * (unconditional) rendering of a visible character's path. When false, a
+ * reader only sees where each checked character currently is: just the
+ * last-reached position's pin, with no intermediate stops or tails at all.
  */
 export function buildViewPinsAndTails(
   document: StoryDocument,
@@ -55,14 +58,30 @@ export function buildViewPinsAndTails(
       .filter(({ position }) => isPositionVisible(position, mode, currentIndex));
     if (reachedPositionIndices.length === 0) return;
 
-    const lastReachedIndex =
-      reachedPositionIndices[reachedPositionIndices.length - 1]!.positionIndex;
     const color = character.color ?? null;
+    const { position: lastPosition, positionIndex: lastPositionIndex } =
+      reachedPositionIndices[reachedPositionIndices.length - 1]!;
+
+    if (!showFullPath) {
+      pins.push({
+        characterId: characterIndex,
+        characterPosition: toMapCharacterPosition(
+          lastPosition,
+          characterIndex * 100_000 + lastPositionIndex,
+        ),
+        label: characterInitials(character.name),
+        positionIndex: lastPositionIndex + 1,
+        color,
+        style: 'pin',
+      });
+      return;
+    }
+
     const characterTails: CharacterTailOverlay[] = [];
 
     reachedPositionIndices.forEach(({ position, positionIndex }, reachedIndex) => {
       const syntheticId = characterIndex * 100_000 + positionIndex;
-      const isLast = positionIndex === lastReachedIndex;
+      const isLast = positionIndex === lastPositionIndex;
 
       pins.push({
         characterId: characterIndex,
@@ -79,7 +98,7 @@ export function buildViewPinsAndTails(
       const precedingPosition =
         reachedIndex > 0 ? reachedPositionIndices[reachedIndex - 1]!.position : undefined;
       const precedingLatLng = precedingPosition && toLatLngPosition(precedingPosition);
-      if (showFullPath && hasTailToDraw(position, precedingLatLng)) {
+      if (hasTailToDraw(position, precedingLatLng)) {
         characterTails.push({
           characterId: characterIndex,
           points: buildTailPoints(
