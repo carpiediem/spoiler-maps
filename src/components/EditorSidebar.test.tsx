@@ -18,6 +18,7 @@ import {
   createMarker,
   createMarkerSet,
   createStory,
+  createTvSeason,
   type CharacterPosition,
   type LatLng,
   type Story,
@@ -1625,16 +1626,17 @@ describe('EditorSidebar', () => {
     );
 
     expect(screen.getByLabelText(/map name/i)).toBeVisible();
-    expect(await screen.findByText(/no books yet/i)).not.toBeVisible();
+    // Books lazy-mounts, so nothing about it exists until it's expanded.
+    expect(screen.queryByText(/no books yet/i)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /^books/i }));
 
-    expect(screen.getByText(/no books yet/i)).toBeVisible();
+    expect(await screen.findByText(/no books yet/i)).toBeVisible();
     expect(screen.getByLabelText(/map name/i)).not.toBeVisible();
 
     await user.click(screen.getByRole('button', { name: /^books/i }));
 
-    expect(screen.getByText(/no books yet/i)).not.toBeVisible();
+    await waitFor(() => expect(screen.queryByText(/no books yet/i)).not.toBeInTheDocument());
   });
 
   it('renders the Television, Characters, and Markers sections', async () => {
@@ -1773,6 +1775,97 @@ describe('EditorSidebar', () => {
     await user.click(await screen.findByText('Landmarks'));
 
     expect(await screen.findByText('Winterfell')).toBeVisible();
+  });
+
+  it('shows the Books, Television, and Characters count chips, and defers loading each section, until it is first expanded', async () => {
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+    await createBook({
+      storyId: story.id,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createBook({
+      storyId: story.id,
+      name: 'A Clash of Kings',
+      author: null,
+      url: null,
+      sortOrder: 1,
+    });
+    await createTvSeason({ storyId: story.id, url: null, sortOrder: 0 });
+    await createCharacter({
+      storyId: story.id,
+      name: 'Arya',
+      group: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+      url: null,
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={story.id}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onSaveDescription={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
+    );
+
+    const booksHeader = screen.getByRole('button', { name: /^books/i });
+    const televisionHeader = screen.getByRole('button', { name: /^television/i });
+    const charactersHeader = screen.getByRole('button', { name: /^characters/i });
+    await waitFor(() => expect(within(booksHeader).getByText('2')).toBeInTheDocument());
+    await waitFor(() => expect(within(televisionHeader).getByText('1')).toBeInTheDocument());
+    await waitFor(() => expect(within(charactersHeader).getByText('1')).toBeInTheDocument());
+    expect(screen.queryByText('A Game of Thrones')).not.toBeInTheDocument();
+    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+
+    await user.click(booksHeader);
+    await user.click(await screen.findByText('A Game of Thrones'));
+    expect(await screen.findByText('A Game of Thrones')).toBeVisible();
   });
 
   it('clears visible marker pins from the map when the Markers section collapses (unmounting it)', async () => {
@@ -2326,7 +2419,7 @@ describe('EditorSidebar', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText(/no television seasons yet/i)).not.toBeVisible();
+    expect(screen.queryByText(/no television seasons yet/i)).not.toBeInTheDocument();
 
     window.location.hash = '#television';
 
