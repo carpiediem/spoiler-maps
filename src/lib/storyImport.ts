@@ -1,5 +1,6 @@
 import { parse } from 'yaml';
 import {
+  batchWrites,
   createBook,
   createCharacter,
   createCharacterAlias,
@@ -512,7 +513,14 @@ async function importMarkerSets(
  * created story is deleted (cascading to its books/characters/etc.) before
  * the error is re-thrown.
  */
-export async function importStoryDocument(document: StoryDocument): Promise<Story> {
+export function importStoryDocument(document: StoryDocument): Promise<Story> {
+  // Batched so the whole import saves the database once at the end, rather
+  // than re-saving all of it after every one of the hundreds of records a
+  // large story creates.
+  return batchWrites(() => importStoryDocumentUnbatched(document));
+}
+
+async function importStoryDocumentUnbatched(document: StoryDocument): Promise<Story> {
   const story = await createStory({
     name: `${document.name} v2`,
     tileUrlTemplate: document.tileUrlTemplate ?? null,

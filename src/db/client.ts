@@ -90,11 +90,7 @@ export function getDatabase(): Promise<SqlDatabase> {
   return databasePromise;
 }
 
-/**
- * Saves the current state of the database to IndexedDB. Callers that
- * mutate data are responsible for awaiting this afterward.
- */
-export async function persist(): Promise<void> {
+async function saveNow(): Promise<void> {
   const start = performance.now();
   const db = await getDatabase();
   const bytes = db.export();
@@ -103,18 +99,78 @@ export async function persist(): Promise<void> {
   // turns off for the rest of the connection's lifetime.
   db.run('PRAGMA foreign_keys = ON;');
   await saveDatabaseBytes(bytes);
-  // Diagnostic only: every create/update/delete calls this, and it
-  // re-serializes and re-saves the *entire* database each time — its cost
-  // grows with total database size, so a story with a lot of data can make
-  // even a single unrelated edit take a noticeable, and growing, amount of
-  // time. Warns so that pattern is visible instead of just "saving feels
-  // slow" with no lead as to why.
+  // Diagnostic only: every save re-serializes and re-writes the *entire*
+  // database — its cost grows with total database size, so a story with a
+  // lot of data can make even a single unrelated edit take a noticeable,
+  // and growing, amount of time. Warns so that pattern is visible instead
+  // of just "saving feels slow" with no lead as to why. (persist() and
+  // batchWrites() below exist to keep the *number* of saves down.)
   const elapsed = performance.now() - start;
   if (elapsed >= 100) {
     // eslint-disable-next-line no-console
     console.warn(
       `[db] persist() took ${elapsed.toFixed(1)}ms for a ${bytes.byteLength}-byte database.`,
     );
+  }
+}
+
+let activeSave: Promise<void> | null = null;
+let queuedSave: Promise<void> | null = null;
+let batchDepth = 0;
+let batchHasWrites = false;
+
+/**
+ * Saves the current state of the database to IndexedDB. Callers that
+ * mutate data are responsible for awaiting this afterward, and once it
+ * resolves their write is durably saved.
+ *
+ * Saves never overlap, and writes that pile up while one is in flight
+ * share a single follow-up save instead of each triggering their own — so a
+ * burst of concurrent writes costs at most two full-database saves, not
+ * one per write. (A caller's write is always in the save it awaits: a save
+ * already in flight may have exported before that write, so it waits for
+ * the next one.) Inside batchWrites(), saving is deferred to the end of the
+ * batch.
+ */
+export function persist(): Promise<void> {
+  if (batchDepth > 0) {
+    batchHasWrites = true;
+    return Promise.resolve();
+  }
+  if (activeSave === null) {
+    activeSave = saveNow().finally(() => {
+      activeSave = null;
+    });
+    return activeSave;
+  }
+  // The in-flight save's failure belongs to whoever awaited *it*; this
+  // follow-up should still run for the writes queued behind it.
+  queuedSave ??= activeSave
+    .catch(() => {})
+    .then(() => {
+      queuedSave = null;
+      return persist();
+    });
+  return queuedSave;
+}
+
+/**
+ * Runs `work`, deferring every persist() inside it to a single save once
+ * it finishes (whether it resolves or throws) — for a multi-step change
+ * that would otherwise re-save the whole database after each step, like
+ * importing a large story. Until it finishes, writes made inside are only
+ * in memory, so nothing awaiting persist() in there is durable yet.
+ */
+export async function batchWrites<T>(work: () => Promise<T>): Promise<T> {
+  batchDepth++;
+  try {
+    return await work();
+  } finally {
+    batchDepth--;
+    if (batchDepth === 0 && batchHasWrites) {
+      batchHasWrites = false;
+      await persist();
+    }
   }
 }
 

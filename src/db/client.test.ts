@@ -1,7 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createRawDatabaseForTests, getDatabase, persist, resetDatabaseForTests } from './client';
+import {
+  batchWrites,
+  createRawDatabaseForTests,
+  getDatabase,
+  persist,
+  resetDatabaseForTests,
+} from './client';
 import { MIGRATIONS } from './schema';
-import { saveLegacyDatabaseBytesForTests } from './storage';
+import { saveDatabaseBytes, saveLegacyDatabaseBytesForTests } from './storage';
+
+// Wraps the real saveDatabaseBytes so a test can make one save fail.
+vi.mock('./storage', async (importOriginal) => {
+  const original = await importOriginal<typeof import('./storage')>();
+  return { ...original, saveDatabaseBytes: vi.fn(original.saveDatabaseBytes) };
+});
 
 async function deleteStoredDatabase(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
@@ -97,6 +109,159 @@ describe('persist', () => {
 
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+async function insertStory(name: string): Promise<void> {
+  const db = await getDatabase();
+  db.run(
+    `INSERT INTO stories (name, tile_url_template, initial_center_lat, initial_center_lng, initial_zoom)
+     VALUES (?, 'https://tile.example.com/{z}/{x}/{y}.png', 1, 2, 3);`,
+    [name],
+  );
+}
+
+async function persistedStoryNames(): Promise<string[]> {
+  resetDatabaseForTests();
+  const reloaded = await getDatabase();
+  return reloaded
+    .exec('SELECT name FROM stories ORDER BY id;')[0]
+    .values.map((row) => row[0] as string);
+}
+
+describe('persist coalescing', () => {
+  it('saves once per call when writes are sequential', async () => {
+    const db = await getDatabase();
+    const exportSpy = vi.spyOn(db, 'export');
+
+    await persist();
+    await persist();
+    await persist();
+
+    expect(exportSpy).toHaveBeenCalledTimes(3);
+  });
+
+  it('shares one follow-up save between writes that arrive while one is in flight', async () => {
+    const db = await getDatabase();
+    const exportSpy = vi.spyOn(db, 'export');
+
+    const saves: Promise<void>[] = [];
+    for (let i = 0; i < 10; i++) {
+      await insertStory(`Story ${i}`);
+      saves.push(persist());
+    }
+    await Promise.all(saves);
+
+    // The first save, plus one shared by the other nine — not ten.
+    expect(exportSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('includes every write in the save its caller awaited', async () => {
+    const saves: Promise<void>[] = [];
+    for (let i = 0; i < 5; i++) {
+      await insertStory(`Story ${i}`);
+      saves.push(persist());
+    }
+    await Promise.all(saves);
+
+    expect(await persistedStoryNames()).toEqual([
+      'Story 0',
+      'Story 1',
+      'Story 2',
+      'Story 3',
+      'Story 4',
+    ]);
+  });
+
+  it('never runs two saves at once', async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const original = vi.mocked(saveDatabaseBytes).getMockImplementation()!;
+    vi.mocked(saveDatabaseBytes).mockImplementation(async (bytes) => {
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await original(bytes);
+      inFlight--;
+    });
+
+    await Promise.all([persist(), persist(), persist(), persist()]);
+
+    expect(maxInFlight).toBe(1);
+    vi.mocked(saveDatabaseBytes).mockImplementation(original);
+  });
+
+  it('rejects for a failed save, still runs the queued follow-up, and recovers afterwards', async () => {
+    const original = vi.mocked(saveDatabaseBytes).getMockImplementation()!;
+    vi.mocked(saveDatabaseBytes).mockRejectedValueOnce(new Error('disk full'));
+    await insertStory('First');
+
+    const failing = persist();
+    await insertStory('Second');
+    const followUp = persist();
+
+    await expect(failing).rejects.toThrow('disk full');
+    await expect(followUp).resolves.toBeUndefined();
+    expect(await persistedStoryNames()).toEqual(['First', 'Second']);
+
+    await expect(persist()).resolves.toBeUndefined();
+    vi.mocked(saveDatabaseBytes).mockImplementation(original);
+  });
+});
+
+describe('batchWrites', () => {
+  it('defers every persist() inside it to one save at the end', async () => {
+    const db = await getDatabase();
+    const exportSpy = vi.spyOn(db, 'export');
+
+    await batchWrites(async () => {
+      for (let i = 0; i < 5; i++) {
+        await insertStory(`Story ${i}`);
+        await persist();
+      }
+      expect(exportSpy).not.toHaveBeenCalled();
+    });
+
+    expect(exportSpy).toHaveBeenCalledTimes(1);
+    expect(await persistedStoryNames()).toHaveLength(5);
+  });
+
+  it('does not save at all when nothing inside it persisted', async () => {
+    const db = await getDatabase();
+    const exportSpy = vi.spyOn(db, 'export');
+
+    await expect(batchWrites(async () => 'result')).resolves.toBe('result');
+
+    expect(exportSpy).not.toHaveBeenCalled();
+  });
+
+  it('saves once, at the outermost batch, when batches are nested', async () => {
+    const db = await getDatabase();
+    const exportSpy = vi.spyOn(db, 'export');
+
+    await batchWrites(async () => {
+      await batchWrites(async () => {
+        await insertStory('Inner');
+        await persist();
+      });
+      expect(exportSpy).not.toHaveBeenCalled();
+      await insertStory('Outer');
+      await persist();
+    });
+
+    expect(exportSpy).toHaveBeenCalledTimes(1);
+    expect(await persistedStoryNames()).toEqual(['Inner', 'Outer']);
+  });
+
+  it('still saves what was written, and rethrows, when the work throws', async () => {
+    await expect(
+      batchWrites(async () => {
+        await insertStory('Partial');
+        await persist();
+        throw new Error('import failed');
+      }),
+    ).rejects.toThrow('import failed');
+
+    expect(await persistedStoryNames()).toEqual(['Partial']);
   });
 });
 

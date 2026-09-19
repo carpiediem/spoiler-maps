@@ -1,3 +1,3 @@
-export { getDatabase, persist } from './client';
+export { batchWrites, getDatabase, persist } from './client';
 export * from './repository';
 export * from './types';
