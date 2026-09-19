@@ -6,6 +6,30 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   base: '/spoiler-maps/',
   plugins: [react()],
+  build: {
+    rolldownOptions: {
+      output: {
+        // Vendor libraries change far less often than app code, so giving
+        // them their own chunks lets returning visitors keep them cached
+        // across deploys (GitHub Pages' own cache headers are the only ones
+        // available, and they're keyed on the hashed filename).
+        codeSplitting: {
+          groups: [
+            {
+              name: 'react',
+              test: /node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom)[\\/]/,
+            },
+            { name: 'mui', test: /node_modules[\\/](@mui|@emotion)[\\/]/ },
+            {
+              name: 'leaflet',
+              test: /node_modules[\\/](leaflet|react-leaflet|@react-leaflet)[\\/]/,
+            },
+            { name: 'sqljs', test: /node_modules[\\/]sql\.js[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,
