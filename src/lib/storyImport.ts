@@ -214,7 +214,10 @@ export function parseStoryDocument(yamlText: string): StoryDocument {
         );
         const alias = rawAlias as Record<string, unknown>;
         return {
-          name: assertString(alias.name, `characters[${characterIndex}].aliases[${aliasIndex}].name`),
+          name: assertString(
+            alias.name,
+            `characters[${characterIndex}].aliases[${aliasIndex}].name`,
+          ),
           group: assertOptionalString(
             alias.group,
             `characters[${characterIndex}].aliases[${aliasIndex}].group`,
