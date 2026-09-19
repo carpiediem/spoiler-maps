@@ -668,6 +668,61 @@ describe('CharactersSection', () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
   });
 
+  it('shows no color (not the character’s own) for the expanded character’s active alias when it leaves color unset', async () => {
+    const storyId = await seedStoryId();
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+      sortOrder: 13,
+      url: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterAlias({
+      characterId: character.id,
+      name: 'Lord Commander',
+      group: null,
+      icon: null,
+      color: null,
+      url: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+
+    await waitFor(() =>
+      expect(onVisiblePositionsChange).toHaveBeenLastCalledWith([
+        expect.objectContaining({ label: '1', color: null }),
+      ]),
+    );
+  });
+
   it('reports numbered pins for the expanded character once its positions have loaded', async () => {
     const storyId = await seedStoryId();
     const character = await createCharacter({

@@ -129,7 +129,9 @@ export function CharactersSection({
       const positions = positionsByCharacterId[expandedCharacterId];
       const character = characters?.find((candidate) => candidate.id === expandedCharacterId);
       const activeAlias = resolveActiveAlias(expandedCharacterId);
-      const color = activeAlias?.color ?? character?.color ?? null;
+      // An active alias's own color entirely replaces the character's — not
+      // just filling in when the alias left it unset.
+      const color = activeAlias ? (activeAlias.color ?? null) : (character?.color ?? null);
       const characterTails: CharacterTailOverlay[] = [];
       let precedingPosition: CharacterPosition | undefined;
       positions?.forEach((position, positionIndex) => {
@@ -167,8 +169,10 @@ export function CharactersSection({
       if (!positions || positions.length === 0) return;
       const character = characters?.find((candidate) => candidate.id === characterId);
       const activeAlias = resolveActiveAlias(characterId);
+      // An active alias's own color entirely replaces the character's — not
+      // just filling in when the alias left it unset.
       /* v8 ignore next -- character can only be undefined here if visibleCharacterIds still names a just-deleted character, but handleDeleteCharacter clears both in the same batched update. */
-      const color = activeAlias?.color ?? character?.color ?? null;
+      const color = activeAlias ? (activeAlias.color ?? null) : (character?.color ?? null);
 
       const lastVisiblePositionIndex = positions.reduce(
         (lastIndex, position, positionIndex) =>

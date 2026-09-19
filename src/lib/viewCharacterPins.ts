@@ -65,7 +65,10 @@ export function buildViewPinsAndTails(
       isPositionVisible(alias, mode, currentIndex),
     );
     const name = activeAlias?.name ?? character.name;
-    const color = activeAlias?.color ?? character.color ?? null;
+    // An active alias's own color entirely replaces the character's — not
+    // just filling in when the alias left it unset — matching
+    // CharacterPathsPanel's identical rule for its own icon/color/url.
+    const color = activeAlias ? (activeAlias.color ?? null) : (character.color ?? null);
     const { position: lastPosition, positionIndex: lastPositionIndex } =
       reachedPositionIndices[reachedPositionIndices.length - 1]!;
 

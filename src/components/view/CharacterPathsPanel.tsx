@@ -146,9 +146,13 @@ export function CharacterPathsPanel({
               isPositionVisible(alias, timelineMode, timelineIndex),
             );
             const name = activeAlias?.name || character.name || 'Unnamed Character';
-            const icon = activeAlias?.icon ?? character.icon;
-            const color = activeAlias?.color ?? character.color;
-            const url = activeAlias?.url ?? character.url;
+            // An active alias's own icon/color/url entirely replace the
+            // character's — not just filling in when the alias left one
+            // unset — so e.g. an alias with no icon shows a plain color
+            // swatch, never the character's own icon underneath it.
+            const icon = activeAlias ? activeAlias.icon : character.icon;
+            const color = activeAlias ? activeAlias.color : character.color;
+            const url = activeAlias ? activeAlias.url : character.url;
             return (
               <ListItem key={index} disablePadding>
                 <Checkbox
