@@ -2,7 +2,15 @@ import { Box, Button, Paper } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
-import { countMarkersForStory, type CharacterPosition, type LatLng, type Story } from '../db';
+import {
+  countBooksForStory,
+  countCharactersForStory,
+  countMarkersForStory,
+  countTvSeasonsForStory,
+  type CharacterPosition,
+  type LatLng,
+  type Story,
+} from '../db';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import type { ActiveMarker, MarkerMapPin } from '../lib/markerPins';
 import { BooksSection } from './editor-sidebar/BooksSection';
@@ -185,20 +193,30 @@ export function EditorSidebar({
   const [markersCount, setMarkersCount] = useState<number>();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-  // The Markers section lazy-mounts (see its SidebarSection below), so it
-  // won't call onCountChange with the real total until the user expands it
-  // at least once — this keeps the header chip accurate before that, with a
-  // count-only query that doesn't need to load any marker set's full marker
-  // list. Superseded by MarkersSection's own onCountChange once it mounts.
+  // Books, Television, Characters and Markers all lazy-mount (see their
+  // SidebarSection below): none of them fetches or renders anything until
+  // first expanded, so they can't report their own onCountChange yet. These
+  // count-only queries keep every header chip accurate before then, without
+  // loading any section's full list. Superseded by each section's own
+  // onCountChange once it mounts.
   useEffect(() => {
     if (selectedStoryId === null) {
+      setBookCount(undefined);
+      setTelevisionCount(undefined);
+      setCharactersCount(undefined);
       setMarkersCount(undefined);
       return;
     }
     let cancelled = false;
-    countMarkersForStory(selectedStoryId).then((count) => {
-      if (!cancelled) setMarkersCount(count);
-    });
+    function reportCount(setCount: (count: number) => void) {
+      return (count: number) => {
+        if (!cancelled) setCount(count);
+      };
+    }
+    countBooksForStory(selectedStoryId).then(reportCount(setBookCount));
+    countTvSeasonsForStory(selectedStoryId).then(reportCount(setTelevisionCount));
+    countCharactersForStory(selectedStoryId).then(reportCount(setCharactersCount));
+    countMarkersForStory(selectedStoryId).then(reportCount(setMarkersCount));
     return () => {
       cancelled = true;
     };
@@ -267,6 +285,10 @@ export function EditorSidebar({
   function handleAccordionChange(section: SectionId) {
     return (_event: SyntheticEvent, isExpanded: boolean) => {
       setExpandedSection(isExpanded ? section : false);
+      // A hash-targeted item only auto-expands the first time its section
+      // mounts. Lazy sections remount on every re-expand, so without this
+      // it would re-open on each one.
+      setHashItemIndex(null);
     };
   }
 
@@ -333,6 +355,7 @@ export function EditorSidebar({
                   count={bookCount}
                   expanded={expandedSection === 'books'}
                   onChange={handleAccordionChange('books')}
+                  lazy
                 >
                   <BooksSection
                     storyId={selectedStoryId}
@@ -347,6 +370,7 @@ export function EditorSidebar({
                   count={televisionCount}
                   expanded={expandedSection === 'television'}
                   onChange={handleAccordionChange('television')}
+                  lazy
                 >
                   <TelevisionSection
                     storyId={selectedStoryId}
@@ -361,6 +385,7 @@ export function EditorSidebar({
                   count={charactersCount}
                   expanded={expandedSection === 'characters'}
                   onChange={handleAccordionChange('characters')}
+                  lazy
                 >
                   <CharactersSection
                     storyId={selectedStoryId}

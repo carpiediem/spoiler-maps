@@ -4,6 +4,7 @@ import {
   screen,
   waitFor,
   waitForElementToBeRemoved,
+  within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -120,7 +121,9 @@ describe('App', () => {
     await screen.findByDisplayValue('A Song of Ice and Fire');
     // Expands the Books section (a SidebarSection, <h2>), revealing the
     // book's own accordion (BookItem, MUI's default <h3>) nested inside it.
-    await user.click(screen.getByRole('heading', { level: 2, name: /books/i }));
+    await user.click(
+      within(screen.getByRole('heading', { level: 2, name: /books/i })).getByRole('button'),
+    );
     await screen.findByText('A Game of Thrones');
 
     const levels = screen

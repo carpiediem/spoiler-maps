@@ -130,6 +130,19 @@ function makeCrud<T, TNew>(config: CrudConfig<T, TNew>) {
       );
     },
 
+    /** Counts a parent's children without loading any of them, for header chips that must be accurate before a list is ever fetched. */
+    async countForParent(parentId: number): Promise<number> {
+      const db = await getDatabase();
+      const row = selectOne<{ count: number }>(
+        db,
+        `SELECT COUNT(*) AS count FROM ${table} WHERE ${parentColumn} = ?;`,
+        (row) => ({ count: row.count as number }),
+        [parentId],
+      );
+      /* v8 ignore next -- COUNT(*) always returns exactly one row, even for zero matching rows. */
+      return row?.count ?? 0;
+    },
+
     async update(id: number, input: TNew): Promise<void> {
       const db = await getDatabase();
       beforeWrite?.(db, input);
@@ -251,6 +264,7 @@ const bookCrud = makeCrud<Book, NewBook>({
 
 export const createBook = bookCrud.create;
 export const listBooksForStory = bookCrud.listForParent;
+export const countBooksForStory = bookCrud.countForParent;
 export const updateBook = bookCrud.update;
 export const deleteBook = bookCrud.delete;
 
@@ -290,6 +304,7 @@ const tvSeasonCrud = makeCrud<TvSeason, NewTvSeason>({
 
 export const createTvSeason = tvSeasonCrud.create;
 export const listTvSeasonsForStory = tvSeasonCrud.listForParent;
+export const countTvSeasonsForStory = tvSeasonCrud.countForParent;
 export const updateTvSeason = tvSeasonCrud.update;
 export const deleteTvSeason = tvSeasonCrud.delete;
 
@@ -558,6 +573,7 @@ const characterCrud = makeCrud<Character, NewCharacter>({
 
 export const createCharacter = characterCrud.create;
 export const listCharactersForStory = characterCrud.listForParent;
+export const countCharactersForStory = characterCrud.countForParent;
 export const updateCharacter = characterCrud.update;
 export const deleteCharacter = characterCrud.delete;
 

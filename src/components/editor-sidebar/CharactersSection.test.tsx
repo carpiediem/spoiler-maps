@@ -1768,4 +1768,33 @@ describe('CharactersSection', () => {
       ]),
     );
   });
+
+  it('clears its pins and tails from the map when unmounted', async () => {
+    // The Characters section lazy-unmounts on every collapse, so anything
+    // it reported to the map must be cleared on the way out.
+    const storyId = await seedStoryId();
+    const onVisiblePositionsChange = vi.fn();
+    const onVisibleTailsChange = vi.fn();
+    const { unmount } = render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={onVisibleTailsChange}
+        timelineMode="book"
+        timelineIndex={1}
+        sectionExpanded
+      />,
+    );
+    await screen.findByText(/no characters yet/i);
+    onVisiblePositionsChange.mockClear();
+    onVisibleTailsChange.mockClear();
+
+    unmount();
+
+    expect(onVisiblePositionsChange).toHaveBeenCalledWith(null);
+    expect(onVisibleTailsChange).toHaveBeenCalledWith([]);
+  });
 });
