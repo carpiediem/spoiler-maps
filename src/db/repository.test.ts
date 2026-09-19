@@ -4,6 +4,7 @@ import {
   createBook,
   createChapter,
   createCharacter,
+  createCharacterAlias,
   createCharacterPosition,
   createEpisode,
   createMarker,
@@ -13,6 +14,7 @@ import {
   deleteBook,
   deleteChapter,
   deleteCharacter,
+  deleteCharacterAlias,
   deleteCharacterPosition,
   deleteEpisode,
   deleteMarker,
@@ -20,6 +22,7 @@ import {
   deleteStory,
   deleteTvSeason,
   getStory,
+  listAliasesForCharacter,
   listBooksForStory,
   listChaptersForBook,
   listCharacterPositionsForCharacter,
@@ -32,6 +35,7 @@ import {
   updateBook,
   updateChapter,
   updateCharacter,
+  updateCharacterAlias,
   updateCharacterPosition,
   updateEpisode,
   updateMarker,
@@ -690,5 +694,130 @@ describe('character positions', () => {
     await deleteCharacter(character.id);
 
     expect(await listCharacterPositionsForCharacter(character.id)).toEqual([]);
+  });
+});
+
+describe('character aliases', () => {
+  async function seedCharacterAndBook() {
+    const story = await seedStory();
+    const character = await createCharacter({
+      storyId: story.id,
+      name: 'Arya Stark',
+      group: 'Stark',
+      icon: null,
+      color: null,
+      sortOrder: 0,
+      url: null,
+    });
+    const book = await createBook({
+      storyId: story.id,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter1 = await createChapter({
+      bookId: book.id,
+      name: 'Arya I',
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Arya II',
+      url: null,
+      sortOrder: 1,
+    });
+    return { character, chapter1, chapter2 };
+  }
+
+  it('creates, lists, updates, and deletes an alias with no range', async () => {
+    const { character } = await seedCharacterAndBook();
+    const alias = await createCharacterAlias({
+      characterId: character.id,
+      name: 'Arry',
+      group: null,
+      icon: null,
+      color: null,
+      url: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+
+    expect(await listAliasesForCharacter(character.id)).toEqual([alias]);
+
+    await updateCharacterAlias(alias.id, { ...alias, name: 'Nan' });
+    const [updated] = await listAliasesForCharacter(character.id);
+    expect(updated!.name).toBe('Nan');
+
+    await deleteCharacterAlias(alias.id);
+    expect(await listAliasesForCharacter(character.id)).toEqual([]);
+  });
+
+  it('round-trips a bounded chapter range', async () => {
+    const { character, chapter1, chapter2 } = await seedCharacterAndBook();
+    const alias = await createCharacterAlias({
+      characterId: character.id,
+      name: 'Arry',
+      group: null,
+      icon: null,
+      color: '#808080',
+      url: null,
+      chapterRange: { startChapterId: chapter1.id, endChapterId: chapter2.id },
+      episodeRange: null,
+    });
+
+    expect(await listAliasesForCharacter(character.id)).toEqual([alias]);
+  });
+
+  it('rejects a chapter range whose end comes before its start', async () => {
+    const { character, chapter1, chapter2 } = await seedCharacterAndBook();
+
+    await expect(
+      createCharacterAlias({
+        characterId: character.id,
+        name: 'Arry',
+        group: null,
+        icon: null,
+        color: null,
+        url: null,
+        chapterRange: { startChapterId: chapter2.id, endChapterId: chapter1.id },
+        episodeRange: null,
+      }),
+    ).rejects.toThrow(/endChapterId must not come before/);
+  });
+
+  it('normalizes a chapter range with both boundaries open to no range at all', async () => {
+    const { character } = await seedCharacterAndBook();
+    const alias = await createCharacterAlias({
+      characterId: character.id,
+      name: 'Arry',
+      group: null,
+      icon: null,
+      color: null,
+      url: null,
+      chapterRange: { startChapterId: null, endChapterId: null },
+      episodeRange: null,
+    });
+
+    expect(alias.chapterRange).toBeNull();
+  });
+
+  it('deletes an alias when its character is deleted', async () => {
+    const { character } = await seedCharacterAndBook();
+    await createCharacterAlias({
+      characterId: character.id,
+      name: 'Arry',
+      group: null,
+      icon: null,
+      color: null,
+      url: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+
+    await deleteCharacter(character.id);
+
+    expect(await listAliasesForCharacter(character.id)).toEqual([]);
   });
 });

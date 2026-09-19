@@ -50,6 +50,22 @@ export interface StoryDocumentPosition {
   episodes?: StoryDocumentRangeTuple;
 }
 
+/**
+ * A character's alternate identity for part of the story, e.g. introduced
+ * in disguise — during chapters/episodes (independent of each other, same
+ * as elsewhere), the character displays this alias's own name/group/icon/
+ * color instead of its own.
+ */
+export interface StoryDocumentAlias {
+  name: string;
+  group?: string;
+  icon?: string;
+  color?: string;
+  url?: string;
+  chapters?: StoryDocumentRangeTuple;
+  episodes?: StoryDocumentRangeTuple;
+}
+
 export interface StoryDocumentCharacter {
   name: string;
   group?: string;
@@ -58,6 +74,7 @@ export interface StoryDocumentCharacter {
   /** The character's own wiki page, if any — their name links here in the view screen. */
   url?: string;
   positions: StoryDocumentPosition[];
+  aliases?: StoryDocumentAlias[];
 }
 
 export interface StoryDocumentMarker {

@@ -61,13 +61,15 @@ async function createDatabase(): Promise<SqlDatabase> {
         db.run(migration.sql);
       } catch (error) {
         // Best-effort recovery for data that already drifted out of sync
-        // before this fix, where a migration's columns already exist even
-        // though its version wasn't recorded as applied — treat that
-        // specific failure as "already done" and move on, rather than
+        // before this fix, where a migration's columns or table already
+        // exist even though its version wasn't recorded as applied — treat
+        // either failure as "already done" and move on, rather than
         // leaving the app permanently unable to start.
         /* v8 ignore next -- sql.js's db.run only ever throws Error instances; the String(error) fallback exists only in case that contract ever changes. */
         const message = error instanceof Error ? error.message : String(error);
-        if (!message.includes('duplicate column name')) throw error;
+        if (!message.includes('duplicate column name') && !message.includes('already exists')) {
+          throw error;
+        }
         console.warn(
           `Skipping migration ${migration.version}: its SQL failed with "${message}", suggesting it already ran previously without being recorded.`,
         );

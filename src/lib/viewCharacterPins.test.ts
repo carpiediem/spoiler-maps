@@ -248,4 +248,61 @@ describe('buildViewPinsAndTails', () => {
     expect(pins[0]!.characterId).toBe(1);
     expect(pins[0]!.label).toBe('DT');
   });
+
+  it('shows an active alias’s name/color instead of the character’s own, reverting once its range ends', () => {
+    const document = minimalDocument({
+      characters: [
+        {
+          name: 'Arya Stark',
+          color: '#ff0000',
+          positions: [{ lat: 1, lng: 1 }],
+          aliases: [{ name: 'Arry', color: '#808080', chapters: [0, 0] }],
+        },
+      ],
+    });
+
+    const withinAliasRange = buildViewPinsAndTails(document, new Set([0]), false, 'book', 1);
+    expect(withinAliasRange.pins).toEqual([
+      expect.objectContaining({ label: 'AR', color: '#808080' }),
+    ]);
+
+    const afterAliasRange = buildViewPinsAndTails(document, new Set([0]), false, 'book', 2);
+    expect(afterAliasRange.pins).toEqual([
+      expect.objectContaining({ label: 'AS', color: '#ff0000' }),
+    ]);
+  });
+
+  it('falls back to the character’s own name/color when no alias is active', () => {
+    const document = minimalDocument({
+      characters: [
+        {
+          name: 'Arya Stark',
+          color: '#ff0000',
+          positions: [{ lat: 1, lng: 1 }],
+          aliases: [{ name: 'Arry', color: '#808080', chapters: [5, null] }],
+        },
+      ],
+    });
+
+    const { pins } = buildViewPinsAndTails(document, new Set([0]), false, 'book', 1);
+
+    expect(pins).toEqual([expect.objectContaining({ label: 'AS', color: '#ff0000' })]);
+  });
+
+  it('shows no color (not the character’s own) for an active alias that leaves color unset', () => {
+    const document = minimalDocument({
+      characters: [
+        {
+          name: 'Arya Stark',
+          color: '#ff0000',
+          positions: [{ lat: 1, lng: 1 }],
+          aliases: [{ name: 'Arry', chapters: [0, 0] }],
+        },
+      ],
+    });
+
+    const { pins } = buildViewPinsAndTails(document, new Set([0]), false, 'book', 1);
+
+    expect(pins).toEqual([expect.objectContaining({ label: 'AR', color: null })]);
+  });
 });

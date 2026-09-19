@@ -47,6 +47,9 @@ export function EditScreen() {
   const dataUrl = searchParams.get('d');
 
   const [stories, setStories] = useState<Story[]>([]);
+  // Distinct from `stories.length === 0`, which is also true for a
+  // legitimately empty (all-deleted) story list before it's ever loaded.
+  const [storiesLoaded, setStoriesLoaded] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [tileUrl, setTileUrl] = useState<string | null>(null);
   const [mapPosition, setMapPosition] = useState<{ center: LatLng; zoom: number }>({
@@ -101,6 +104,7 @@ export function EditScreen() {
     listStories().then((loaded) => {
       if (cancelled) return;
       setStories(loaded);
+      setStoriesLoaded(true);
     });
 
     return () => {
@@ -121,6 +125,16 @@ export function EditScreen() {
     const target = stories.find((s) => s.id === lastViewedId) ?? stories[0];
     navigate(`/edit/${target.id}`, { replace: true });
   }, [storyIdParam, stories, navigate, dataUrl]);
+
+  // Redirects to the create-new flow if the URL names a story id that
+  // doesn't exist (e.g. /edit/99) — once stories have loaded, rather than
+  // silently rendering the "new story" form under a stale/bogus id, which
+  // would leave Save unable to find anything to update.
+  useEffect(() => {
+    if (selectedStoryId === null || !storiesLoaded) return;
+    if (stories.some((s) => s.id === selectedStoryId)) return;
+    navigate('/edit/new', { replace: true });
+  }, [selectedStoryId, storiesLoaded, stories, navigate]);
 
   // Lets an /edit?d=<url> link auto-import that YAML as a brand-new story
   // and start editing it — e.g. so the accessibility scanner (which can

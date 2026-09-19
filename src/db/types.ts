@@ -117,10 +117,11 @@ export interface Character {
 }
 
 /**
- * Where a character should appear on the map once the reader/viewer has
- * reached a given point in the story. chapterRange and episodeRange are
- * independent of each other, so a position can resolve regardless of
- * whether progress is tracked via books or the show.
+ * Where a character appears on the map from the point the reader/viewer
+ * reaches this position's start chapter/episode through its end (each
+ * independently optional, leaving that side open-ended). chapterRange and
+ * episodeRange are independent of each other, so a position can resolve
+ * regardless of whether progress is tracked via books or the show.
  */
 export interface CharacterPosition {
   id: number;
@@ -135,6 +136,25 @@ export interface CharacterPosition {
   episodeRange: EpisodeRange | null;
 }
 
+/**
+ * A character's alternate identity for part of the story, e.g. introduced
+ * in disguise — during chapterRange/episodeRange (independent of each
+ * other, same as elsewhere), the character displays this alias's own
+ * name/group/icon/color instead of its own. Has no position of its own:
+ * it re-labels whichever of the character's own positions are showing.
+ */
+export interface CharacterAlias {
+  id: number;
+  characterId: number;
+  name: string;
+  group: string | null;
+  icon: string | null;
+  color: string | null;
+  url: string | null;
+  chapterRange: ChapterRange | null;
+  episodeRange: EpisodeRange | null;
+}
+
 export type NewStory = Omit<Story, 'id'>;
 export type NewBook = Omit<Book, 'id'>;
 export type NewChapter = Omit<Chapter, 'id'>;
@@ -144,3 +164,4 @@ export type NewMarkerSet = Omit<MarkerSet, 'id'>;
 export type NewMarker = Omit<Marker, 'id'>;
 export type NewCharacter = Omit<Character, 'id'>;
 export type NewCharacterPosition = Omit<CharacterPosition, 'id'>;
+export type NewCharacterAlias = Omit<CharacterAlias, 'id'>;

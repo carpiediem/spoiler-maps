@@ -77,8 +77,14 @@ describe('buildDocumentEpisodeOptions', () => {
 
 describe('isPositionVisible', () => {
   it('is always visible when the range for the active medium is unset', () => {
-    expect(isPositionVisible({ lat: 0, lng: 0 }, 'book', 1)).toBe(true);
-    expect(isPositionVisible({ lat: 0, lng: 0, chapters: [null, null] }, 'book', 1)).toBe(true);
+    const position: StoryDocumentPosition = { lat: 0, lng: 0 };
+    const positionWithOpenRange: StoryDocumentPosition = {
+      lat: 0,
+      lng: 0,
+      chapters: [null, null],
+    };
+    expect(isPositionVisible(position, 'book', 1)).toBe(true);
+    expect(isPositionVisible(positionWithOpenRange, 'book', 1)).toBe(true);
   });
 
   it('is visible once the 1-based current index passes the 0-based start boundary', () => {
@@ -87,6 +93,22 @@ describe('isPositionVisible', () => {
     expect(isPositionVisible(position, 'book', 2)).toBe(false);
     expect(isPositionVisible(position, 'book', 3)).toBe(true);
     expect(isPositionVisible(position, 'book', 4)).toBe(true);
+  });
+
+  it('is hidden once the 1-based current index passes the 0-based end boundary', () => {
+    // Regression: a position (or alias) with an end boundary previously
+    // stayed visible forever once its start was reached, since only the
+    // start was ever checked.
+    const position: StoryDocumentPosition = { lat: 0, lng: 0, chapters: [null, 117] };
+
+    expect(isPositionVisible(position, 'book', 118)).toBe(true);
+    expect(isPositionVisible(position, 'book', 119)).toBe(false);
+  });
+
+  it('is visible when the end boundary is open (null)', () => {
+    const position: StoryDocumentPosition = { lat: 0, lng: 0, chapters: [null, null] };
+
+    expect(isPositionVisible(position, 'book', 999)).toBe(true);
   });
 
   it('checks the episode range only in tv mode', () => {
