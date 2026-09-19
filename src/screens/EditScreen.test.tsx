@@ -450,7 +450,7 @@ describe('App', () => {
     await user.click(await screen.findByText('Jon Snow'));
 
     let marker: Element | null = null;
-    await vi.waitFor(() => {
+    await waitFor(() => {
       marker = container.querySelector('.leaflet-marker-icon');
       expect(marker).not.toBeNull();
     });
@@ -526,7 +526,7 @@ describe('App', () => {
     await user.click(await screen.findByText('Jon Snow'));
 
     let marker: Element | null = null;
-    await vi.waitFor(() => {
+    await waitFor(() => {
       marker = container.querySelector('.leaflet-marker-icon');
       expect(marker).not.toBeNull();
     });
@@ -801,7 +801,7 @@ describe('App', () => {
       </MemoryRouter>,
     );
 
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining("/edit/999 names a story id that isn't in the local database"),
       ),
@@ -843,7 +843,7 @@ describe('App', () => {
       </MemoryRouter>,
     );
 
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining("/edit/999 names a story id that isn't in the local database"),
       ),
