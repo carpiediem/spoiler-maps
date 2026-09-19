@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 
 interface UseExpandableEntityListOptions<T extends { id: number }> {
   storyId: number;
@@ -84,27 +84,32 @@ export function useExpandableEntityList<T extends { id: number }>({
     if (sectionExpanded === false) setExpandedId(null);
   }, [sectionExpanded]);
 
-  function toggle(id: number) {
-    return (_event: SyntheticEvent, isExpanded: boolean) => {
+  // Referentially stable (empty deps — setState setters are themselves
+  // stable) so a caller that hands these straight through as props to a
+  // list of memoized item components doesn't defeat that memoization just
+  // by re-rendering itself for an unrelated reason.
+  const toggle = useCallback(
+    (id: number) => (_event: SyntheticEvent, isExpanded: boolean) => {
       setExpandedId(isExpanded ? id : null);
-    };
-  }
+    },
+    [],
+  );
 
-  function addEntity(entity: T) {
+  const addEntity = useCallback((entity: T) => {
     setEntities((previous) => [...previous!, entity]);
     setExpandedId(entity.id);
-  }
+  }, []);
 
-  function updateEntity(updated: T) {
+  const updateEntity = useCallback((updated: T) => {
     setEntities((previous) =>
       previous!.map((entity) => (entity.id === updated.id ? updated : entity)),
     );
-  }
+  }, []);
 
-  function removeEntity(id: number) {
+  const removeEntity = useCallback((id: number) => {
     setEntities((previous) => previous!.filter((entity) => entity.id !== id));
     setExpandedId(null);
-  }
+  }, []);
 
   return { entities, setEntities, expandedId, toggle, addEntity, updateEntity, removeEntity };
 }

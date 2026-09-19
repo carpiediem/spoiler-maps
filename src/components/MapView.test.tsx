@@ -1,16 +1,36 @@
 import {
   CircleMarker as LeafletCircleMarker,
   Marker as LeafletMarker,
+  Polygon as LeafletPolygon,
   Polyline as LeafletPolyline,
   type Map as LeafletMap,
 } from 'leaflet';
-import { act, render } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import type { Marker } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
+import { MapErrorBoundary } from './MapErrorBoundary';
 import { MapView } from './MapView';
 
 const center = { lat: 40, lng: -100 };
+
+function makeMarker(overrides: Partial<Marker> = {}): Marker {
+  return {
+    id: 1,
+    markerSetId: 1,
+    label: 'Winterfell',
+    icon: null,
+    url: null,
+    color: null,
+    large: false,
+    position: { lat: 41, lng: -101 },
+    polygon: null,
+    chapterRange: null,
+    episodeRange: null,
+    ...overrides,
+  };
+}
 
 describe('MapView', () => {
   it('renders the default xyz tile layer when no tileUrl is set', () => {
@@ -591,6 +611,572 @@ describe('MapView', () => {
     expect(polylines[0]!.getElement()?.classList.contains('character-tail-flow')).toBe(true);
   });
 
+  it('renders a "no icons" marker as an invisible but clickable marker', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[
+          {
+            marker: makeMarker({ label: 'Winterfell', position: { lat: 41, lng: -101 } }),
+            noIcons: true,
+          },
+        ]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    expect(marker).toBeDefined();
+    // A DivIcon with no visible content — not the usual colored pin/image.
+    expect((marker!.options.icon!.options as { iconUrl?: string }).iconUrl).toBeUndefined();
+  });
+
+  it('sets each marker’s label as its hover title, with or without an icon', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[
+          { marker: makeMarker({ id: 1, label: 'Winterfell' }), noIcons: false },
+          { marker: makeMarker({ id: 2, label: 'Castle Black' }), noIcons: true },
+        ]}
+      />,
+    );
+
+    const titles: (string | undefined)[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) titles.push(layer.getElement()?.title);
+    });
+    expect(titles.sort()).toEqual(['Castle Black', 'Winterfell']);
+  });
+
+  it('opens a "no icons" marker’s wiki URL in a new tab on click', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[
+          {
+            marker: makeMarker({
+              label: 'Winterfell',
+              url: 'https://wiki.example.com/winterfell',
+            }),
+            noIcons: true,
+          },
+        ]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    act(() => marker!.fire('click'));
+
+    expect(windowOpen).toHaveBeenCalledWith(
+      'https://wiki.example.com/winterfell',
+      '_blank',
+      'noopener,noreferrer',
+    );
+    windowOpen.mockRestore();
+  });
+
+  it('does nothing on click when a "no icons" marker has no wiki URL', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[{ marker: makeMarker({ url: null }), noIcons: true }]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    act(() => marker!.fire('click'));
+
+    expect(windowOpen).not.toHaveBeenCalled();
+    windowOpen.mockRestore();
+  });
+
+  it('opens a regular (iconed) marker’s wiki URL in a new tab on click too', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[
+          {
+            marker: makeMarker({ url: 'https://wiki.example.com/winterfell' }),
+            noIcons: false,
+          },
+        ]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    act(() => marker!.fire('click'));
+
+    expect(windowOpen).toHaveBeenCalledWith(
+      'https://wiki.example.com/winterfell',
+      '_blank',
+      'noopener,noreferrer',
+    );
+    windowOpen.mockRestore();
+  });
+
+  it('renders a non-draggable pin for a marker whose set does show icons', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[
+          {
+            marker: {
+              id: 1,
+              markerSetId: 1,
+              label: 'Winterfell',
+              icon: null,
+              url: null,
+              color: '#ff0000',
+              large: false,
+              position: { lat: 41, lng: -101 },
+              polygon: null,
+              chapterRange: null,
+              episodeRange: null,
+            },
+            noIcons: false,
+          },
+        ]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    expect(marker).toBeDefined();
+    expect(marker!.options.draggable).not.toBe(true);
+    expect(marker!.getLatLng().lat).toBeCloseTo(41);
+  });
+
+  it('renders the active marker pin as draggable and reports its new lat/lng on drag end', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onActiveMarkerDragEnd = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        activeMarkerPin={{
+          marker: {
+            id: 1,
+            markerSetId: 1,
+            label: 'Winterfell',
+            icon: null,
+            url: null,
+            color: null,
+            large: false,
+            position: { lat: 41, lng: -101 },
+            polygon: null,
+            chapterRange: null,
+            episodeRange: null,
+          },
+          noIcons: true,
+        }}
+        onActiveMarkerDragEnd={onActiveMarkerDragEnd}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    expect(marker).toBeDefined();
+    expect(marker!.options.draggable).toBe(true);
+
+    act(() => {
+      marker!.setLatLng([42, -102]);
+      marker!.fire('dragend', { target: marker });
+    });
+
+    expect(onActiveMarkerDragEnd).toHaveBeenCalledTimes(1);
+    const [reported] = onActiveMarkerDragEnd.mock.calls[0] as [{ lat: number; lng: number }];
+    expect(reported.lat).toBeCloseTo(42);
+    expect(reported.lng).toBeCloseTo(-102);
+  });
+
+  it('always renders the active marker as a plain pushpin, ignoring its own icon/large flag', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        activeMarkerPin={{
+          marker: {
+            id: 1,
+            markerSetId: 1,
+            label: 'Winterfell',
+            icon: 'https://example.com/icon.png',
+            url: null,
+            color: '#00ff00',
+            large: true,
+            position: { lat: 41, lng: -101 },
+            polygon: null,
+            chapterRange: null,
+            episodeRange: null,
+          },
+          noIcons: false,
+        }}
+        onActiveMarkerDragEnd={vi.fn()}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+    expect(marker).toBeDefined();
+    // A DivIcon (the plain pushpin), not an Icon built from the marker's
+    // own custom image — DivIcon has no iconUrl option at all.
+    expect((marker!.options.icon!.options as { iconUrl?: string }).iconUrl).toBeUndefined();
+  });
+
+  it('renders a marker’s saved area at 50% opacity, in its own color', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const polygon = [
+      { lat: 41, lng: -101 },
+      { lat: 42, lng: -101 },
+      { lat: 42, lng: -102 },
+    ];
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[{ marker: makeMarker({ color: '#00ff00', polygon }), noIcons: false }]}
+      />,
+    );
+
+    let area: LeafletPolygon | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) area = layer;
+    });
+    expect(area).toBeDefined();
+    expect((area!.options as { fillColor?: string }).fillColor).toBe('#00ff00');
+    expect((area!.options as { fillOpacity?: number }).fillOpacity).toBe(0.5);
+    expect(area!.getLatLngs()).toHaveLength(1);
+  });
+
+  it('renders a "no icons" marker’s area alongside its invisible marker', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const polygon = [
+      { lat: 41, lng: -101 },
+      { lat: 42, lng: -101 },
+      { lat: 42, lng: -102 },
+    ];
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        markerPins={[{ marker: makeMarker({ polygon }), noIcons: true }]}
+      />,
+    );
+
+    let areaCount = 0;
+    let markerCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) areaCount += 1;
+      if (layer instanceof LeafletMarker) markerCount += 1;
+    });
+    expect(areaCount).toBe(1);
+    expect(markerCount).toBe(1);
+  });
+
+  it('renders the active marker’s saved area, hiding it once a draft takes over', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const polygon = [
+      { lat: 41, lng: -101 },
+      { lat: 42, lng: -101 },
+      { lat: 42, lng: -102 },
+    ];
+    const { rerender } = render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        activeMarkerPin={{ marker: makeMarker({ polygon }), noIcons: false }}
+        onActiveMarkerDragEnd={vi.fn()}
+      />,
+    );
+
+    let areaCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) areaCount += 1;
+    });
+    expect(areaCount).toBe(1);
+
+    act(() => {
+      rerender(
+        <MapView
+          tileUrl={null}
+          center={center}
+          zoom={5}
+          mapRef={mapRef}
+          activeMarkerPin={{ marker: makeMarker({ polygon }), noIcons: false }}
+          onActiveMarkerDragEnd={vi.fn()}
+          areaDraftPoints={polygon}
+          onAreaDraftPointsChange={vi.fn()}
+        />,
+      );
+    });
+
+    areaCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) areaCount += 1;
+    });
+    // The saved area is gone; the draft polygon (below) takes its place.
+    expect(areaCount).toBe(1);
+  });
+
+  it('adds a point to the area draft when the map is clicked', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onAreaDraftPointsChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[{ lat: 1, lng: 1 }]}
+        onAreaDraftPointsChange={onAreaDraftPointsChange}
+      />,
+    );
+
+    act(() => {
+      mapRef.current!.fire('click', { latlng: { lat: 41, lng: -101 } });
+    });
+
+    expect(onAreaDraftPointsChange).toHaveBeenCalledWith([
+      { lat: 1, lng: 1 },
+      { lat: 41, lng: -101 },
+    ]);
+  });
+
+  it('does not listen for map clicks when no area draft is in progress', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onAreaDraftPointsChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={null}
+        onAreaDraftPointsChange={onAreaDraftPointsChange}
+      />,
+    );
+
+    act(() => {
+      mapRef.current!.fire('click', { latlng: { lat: 41, lng: -101 } });
+    });
+
+    expect(onAreaDraftPointsChange).not.toHaveBeenCalled();
+  });
+
+  it('renders a draggable vertex per area draft point, updating it on drag end', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onAreaDraftPointsChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[
+          { lat: 1, lng: 1 },
+          { lat: 2, lng: 2 },
+          { lat: 3, lng: 3 },
+        ]}
+        onAreaDraftPointsChange={onAreaDraftPointsChange}
+      />,
+    );
+
+    const vertices: LeafletMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) vertices.push(layer);
+    });
+    expect(vertices).toHaveLength(3);
+    expect(vertices.every((vertex) => vertex.options.draggable)).toBe(true);
+
+    act(() => {
+      vertices[1]!.setLatLng([9, 9]);
+      vertices[1]!.fire('dragend', { target: vertices[1] });
+    });
+
+    expect(onAreaDraftPointsChange).toHaveBeenCalledWith([
+      { lat: 1, lng: 1 },
+      { lat: 9, lng: 9 },
+      { lat: 3, lng: 3 },
+    ]);
+  });
+
+  it('removes a vertex on click, as long as at least 3 would remain', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onAreaDraftPointsChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[
+          { lat: 1, lng: 1 },
+          { lat: 2, lng: 2 },
+          { lat: 3, lng: 3 },
+        ]}
+        onAreaDraftPointsChange={onAreaDraftPointsChange}
+      />,
+    );
+
+    const vertices: LeafletMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) vertices.push(layer);
+    });
+
+    act(() => {
+      vertices[0]!.fire('click');
+    });
+
+    // Only 3 points exist — removing one would leave fewer than a valid
+    // triangle, so the click is a no-op.
+    expect(onAreaDraftPointsChange).not.toHaveBeenCalled();
+  });
+
+  it('removes a vertex on click when more than 3 points exist', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const onAreaDraftPointsChange = vi.fn();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[
+          { lat: 1, lng: 1 },
+          { lat: 2, lng: 2 },
+          { lat: 3, lng: 3 },
+          { lat: 4, lng: 4 },
+        ]}
+        onAreaDraftPointsChange={onAreaDraftPointsChange}
+      />,
+    );
+
+    const vertices: LeafletMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) vertices.push(layer);
+    });
+
+    act(() => {
+      vertices[1]!.fire('click');
+    });
+
+    expect(onAreaDraftPointsChange).toHaveBeenCalledWith([
+      { lat: 1, lng: 1 },
+      { lat: 3, lng: 3 },
+      { lat: 4, lng: 4 },
+    ]);
+  });
+
+  it('renders a dashed, translucent preview polygon for a 3+ point area draft', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[
+          { lat: 1, lng: 1 },
+          { lat: 2, lng: 2 },
+          { lat: 3, lng: 3 },
+        ]}
+        onAreaDraftPointsChange={vi.fn()}
+        areaDraftColor="#0000ff"
+      />,
+    );
+
+    let preview: LeafletPolygon | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) preview = layer;
+    });
+    expect(preview).toBeDefined();
+    expect((preview!.options as { fillColor?: string }).fillColor).toBe('#0000ff');
+    expect((preview!.options as { fillOpacity?: number }).fillOpacity).toBe(0.35);
+  });
+
+  it('renders a plain line, not a filled polygon, for a 2-point area draft', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        areaDraftPoints={[
+          { lat: 1, lng: 1 },
+          { lat: 2, lng: 2 },
+        ]}
+        onAreaDraftPointsChange={vi.fn()}
+      />,
+    );
+
+    let polygonCount = 0;
+    let polylineCount = 0;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolygon) polygonCount += 1;
+      if (layer instanceof LeafletPolyline && !(layer instanceof LeafletPolygon)) {
+        polylineCount += 1;
+      }
+    });
+    expect(polygonCount).toBe(0);
+    expect(polylineCount).toBe(1);
+  });
+
   it('applies the initial zoom limits to the underlying Leaflet map', () => {
     const mapRef = createRef<LeafletMap | null>();
     render(
@@ -643,5 +1229,142 @@ describe('MapView', () => {
     expect(mapRef.current!.getZoom()).toBe(6);
     expect(mapRef.current!.getCenter().lat).toBeCloseTo(center.lat);
     expect(mapRef.current!.getCenter().lng).toBeCloseTo(center.lng);
+  });
+
+  describe('diagnostic warnings', () => {
+    it('warns when the tile URL template matches neither the {x}/{y}/{z} nor {q} scheme', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      render(<MapView tileUrl="https://tile.example.com/broken.png" center={center} zoom={5} />);
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('tileUrlTemplate matches neither'));
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('https://tile.example.com/broken.png'),
+      );
+      warn.mockRestore();
+    });
+
+    // A non-finite lat/lng is invalid enough that Leaflet itself throws
+    // synchronously while rendering the affected layer — these wrap in
+    // MapErrorBoundary (as EditScreen/ViewScreen do) so that's contained,
+    // and confirm the diagnostic still logged first, before the crash.
+    it('warns about a non-finite center/zoom, then contains the resulting crash', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(
+        <MapErrorBoundary>
+          <MapView tileUrl={null} center={{ lat: NaN, lng: -100 }} zoom={5} />
+        </MapErrorBoundary>,
+      );
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('non-finite center/zoom'));
+      expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
+      warn.mockRestore();
+      consoleError.mockRestore();
+    });
+
+    it('warns about a character position with a non-finite lat/lng, then contains the resulting crash', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(
+        <MapErrorBoundary>
+          <MapView
+            tileUrl={null}
+            center={center}
+            zoom={5}
+            characterPositionPins={[makePin(1, { lat: NaN, lng: -101 }, '1')]}
+          />
+        </MapErrorBoundary>,
+      );
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('character position has a non-finite lat/lng'),
+      );
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('characterId=1'));
+      expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
+      warn.mockRestore();
+      consoleError.mockRestore();
+    });
+
+    it('warns about a marker with a non-finite position, then contains the resulting crash', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(
+        <MapErrorBoundary>
+          <MapView
+            tileUrl={null}
+            center={center}
+            zoom={5}
+            markerPins={[
+              { marker: makeMarker({ position: { lat: NaN, lng: 1 } }), noIcons: false },
+            ]}
+          />
+        </MapErrorBoundary>,
+      );
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('marker 1 (Winterfell) has a non-finite position'),
+      );
+      expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
+      warn.mockRestore();
+      consoleError.mockRestore();
+    });
+
+    it('warns about a marker area with fewer than 3 points', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      render(
+        <MapView
+          tileUrl={null}
+          center={center}
+          zoom={5}
+          markerPins={[
+            {
+              marker: makeMarker({
+                polygon: [
+                  { lat: 1, lng: 1 },
+                  { lat: 2, lng: 2 },
+                ],
+              }),
+              noIcons: false,
+            },
+          ]}
+        />,
+      );
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('marker 1 (Winterfell) has an area with fewer than 3 points'),
+      );
+      warn.mockRestore();
+    });
+
+    it('warns about a marker area with a non-finite point, then contains the resulting crash', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(
+        <MapErrorBoundary>
+          <MapView
+            tileUrl={null}
+            center={center}
+            zoom={5}
+            activeMarkerPin={{
+              marker: makeMarker({
+                polygon: [
+                  { lat: 1, lng: 1 },
+                  { lat: NaN, lng: 2 },
+                  { lat: 3, lng: 3 },
+                ],
+              }),
+              noIcons: false,
+            }}
+          />
+        </MapErrorBoundary>,
+      );
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('marker 1 (Winterfell) has an area with a non-finite point'),
+      );
+      expect(screen.getByText(/the map failed to render/i)).toBeInTheDocument();
+      warn.mockRestore();
+      consoleError.mockRestore();
+    });
   });
 });

@@ -208,10 +208,13 @@ markerSets:
     expect(document.markerSets).toEqual([
       {
         name: 'Cities',
+        noIcons: false,
         markers: [
           {
             label: 'Winterfell',
             icon: 'https://example.com/winterfell.png',
+            url: undefined,
+            large: false,
             color: '#00ff00',
             lat: 3,
             lng: 3,
@@ -452,15 +455,47 @@ describe('importStoryDocument', () => {
     expect(nan).toMatchObject({ name: 'Nan', group: null, color: null, url: null });
   });
 
-  it('deletes the partially created story and rethrows when a range references an out-of-bounds index', async () => {
+  it('clamps a range that references an out-of-bounds index to the last entry', async () => {
+    const story = await importStoryDocument(
+      minimalDocument({
+        books: [{ name: 'A Game of Thrones', chapters: [{ name: 'Bran' }] }],
+        characters: [{ name: 'Jon Snow', positions: [{ lat: 1, lng: 1, chapters: [0, 5] }] }],
+      }),
+    );
+
+    const [character] = await listCharactersForStory(story.id);
+    const [position] = await listCharacterPositionsForCharacter(character!.id);
+    const books = await listBooksForStory(story.id);
+    const chapters = await listChaptersForBook(books[0]!.id);
+
+    expect(position!.chapterRange).toEqual({
+      startChapterId: chapters[0]!.id,
+      endChapterId: chapters[0]!.id,
+    });
+  });
+
+  it('treats a range as open-ended when the story has no chapters or episodes at all', async () => {
+    const story = await importStoryDocument(
+      minimalDocument({
+        characters: [{ name: 'Jon Snow', positions: [{ lat: 1, lng: 1, chapters: [0, 5] }] }],
+      }),
+    );
+
+    const [character] = await listCharactersForStory(story.id);
+    const [position] = await listCharacterPositionsForCharacter(character!.id);
+
+    expect(position!.chapterRange).toBeNull();
+  });
+
+  it('deletes the partially created story and rethrows when a range ends before it starts', async () => {
     await expect(
       importStoryDocument(
         minimalDocument({
-          books: [{ name: 'A Game of Thrones', chapters: [{ name: 'Bran' }] }],
-          characters: [{ name: 'Jon Snow', positions: [{ lat: 1, lng: 1, chapters: [0, 5] }] }],
+          books: [{ name: 'A Game of Thrones', chapters: [{ name: 'Bran' }, { name: 'Catelyn' }] }],
+          characters: [{ name: 'Jon Snow', positions: [{ lat: 1, lng: 1, chapters: [1, 0] }] }],
         }),
       ),
-    ).rejects.toThrow(/references index 5/);
+    ).rejects.toThrow(/endChapterId must not come before/);
 
     expect(await listStories()).toEqual([]);
   });
@@ -538,12 +573,14 @@ describe('round trip', () => {
       chapterRange: { startChapterId: chapter1.id, endChapterId: null },
       episodeRange: null,
     });
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Cities' });
+    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Cities', noIcons: false });
     await createMarker({
       markerSetId: markerSet.id,
       label: 'Winterfell',
       icon: null,
+      url: null,
       color: '#00ff00',
+      large: false,
       position: { lat: 3, lng: 3 },
       polygon: null,
       chapterRange: null,

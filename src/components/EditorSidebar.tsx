@@ -2,8 +2,9 @@ import { Box, Button, Paper } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useForm } from 'react-hook-form';
-import type { CharacterPosition, LatLng, Story } from '../db';
+import { countMarkersForStory, type CharacterPosition, type LatLng, type Story } from '../db';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
+import type { ActiveMarker, MarkerMapPin } from '../lib/markerPins';
 import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
 import type { TimelineMode } from './MapTimelineControl';
@@ -14,6 +15,7 @@ import { MarkersSection } from './editor-sidebar/MarkersSection';
 import { PositionPanel } from './editor-sidebar/PositionPanel';
 import { SidebarSection } from './editor-sidebar/SidebarSection';
 import { TelevisionSection } from './editor-sidebar/TelevisionSection';
+import { useRenderLoopWatchdog } from '../lib/renderLoopWatchdog';
 import { resolveTileUrlTemplate } from '../lib/tileUrl';
 import { StorySelector } from './StorySelector';
 
@@ -110,6 +112,18 @@ interface EditorSidebarProps {
   timelineMode: TimelineMode;
   /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
   timelineIndex: number;
+  /** Called with the pins to render for every marker set toggled visible, excluding whichever marker is currently selected. */
+  onVisibleMarkersChange: (pins: MarkerMapPin[] | null) => void;
+  /** Called with the currently selected marker (and a handler for dragging its pin), or null once none is selected. */
+  onActiveMarkerChange: (active: ActiveMarker | null) => void;
+  /** Whether the currently selected marker's area is being drawn/edited on the map. */
+  isEditingMarkerArea: boolean;
+  /** The number of points in the in-progress area draft, for enabling/disabling Save. */
+  areaDraftPointCount: number;
+  onStartEditingMarkerArea: () => void;
+  onSaveMarkerArea: () => void;
+  onCancelMarkerArea: () => void;
+  onClearMarkerArea: () => void;
 }
 
 export function EditorSidebar({
@@ -137,7 +151,16 @@ export function EditorSidebar({
   onFinishDrawingTail,
   timelineMode,
   timelineIndex,
+  onVisibleMarkersChange,
+  onActiveMarkerChange,
+  isEditingMarkerArea,
+  areaDraftPointCount,
+  onStartEditingMarkerArea,
+  onSaveMarkerArea,
+  onCancelMarkerArea,
+  onClearMarkerArea,
 }: EditorSidebarProps) {
+  useRenderLoopWatchdog('EditorSidebar');
   const {
     control,
     handleSubmit,
@@ -161,6 +184,25 @@ export function EditorSidebar({
   const [charactersCount, setCharactersCount] = useState<number>();
   const [markersCount, setMarkersCount] = useState<number>();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  // The Markers section lazy-mounts (see its SidebarSection below), so it
+  // won't call onCountChange with the real total until the user expands it
+  // at least once — this keeps the header chip accurate before that, with a
+  // count-only query that doesn't need to load any marker set's full marker
+  // list. Superseded by MarkersSection's own onCountChange once it mounts.
+  useEffect(() => {
+    if (selectedStoryId === null) {
+      setMarkersCount(undefined);
+      return;
+    }
+    let cancelled = false;
+    countMarkersForStory(selectedStoryId).then((count) => {
+      if (!cancelled) setMarkersCount(count);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedStoryId]);
 
   // Tracks the selectedStoryId last synced to the form, so the list simply
   // reloading (e.g. the initial fetch resolving) doesn't reset the form out
@@ -341,8 +383,22 @@ export function EditorSidebar({
                   count={markersCount}
                   expanded={expandedSection === 'markers'}
                   onChange={handleAccordionChange('markers')}
+                  lazy
                 >
-                  <MarkersSection storyId={selectedStoryId} onCountChange={setMarkersCount} />
+                  <MarkersSection
+                    storyId={selectedStoryId}
+                    onCountChange={setMarkersCount}
+                    mapCenter={mapPosition?.center}
+                    onVisibleMarkersChange={onVisibleMarkersChange}
+                    onActiveMarkerChange={onActiveMarkerChange}
+                    sectionExpanded={expandedSection === 'markers'}
+                    isEditingMarkerArea={isEditingMarkerArea}
+                    areaDraftPointCount={areaDraftPointCount}
+                    onStartEditingMarkerArea={onStartEditingMarkerArea}
+                    onSaveMarkerArea={onSaveMarkerArea}
+                    onCancelMarkerArea={onCancelMarkerArea}
+                    onClearMarkerArea={onClearMarkerArea}
+                  />
                 </SidebarSection>
 
                 <Button

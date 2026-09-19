@@ -61,6 +61,8 @@ export interface MarkerSet {
   id: number;
   storyId: number;
   name: string;
+  /** When true, the map skips rendering an icon for this set's markers — for tiles that already show one at each marker's location. */
+  noIcons: boolean;
 }
 
 /**
@@ -82,19 +84,24 @@ export interface EpisodeRange {
 }
 
 /**
- * A pin on the map. chapterRange and episodeRange say when it should
- * appear — once the reader/viewer has reached a given point in the story —
- * and are independent of each other, so a marker resolves regardless of
- * whether progress is tracked via books or the show. Both null means the
- * marker is always shown.
+ * A pin on the map. chapterRange and episodeRange say when it's visible —
+ * from its start through its end (each independently optional, leaving that
+ * side open-ended) — once the reader/viewer has reached a given point in
+ * the story, and are independent of each other, so a marker resolves
+ * regardless of whether progress is tracked via books or the show. Both
+ * null means the marker is always shown.
  */
 export interface Marker {
   id: number;
   markerSetId: number;
   label: string;
   icon: string | null;
+  /** The marker's own wiki page, if any — shown as a link in the editor. */
+  url: string | null;
   /** CSS color (e.g. a hex string), used for the icon and/or polygon. */
   color: string | null;
+  /** Renders the marker's icon at a larger size on the map. */
+  large: boolean;
   position: LatLng;
   /** An optional area outline, e.g. a territory boundary, in addition to the position pin. */
   polygon: LatLng[] | null;

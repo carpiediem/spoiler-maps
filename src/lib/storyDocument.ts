@@ -80,7 +80,11 @@ export interface StoryDocumentCharacter {
 export interface StoryDocumentMarker {
   label: string;
   icon?: string;
+  /** The marker's own wiki page, if any. */
+  url?: string;
   color?: string;
+  /** Renders the marker's icon at a larger size on the map. */
+  large?: boolean;
   lat: number;
   lng: number;
   polygon?: LatLng[];
@@ -90,6 +94,8 @@ export interface StoryDocumentMarker {
 
 export interface StoryDocumentMarkerSet {
   name: string;
+  /** True skips rendering an icon for this set's markers — for tiles that already show one at each marker's location. */
+  noIcons?: boolean;
   markers: StoryDocumentMarker[];
 }
 

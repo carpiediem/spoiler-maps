@@ -5,6 +5,7 @@ import {
   screen,
   waitFor,
   waitForElementToBeRemoved,
+  within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
@@ -14,6 +15,8 @@ import {
   createBook,
   createCharacter,
   createCharacterPosition,
+  createMarker,
+  createMarkerSet,
   createStory,
   type CharacterPosition,
   type LatLng,
@@ -109,6 +112,14 @@ function DraggableEditorSidebar({
           onBackFromPosition={handleBackFromPosition}
           positionsVersion={positionsVersion}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -148,6 +159,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -191,6 +210,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -228,6 +255,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -281,6 +316,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -331,6 +374,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -378,6 +429,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -421,6 +480,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -466,6 +533,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -506,6 +581,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -543,6 +626,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -596,6 +687,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -641,6 +740,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -693,6 +800,14 @@ describe('EditorSidebar', () => {
             onBackFromPosition={vi.fn()}
             positionsVersion={0}
             onVisiblePositionsChange={vi.fn()}
+            onVisibleMarkersChange={vi.fn()}
+            onActiveMarkerChange={vi.fn()}
+            isEditingMarkerArea={false}
+            areaDraftPointCount={0}
+            onStartEditingMarkerArea={vi.fn()}
+            onSaveMarkerArea={vi.fn()}
+            onCancelMarkerArea={vi.fn()}
+            onClearMarkerArea={vi.fn()}
             onVisibleTailsChange={vi.fn()}
             isDrawingTail={false}
             tailDraftPoints={[]}
@@ -750,6 +865,14 @@ describe('EditorSidebar', () => {
             onBackFromPosition={vi.fn()}
             positionsVersion={0}
             onVisiblePositionsChange={vi.fn()}
+            onVisibleMarkersChange={vi.fn()}
+            onActiveMarkerChange={vi.fn()}
+            isEditingMarkerArea={false}
+            areaDraftPointCount={0}
+            onStartEditingMarkerArea={vi.fn()}
+            onSaveMarkerArea={vi.fn()}
+            onCancelMarkerArea={vi.fn()}
+            onClearMarkerArea={vi.fn()}
             onVisibleTailsChange={vi.fn()}
             isDrawingTail={false}
             tailDraftPoints={[]}
@@ -802,6 +925,14 @@ describe('EditorSidebar', () => {
             onBackFromPosition={vi.fn()}
             positionsVersion={0}
             onVisiblePositionsChange={vi.fn()}
+            onVisibleMarkersChange={vi.fn()}
+            onActiveMarkerChange={vi.fn()}
+            isEditingMarkerArea={false}
+            areaDraftPointCount={0}
+            onStartEditingMarkerArea={vi.fn()}
+            onSaveMarkerArea={vi.fn()}
+            onCancelMarkerArea={vi.fn()}
+            onClearMarkerArea={vi.fn()}
             onVisibleTailsChange={vi.fn()}
             isDrawingTail={false}
             tailDraftPoints={[]}
@@ -864,6 +995,14 @@ describe('EditorSidebar', () => {
             onBackFromPosition={vi.fn()}
             positionsVersion={0}
             onVisiblePositionsChange={vi.fn()}
+            onVisibleMarkersChange={vi.fn()}
+            onActiveMarkerChange={vi.fn()}
+            isEditingMarkerArea={false}
+            areaDraftPointCount={0}
+            onStartEditingMarkerArea={vi.fn()}
+            onSaveMarkerArea={vi.fn()}
+            onCancelMarkerArea={vi.fn()}
+            onClearMarkerArea={vi.fn()}
             onVisibleTailsChange={vi.fn()}
             isDrawingTail={false}
             tailDraftPoints={[]}
@@ -919,6 +1058,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -950,6 +1097,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -994,6 +1149,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1037,6 +1200,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1072,6 +1243,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1107,6 +1286,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1145,6 +1332,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1198,6 +1393,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1248,6 +1451,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1286,6 +1497,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1332,6 +1551,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1376,6 +1603,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1422,6 +1657,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1445,6 +1688,180 @@ describe('EditorSidebar', () => {
     expect(await screen.findByText(/no markers yet/i)).toBeVisible();
   });
 
+  it('shows the Markers count chip, and defers loading the section itself, until it is first expanded', async () => {
+    // MarkersSection lazy-mounts (see SidebarSection's `lazy` prop): a story
+    // with a large marker collection shouldn't pay for loading it at all
+    // unless the user actually opens the section. The count chip still
+    // needs to be accurate before that, via a separate, cheap count-only
+    // query (countMarkersForStory) that doesn't require the section itself
+    // to have mounted.
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+    const markerSet = await createMarkerSet({
+      storyId: story.id,
+      name: 'Landmarks',
+      noIcons: false,
+    });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={story.id}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onSaveDescription={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
+    );
+
+    const markersHeader = screen.getByRole('button', { name: /^markers/i });
+    await waitFor(() => expect(within(markersHeader).getByText('1')).toBeInTheDocument());
+    expect(screen.queryByText('Winterfell')).not.toBeInTheDocument();
+    expect(screen.queryByText(/no markers yet/i)).not.toBeInTheDocument();
+
+    await user.click(markersHeader);
+    await user.click(await screen.findByText('Landmarks'));
+
+    expect(await screen.findByText('Winterfell')).toBeVisible();
+  });
+
+  it('clears visible marker pins from the map when the Markers section collapses (unmounting it)', async () => {
+    // Because the Markers section now lazy-*un*mounts on every collapse
+    // (not just its first expand), a marker set left toggled "visible on
+    // map" would otherwise leave its pins stuck showing with no way to turn
+    // them off, since the component reporting them is simply gone.
+    const story = await createStory({
+      name: 'A Song of Ice and Fire',
+      tileUrlTemplate: null,
+      tileLayerAuthor: null,
+      tileLayerAttributionUrl: null,
+      initialCenter: { lat: 0, lng: 0 },
+      initialZoom: 4,
+      minZoom: 0,
+      maxZoom: 19,
+      description: null,
+      paletteKey: null,
+    });
+    const markerSet = await createMarkerSet({
+      storyId: story.id,
+      name: 'Landmarks',
+      noIcons: false,
+    });
+    await createMarker({
+      markerSetId: markerSet.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 1, lng: 1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const user = userEvent.setup();
+    const onVisibleMarkersChange = vi.fn();
+    render(
+      <MemoryRouter initialEntries={['/edit']}>
+        <EditorSidebar
+          stories={[story]}
+          selectedStoryId={story.id}
+          onSelectStory={vi.fn()}
+          onSave={vi.fn()}
+          onSaveDescription={vi.fn()}
+          onDeleteStory={vi.fn()}
+          onCaptureMapPosition={() => null}
+          mapPosition={null}
+          draftPosition={null}
+          activePosition={null}
+          onAddPosition={vi.fn()}
+          onEditPosition={vi.fn()}
+          onBackFromPosition={vi.fn()}
+          positionsVersion={0}
+          onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={onVisibleMarkersChange}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
+          onVisibleTailsChange={vi.fn()}
+          isDrawingTail={false}
+          tailDraftPoints={[]}
+          onStartDrawingTail={vi.fn()}
+          onFinishDrawingTail={vi.fn()}
+          onExportStory={vi.fn()}
+          onImportFile={vi.fn()}
+          timelineMode="book"
+          timelineIndex={1}
+        />
+      </MemoryRouter>,
+    );
+
+    const markersHeader = screen.getByRole('button', { name: /^markers/i });
+    await user.click(markersHeader);
+    await screen.findByText('Winterfell');
+
+    await user.click(screen.getByRole('button', { name: /show on map/i }));
+    await waitFor(() => expect(onVisibleMarkersChange).toHaveBeenCalledWith([expect.anything()]));
+
+    await user.click(markersHeader);
+
+    await waitFor(() => expect(onVisibleMarkersChange).toHaveBeenLastCalledWith(null));
+  });
+
   it('hides the Books/Television/Characters/Markers sections for a brand new, unsaved map', () => {
     render(
       <MemoryRouter initialEntries={['/edit']}>
@@ -1464,6 +1881,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1504,6 +1929,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1538,6 +1971,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1574,6 +2015,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1638,6 +2087,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1706,6 +2163,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1751,6 +2216,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1787,6 +2260,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}
@@ -1822,6 +2303,14 @@ describe('EditorSidebar', () => {
           onBackFromPosition={vi.fn()}
           positionsVersion={0}
           onVisiblePositionsChange={vi.fn()}
+          onVisibleMarkersChange={vi.fn()}
+          onActiveMarkerChange={vi.fn()}
+          isEditingMarkerArea={false}
+          areaDraftPointCount={0}
+          onStartEditingMarkerArea={vi.fn()}
+          onSaveMarkerArea={vi.fn()}
+          onCancelMarkerArea={vi.fn()}
+          onClearMarkerArea={vi.fn()}
           onVisibleTailsChange={vi.fn()}
           isDrawingTail={false}
           tailDraftPoints={[]}

@@ -1,9 +1,19 @@
-import { Alert, Box, CircularProgress, ThemeProvider, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  Divider,
+  Paper,
+  ThemeProvider,
+  Typography,
+} from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { CharacterPathsPanel } from '../components/view/CharacterPathsPanel';
 import { DescriptionDialog } from '../components/view/DescriptionDialog';
+import { MarkersPanel } from '../components/view/MarkersPanel';
 import { WelcomeDialog } from '../components/view/WelcomeDialog';
+import { MapErrorBoundary } from '../components/MapErrorBoundary';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
 import { MapView } from '../components/MapView';
 import { buildTileAttribution } from '../lib/attribution';
@@ -13,6 +23,7 @@ import type { StoryDocument } from '../lib/storyDocument';
 import { parseTimelineHash } from '../lib/timelineHash';
 import { buildDocumentChapterOptions, buildDocumentEpisodeOptions } from '../lib/viewTimeline';
 import { buildViewPinsAndTails } from '../lib/viewCharacterPins';
+import { buildViewMarkerPins } from '../lib/viewMarkerPins';
 import { buildStoryTheme } from '../theme';
 import { visuallyHidden } from '../lib/visuallyHidden';
 import './EditScreen.css';
@@ -84,6 +95,11 @@ export function ViewScreen() {
 
   const [checkedIndices, setCheckedIndices] = useState<Set<number>>(new Set());
   const [showFullPath, setShowFullPath] = useState(true);
+  // null until the user first touches a checkbox; until then, every marker
+  // collection is hidden by default, matching characters' own "nothing
+  // revealed yet" default (see hiddenMarkerSetIndices below).
+  const [hiddenMarkerSetIndicesOverride, setHiddenMarkerSetIndicesOverride] =
+    useState<Set<number> | null>(null);
   const [timelineMode, setTimelineMode] = useState<TimelineMode>('book');
   const [timelineIndex, setTimelineIndex] = useState(1);
   // Seeded once from a #chapter-N or #episode-N URL fragment at first
@@ -109,6 +125,23 @@ export function ViewScreen() {
     [document],
   );
 
+  // Every listable (non-noIcons) marker collection's index, until the user
+  // overrides it by touching a checkbox — computed fresh each time rather
+  // than seeded via an effect, so there's no flash of "all visible" on the
+  // first render where the document becomes available. A noIcons collection
+  // is never included: it has no checkbox to hide it behind, so it's always
+  // visible.
+  const hiddenMarkerSetIndices = useMemo(() => {
+    if (hiddenMarkerSetIndicesOverride !== null) return hiddenMarkerSetIndicesOverride;
+    if (!document) return new Set<number>();
+    return new Set(
+      document.markerSets
+        .map((markerSet, index) => ({ markerSet, index }))
+        .filter(({ markerSet }) => !markerSet.noIcons)
+        .map(({ index }) => index),
+    );
+  }, [hiddenMarkerSetIndicesOverride, document]);
+
   const { pins, tails } = useMemo(() => {
     if (!document) return { pins: [], tails: [] };
     return buildViewPinsAndTails(
@@ -119,6 +152,11 @@ export function ViewScreen() {
       timelineIndex,
     );
   }, [document, checkedIndices, showFullPath, timelineMode, timelineIndex]);
+
+  const markerPins = useMemo(() => {
+    if (!document) return [];
+    return buildViewMarkerPins(document, timelineMode, timelineIndex, hiddenMarkerSetIndices);
+  }, [document, timelineMode, timelineIndex, hiddenMarkerSetIndices]);
 
   function handleCloseWelcome() {
     setIsWelcomeOpen(false);
@@ -180,18 +218,21 @@ export function ViewScreen() {
           <Typography component="h1" sx={visuallyHidden}>
             {document!.name}
           </Typography>
-          <MapView
-            tileUrl={document!.tileUrlTemplate ?? null}
-            attribution={tileAttribution}
-            center={document!.initialCenter}
-            zoom={document!.initialZoom}
-            minZoom={document!.minZoom}
-            maxZoom={document!.maxZoom}
-            characterPositionPins={pins.length > 0 ? pins : null}
-            characterTails={tails}
-          />
+          <MapErrorBoundary key={`map-${timelineKey}`}>
+            <MapView
+              tileUrl={document!.tileUrlTemplate ?? null}
+              attribution={tileAttribution}
+              center={document!.initialCenter}
+              zoom={document!.initialZoom}
+              minZoom={document!.minZoom}
+              maxZoom={document!.maxZoom}
+              characterPositionPins={pins.length > 0 ? pins : null}
+              characterTails={tails}
+              markerPins={markerPins.length > 0 ? markerPins : null}
+            />
+          </MapErrorBoundary>
           <MapTimelineControl
-            key={timelineKey}
+            key={`timeline-${timelineKey}`}
             chapterOptions={chapterOptions}
             episodeOptions={episodeOptions}
             hasBooks={chapterOptions.length > 0}
@@ -211,15 +252,36 @@ export function ViewScreen() {
             }}
           />
         </main>
-        <CharacterPathsPanel
-          characters={document!.characters}
-          checkedIndices={checkedIndices}
-          onCheckedIndicesChange={setCheckedIndices}
-          showFullPath={showFullPath}
-          onShowFullPathChange={setShowFullPath}
-          timelineMode={timelineMode}
-          timelineIndex={timelineIndex}
-        />
+        <Paper
+          component="aside"
+          elevation={4}
+          sx={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            zIndex: 1000,
+            width: 280,
+            maxHeight: 'calc(100vh - 32px)',
+            overflowY: 'auto',
+            p: 2,
+          }}
+        >
+          <MarkersPanel
+            markerSets={document!.markerSets}
+            hiddenIndices={hiddenMarkerSetIndices}
+            onHiddenIndicesChange={setHiddenMarkerSetIndicesOverride}
+          />
+          <Divider sx={{ my: 2 }} />
+          <CharacterPathsPanel
+            characters={document!.characters}
+            checkedIndices={checkedIndices}
+            onCheckedIndicesChange={setCheckedIndices}
+            showFullPath={showFullPath}
+            onShowFullPathChange={setShowFullPath}
+            timelineMode={timelineMode}
+            timelineIndex={timelineIndex}
+          />
+        </Paper>
         {document!.description ? (
           <DescriptionDialog
             open={isWelcomeOpen}

@@ -10,7 +10,7 @@ interface RangeSelectProps {
   onChange: (value: number | null) => void;
 }
 
-/** One Start/End Chapter or Episode boundary picker — shared by the Position form and alias editing. */
+/** One Start/End Chapter or Episode boundary picker — shared by the Position form, alias editing, and marker editing. */
 export function RangeSelect({ label, options, value, onChange }: RangeSelectProps) {
   const labelId = `${label.replace(/\s+/g, '-').toLowerCase()}-label`;
 

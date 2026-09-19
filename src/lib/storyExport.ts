@@ -164,7 +164,9 @@ export async function buildStoryDocument(storyId: number): Promise<StoryDocument
         return {
           label: marker.label,
           ...(marker.icon ? { icon: marker.icon } : {}),
+          ...(marker.url ? { url: marker.url } : {}),
           ...(marker.color ? { color: marker.color } : {}),
+          ...(marker.large ? { large: true } : {}),
           lat: marker.position.lat,
           lng: marker.position.lng,
           ...(marker.polygon ? { polygon: marker.polygon } : {}),
@@ -172,7 +174,11 @@ export async function buildStoryDocument(storyId: number): Promise<StoryDocument
           ...(episodes ? { episodes } : {}),
         };
       });
-      return { name: markerSet.name, markers: markerDocs };
+      return {
+        name: markerSet.name,
+        ...(markerSet.noIcons ? { noIcons: true } : {}),
+        markers: markerDocs,
+      };
     }),
   );
 

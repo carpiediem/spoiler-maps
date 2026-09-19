@@ -540,12 +540,14 @@ describe('buildStoryDocument', () => {
       sortOrder: 0,
     });
     const chapter = await createChapter({ bookId: book.id, name: 'Bran', url: null, sortOrder: 0 });
-    const markerSet = await createMarkerSet({ storyId, name: 'Cities' });
+    const markerSet = await createMarkerSet({ storyId, name: 'Cities', noIcons: true });
     await createMarker({
       markerSetId: markerSet.id,
       label: 'Winterfell',
       icon: 'https://example.com/winterfell.png',
+      url: 'https://wiki.example.com/winterfell',
       color: '#00ff00',
+      large: true,
       position: { lat: 3, lng: 3 },
       polygon: [
         { lat: 3.1, lng: 3.1 },
@@ -560,11 +562,14 @@ describe('buildStoryDocument', () => {
     expect(document.markerSets).toEqual([
       {
         name: 'Cities',
+        noIcons: true,
         markers: [
           {
             label: 'Winterfell',
             icon: 'https://example.com/winterfell.png',
+            url: 'https://wiki.example.com/winterfell',
             color: '#00ff00',
+            large: true,
             lat: 3,
             lng: 3,
             polygon: [
@@ -587,12 +592,14 @@ describe('buildStoryDocument', () => {
       url: null,
       sortOrder: 0,
     });
-    const markerSet = await createMarkerSet({ storyId, name: 'Cities' });
+    const markerSet = await createMarkerSet({ storyId, name: 'Cities', noIcons: false });
     await createMarker({
       markerSetId: markerSet.id,
       label: 'Winterfell',
       icon: null,
+      url: null,
       color: null,
+      large: false,
       position: { lat: 3, lng: 3 },
       polygon: null,
       chapterRange: null,

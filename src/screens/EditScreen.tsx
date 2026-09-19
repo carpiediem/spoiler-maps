@@ -3,6 +3,7 @@ import type { Map as LeafletMap } from 'leaflet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { EditorSidebar } from '../components/EditorSidebar';
+import { MapErrorBoundary } from '../components/MapErrorBoundary';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
 import { MapView } from '../components/MapView';
 import {
@@ -17,7 +18,9 @@ import {
 import { buildTileAttribution } from '../lib/attribution';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import { downloadTextFile } from '../lib/downloadTextFile';
+import type { ActiveMarker, MarkerMapPin } from '../lib/markerPins';
 import { getLastViewedStoryId, setLastViewedStoryId } from '../lib/lastViewedStory';
+import { useRenderLoopWatchdog } from '../lib/renderLoopWatchdog';
 import { parseTimelineHash } from '../lib/timelineHash';
 import {
   DEFAULT_CENTER,
@@ -40,6 +43,7 @@ function parseStoryIdParam(param: string | undefined): number | null {
 }
 
 export function EditScreen() {
+  useRenderLoopWatchdog('EditScreen');
   const { storyId: storyIdParam } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
   const selectedStoryId = parseStoryIdParam(storyIdParam);
@@ -61,6 +65,23 @@ export function EditScreen() {
     null,
   );
   const [characterTails, setCharacterTails] = useState<CharacterTailOverlay[]>([]);
+  const [markerPins, setMarkerPins] = useState<MarkerMapPin[] | null>(null);
+  const [activeMarker, setActiveMarker] = useState<ActiveMarker | null>(null);
+  // Points of the marker area currently being drawn/edited; null when not
+  // in that mode. Only ever applies to the currently selected marker.
+  const [areaDraftPoints, setAreaDraftPoints] = useState<LatLng[] | null>(null);
+  // Mirrors activeMarker/areaDraftPoints for the marker-area handlers below,
+  // which read the *latest* value via these refs instead of closing over
+  // the state directly — activeMarker changes on every keystroke while
+  // editing a marker (to keep its map pin live), so a handler capturing it
+  // normally would get a new identity just as often, which (passed down
+  // through EditorSidebar to every marker's own row) would defeat
+  // MarkerItem/MarkerSetItem's memoization for the *entire* list on every
+  // keystroke, not just the one marker actually being edited.
+  const activeMarkerRef = useRef<ActiveMarker | null>(null);
+  activeMarkerRef.current = activeMarker;
+  const areaDraftPointsRef = useRef<LatLng[] | null>(null);
+  areaDraftPointsRef.current = areaDraftPoints;
   // When set, the sidebar slides its main content out to the left and
   // slides a Position form in from the right, in place of the accordion
   // list. Owned here (rather than by EditorSidebar) so a click on a map
@@ -111,6 +132,18 @@ export function EditScreen() {
       cancelled = true;
     };
   }, []);
+
+  // Diagnostic only: warns when the URL names a story id that isn't in the
+  // local database — the most common reason a map "won't load" with no
+  // console errors at all (there's nothing to render, and nothing crashed).
+  useEffect(() => {
+    if (selectedStoryId === null || stories.length === 0) return;
+    if (stories.some((story) => story.id === selectedStoryId)) return;
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[EditScreen] /edit/${selectedStoryId} names a story id that isn't in the local database (it has ${stories.length} other stor${stories.length === 1 ? 'y' : 'ies'}). It may have been deleted, or the browser's site data/IndexedDB was cleared — the editor will show a blank "New Map" form instead.`,
+    );
+  }, [selectedStoryId, stories]);
 
   // Redirects a bare /edit (no story id in the URL) to the last-viewed
   // story once the story list has finished loading, falling back to the
@@ -205,6 +238,8 @@ export function EditScreen() {
     setActivePosition(null);
     setDraftPosition(null);
     setTailDraftPoints(null);
+    setMarkerPins(null);
+    setActiveMarker(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStoryId]);
 
@@ -276,6 +311,40 @@ export function EditScreen() {
   function handleFinishDrawingTail() {
     setTailDraftPoints(null);
   }
+
+  /* v8 ignore next 3 -- MapView.test.tsx covers this wiring at the unit level (onActiveMarkerDragEnd); a real drag gesture isn't practical to simulate through jsdom's mouse events in a full-App integration test. */
+  const handleActiveMarkerDragEnd = useCallback((position: LatLng) => {
+    activeMarkerRef.current?.onDrag(position);
+  }, []);
+
+  // An in-progress area draft only ever makes sense for the marker it was
+  // started on — if the user selects a different marker (or deselects
+  // entirely) mid-draw, discard it rather than letting it silently apply to
+  // whatever's selected next.
+  useEffect(() => {
+    setAreaDraftPoints(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMarker?.marker.id]);
+
+  // Stable (see activeMarkerRef/areaDraftPointsRef above) so passing these
+  // down through every marker's own row doesn't defeat memoization there.
+  const handleStartEditingMarkerArea = useCallback(() => {
+    setAreaDraftPoints(activeMarkerRef.current?.marker.polygon ?? []);
+  }, []);
+
+  const handleSaveMarkerArea = useCallback(() => {
+    activeMarkerRef.current?.onAreaSave(areaDraftPointsRef.current);
+    setAreaDraftPoints(null);
+  }, []);
+
+  const handleCancelMarkerArea = useCallback(() => {
+    setAreaDraftPoints(null);
+  }, []);
+
+  const handleClearMarkerArea = useCallback(() => {
+    activeMarkerRef.current?.onAreaSave(null);
+    setAreaDraftPoints(null);
+  }, []);
 
   async function handleSave(input: {
     name: string;
@@ -363,26 +432,33 @@ export function EditScreen() {
           <Typography component="h1" sx={visuallyHidden}>
             {selectedStory ? `Editing ${selectedStory.name}` : 'Spoiler Maps Editor'}
           </Typography>
-          <MapView
-            key={selectedStoryId ?? 'new'}
-            mapRef={mapRef}
-            tileUrl={tileUrl}
-            attribution={tileAttribution}
-            center={mapCenter}
-            zoom={mapZoom}
-            minZoom={mapMinZoom}
-            maxZoom={mapMaxZoom}
-            onPositionChange={setMapPosition}
-            draftPosition={draftPosition}
-            onDraftPositionChange={setDraftPosition}
-            characterPositionPins={characterPositionPins}
-            characterTails={characterTails}
-            editingPositionId={activePosition?.existing?.id ?? null}
-            onCharacterPositionPinClick={handlePinClick}
-            tailDraftPoints={tailDraftPoints}
-            onTailPointClick={handleTailPointClick}
-            tailColor={activePosition?.color ?? null}
-          />
+          <MapErrorBoundary key={selectedStoryId ?? 'new'}>
+            <MapView
+              mapRef={mapRef}
+              tileUrl={tileUrl}
+              attribution={tileAttribution}
+              center={mapCenter}
+              zoom={mapZoom}
+              minZoom={mapMinZoom}
+              maxZoom={mapMaxZoom}
+              onPositionChange={setMapPosition}
+              draftPosition={draftPosition}
+              onDraftPositionChange={setDraftPosition}
+              characterPositionPins={characterPositionPins}
+              characterTails={characterTails}
+              editingPositionId={activePosition?.existing?.id ?? null}
+              onCharacterPositionPinClick={handlePinClick}
+              tailDraftPoints={tailDraftPoints}
+              onTailPointClick={handleTailPointClick}
+              tailColor={activePosition?.color ?? null}
+              markerPins={markerPins}
+              activeMarkerPin={activeMarker}
+              onActiveMarkerDragEnd={handleActiveMarkerDragEnd}
+              areaDraftPoints={areaDraftPoints}
+              onAreaDraftPointsChange={setAreaDraftPoints}
+              areaDraftColor={activeMarker?.marker.color ?? null}
+            />
+          </MapErrorBoundary>
           <MapTimelineControl
             key={`timeline-${selectedStoryId ?? 'new'}`}
             {...rangeOptions}
@@ -416,6 +492,14 @@ export function EditScreen() {
           onFinishDrawingTail={handleFinishDrawingTail}
           timelineMode={timelineMode}
           timelineIndex={timelineIndex}
+          onVisibleMarkersChange={setMarkerPins}
+          onActiveMarkerChange={setActiveMarker}
+          isEditingMarkerArea={areaDraftPoints !== null}
+          areaDraftPointCount={areaDraftPoints?.length ?? 0}
+          onStartEditingMarkerArea={handleStartEditingMarkerArea}
+          onSaveMarkerArea={handleSaveMarkerArea}
+          onCancelMarkerArea={handleCancelMarkerArea}
+          onClearMarkerArea={handleClearMarkerArea}
         />
         <Snackbar open={importError !== null} onClose={handleDismissImportError}>
           <Alert severity="error" onClose={handleDismissImportError}>

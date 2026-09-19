@@ -96,7 +96,7 @@ describe('isPositionVisible', () => {
   });
 
   it('is hidden once the 1-based current index passes the 0-based end boundary', () => {
-    // Regression: a position (or alias) with an end boundary previously
+    // Regression: a position/alias/marker with an end boundary previously
     // stayed visible forever once its start was reached, since only the
     // start was ever checked.
     const position: StoryDocumentPosition = { lat: 0, lng: 0, chapters: [null, 117] };

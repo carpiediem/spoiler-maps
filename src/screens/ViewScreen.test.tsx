@@ -272,6 +272,214 @@ describe('ViewScreen', () => {
     expect(within(dialog).queryByText(/\*\*Winter\*\*/)).not.toBeInTheDocument();
   });
 
+  it('shows a marker pin once its collection is checked, respecting the spoiler slider', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () =>
+          Promise.resolve(`
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+books:
+  - name: A Game of Thrones
+    chapters:
+      - name: Prologue
+      - name: Bran
+markerSets:
+  - name: Cities
+    markers:
+      - label: Winterfell
+        lat: 10
+        lng: 10
+      - label: The Wall
+        lat: 20
+        lng: 20
+        chapters: [1, null]
+`),
+      }),
+    );
+    const user = userEvent.setup();
+    const { container } = renderAt('/view?d=https://example.com/story.yaml');
+
+    await screen.findByText('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    // Every marker collection starts hidden by default.
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Cities' }));
+
+    // Winterfell has no range, so it's always visible; The Wall's chapter
+    // range hasn't been reached yet at the default (start of story) slider.
+    await waitFor(() => {
+      expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+    });
+  });
+
+  it('shows a Markers section above Character Paths, with a checkbox per collection', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () =>
+          Promise.resolve(`
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+markerSets:
+  - name: Cities
+    markers:
+      - label: Winterfell
+        lat: 10
+        lng: 10
+characters:
+  - name: Jon Snow
+    positions: []
+`),
+      }),
+    );
+    const user = userEvent.setup();
+    renderAt('/view?d=https://example.com/story.yaml');
+
+    await screen.findByText('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    const headings = screen
+      .getAllByRole('heading', { level: 2 })
+      .map((heading) => heading.textContent);
+    expect(headings.indexOf('Markers')).toBeLessThan(headings.indexOf('Character Paths'));
+    expect(screen.getByRole('checkbox', { name: 'Cities' })).not.toBeChecked();
+  });
+
+  it('shows, then re-hides, a marker collection’s pins as its checkbox is toggled', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () =>
+          Promise.resolve(`
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+markerSets:
+  - name: Cities
+    markers:
+      - label: Winterfell
+        lat: 10
+        lng: 10
+`),
+      }),
+    );
+    const user = userEvent.setup();
+    const { container } = renderAt('/view?d=https://example.com/story.yaml');
+
+    await screen.findByText('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Cities' }));
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+    });
+
+    await user.click(screen.getByRole('checkbox', { name: 'Cities' }));
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(0);
+    });
+  });
+
+  it('never lists a noIcons collection in the Markers section, and always keeps its markers on the map', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () =>
+          Promise.resolve(`
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+markerSets:
+  - name: Landmarks
+    noIcons: true
+    markers:
+      - label: Winterfell
+        lat: 10
+        lng: 10
+`),
+      }),
+    );
+    const user = userEvent.setup();
+    const { container } = renderAt('/view?d=https://example.com/story.yaml');
+
+    await screen.findByText('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    expect(screen.queryByText('Landmarks')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(container.querySelectorAll('.leaflet-marker-icon')).toHaveLength(1);
+    });
+  });
+
+  it('renders a marker’s area at 50% opacity', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: () =>
+          Promise.resolve(`
+name: A Song of Ice and Fire
+initialCenter: { lat: 1, lng: 2 }
+initialZoom: 4
+minZoom: 0
+maxZoom: 19
+markerSets:
+  - name: Territories
+    markers:
+      - label: The North
+        lat: 10
+        lng: 10
+        color: '#00ff00'
+        polygon:
+          - { lat: 10, lng: 10 }
+          - { lat: 11, lng: 10 }
+          - { lat: 11, lng: 11 }
+`),
+      }),
+    );
+    const user = userEvent.setup();
+    const { container } = renderAt('/view?d=https://example.com/story.yaml');
+
+    await screen.findByText('A Song of Ice and Fire');
+    await user.click(screen.getByRole('button', { name: /got it/i }));
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+
+    await user.click(screen.getByRole('checkbox', { name: 'Territories' }));
+
+    await waitFor(() => {
+      const area = container.querySelector('.leaflet-interactive');
+      expect(area).not.toBeNull();
+      expect(area).toHaveAttribute('fill', '#00ff00');
+      expect(area).toHaveAttribute('fill-opacity', '0.5');
+    });
+  });
+
   it('shows a pin once a character is checked, respecting the spoiler slider', async () => {
     vi.stubGlobal(
       'fetch',

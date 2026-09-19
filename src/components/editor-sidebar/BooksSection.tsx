@@ -10,6 +10,7 @@ import {
   type Chapter,
 } from '../../db';
 import { sortOrderAfter } from '../../db/ordering';
+import { useRenderLoopWatchdog } from '../../lib/renderLoopWatchdog';
 import { BookItem } from './books/BookItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
 
@@ -21,6 +22,7 @@ interface BooksSectionProps {
 }
 
 export function BooksSection({ storyId, initialExpandedIndex, onCountChange }: BooksSectionProps) {
+  useRenderLoopWatchdog('BooksSection');
   const [chaptersByBookId, setChaptersByBookId] = useState<Record<number, Chapter[]>>({});
 
   const load = useCallback(async (storyId: number, isCancelled: () => boolean) => {

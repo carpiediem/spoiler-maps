@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetDatabaseForTests } from './client';
 import {
   createBook,
@@ -7,6 +7,7 @@ import {
   createCharacterAlias,
   createCharacterPosition,
   createEpisode,
+  countMarkersForStory,
   createMarker,
   createMarkerSet,
   createStory,
@@ -111,7 +112,7 @@ describe('stories', () => {
       url: null,
       sortOrder: 0,
     });
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses' });
+    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses', noIcons: false });
 
     await deleteStory(story.id);
 
@@ -226,7 +227,7 @@ describe('tv seasons and episodes', () => {
 describe('marker sets and markers', () => {
   it('creates, lists, updates, and deletes marker sets for a story', async () => {
     const story = await seedStory();
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses' });
+    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses', noIcons: false });
 
     expect(await listMarkerSetsForStory(story.id)).toEqual([markerSet]);
 
@@ -239,12 +240,14 @@ describe('marker sets and markers', () => {
 
   it('creates, lists, updates, and deletes markers for a marker set, cascading on marker set delete', async () => {
     const story = await seedStory();
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses' });
+    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Houses', noIcons: false });
     const marker = await createMarker({
       markerSetId: markerSet.id,
       label: 'Winterfell',
       icon: 'castle',
+      url: 'https://wiki.example.com/winterfell',
       color: '#1d3557',
+      large: false,
       position: { lat: 54.5, lng: -1.5 },
       polygon: null,
       chapterRange: null,
@@ -263,7 +266,9 @@ describe('marker sets and markers', () => {
       markerSetId: markerSet.id,
       label: "King's Landing",
       icon: null,
+      url: null,
       color: null,
+      large: false,
       position: { lat: 42.6, lng: 8.7 },
       polygon: null,
       chapterRange: null,
@@ -275,12 +280,18 @@ describe('marker sets and markers', () => {
 
   it('round-trips a polygon', async () => {
     const story = await seedStory();
-    const markerSet = await createMarkerSet({ storyId: story.id, name: 'Territories' });
+    const markerSet = await createMarkerSet({
+      storyId: story.id,
+      name: 'Territories',
+      noIcons: false,
+    });
     const marker = await createMarker({
       markerSetId: markerSet.id,
       label: 'The North',
       icon: null,
+      url: null,
       color: '#457b9d',
+      large: false,
       position: { lat: 54.5, lng: -1.5 },
       polygon: [
         { lat: 54.5, lng: -1.5 },
@@ -292,6 +303,43 @@ describe('marker sets and markers', () => {
     });
 
     expect(await listMarkersForMarkerSet(markerSet.id)).toEqual([marker]);
+  });
+
+  it('counts markers across every marker set in a story, without loading any of them', async () => {
+    const story = await seedStory();
+    expect(await countMarkersForStory(story.id)).toBe(0);
+
+    const setA = await createMarkerSet({ storyId: story.id, name: 'Houses', noIcons: false });
+    const setB = await createMarkerSet({ storyId: story.id, name: 'Battles', noIcons: false });
+    await createMarker({
+      markerSetId: setA.id,
+      label: 'Winterfell',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 54.5, lng: -1.5 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createMarker({
+      markerSetId: setB.id,
+      label: 'Battle of the Blackwater',
+      icon: null,
+      url: null,
+      color: null,
+      large: false,
+      position: { lat: 51.5, lng: -0.1 },
+      polygon: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+
+    expect(await countMarkersForStory(story.id)).toBe(2);
+
+    const otherStory = await seedStory();
+    expect(await countMarkersForStory(otherStory.id)).toBe(0);
   });
 });
 
@@ -819,5 +867,34 @@ describe('character aliases', () => {
     await deleteCharacter(character.id);
 
     expect(await listAliasesForCharacter(character.id)).toEqual([]);
+  });
+});
+
+describe('slow query diagnostic', () => {
+  it('warns when a query takes at least 20ms', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const now = vi.spyOn(performance, 'now');
+    // selectAll reads performance.now() once before the query and once
+    // after; a 25ms gap between them should trip the warning.
+    now.mockReturnValueOnce(0).mockReturnValueOnce(25);
+
+    await listStories();
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('[db] slow query: 25.0ms for'),
+      expect.any(String),
+      undefined,
+    );
+    now.mockRestore();
+    warn.mockRestore();
+  });
+
+  it('does not warn for a fast query', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await listStories();
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

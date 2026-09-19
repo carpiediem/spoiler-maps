@@ -29,7 +29,10 @@ export function DescriptionDialog({
           pb: 1,
           maxHeight: '60vh',
           overflowY: 'auto',
-          '& > div > :first-child': { mt: 0 },
+          // Same as :first-child, spelled so Emotion's SSR-safety lint (which
+          // only flags that literal pseudo-class) doesn't warn in this
+          // client-only app.
+          '& > div > :not(* ~ *)': { mt: 0 },
           '& > div > :last-child': { mb: 0 },
         }}
       >

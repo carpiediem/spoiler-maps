@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRawDatabaseForTests, getDatabase, persist, resetDatabaseForTests } from './client';
 import { MIGRATIONS } from './schema';
 import { saveLegacyDatabaseBytesForTests } from './storage';
@@ -74,6 +74,29 @@ describe('persist', () => {
     const names = reloaded.exec('SELECT name FROM stories;')[0].values.map((row) => row[0]);
 
     expect(names).toEqual(['Reloaded Story']);
+  });
+
+  it('warns when saving takes at least 100ms', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const now = vi.spyOn(performance, 'now');
+    // persist() reads performance.now() once before saving and once after;
+    // a 150ms gap between them should trip the warning.
+    now.mockReturnValueOnce(0).mockReturnValueOnce(150);
+
+    await persist();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('[db] persist() took 150.0ms for'));
+    now.mockRestore();
+    warn.mockRestore();
+  });
+
+  it('does not warn for a fast save', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await persist();
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });
 

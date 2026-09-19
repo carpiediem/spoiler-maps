@@ -1,4 +1,6 @@
 import { icon, type Icon } from 'leaflet';
+import type { Marker } from '../db';
+import { DEFAULT_MARKER_COLOR } from './markerColor';
 
 function textColorFor(colorHex: string): string {
   const r = parseInt(colorHex.substring(0, 2), 16);
@@ -14,7 +16,7 @@ function textColorFor(colorHex: string): string {
  * https://github.com/carpiediem/game-of-thrones-map/pull/6, which itself
  * replaced the discontinued chart.googleapis.com Dynamic Icons API.
  */
-export function buildPinIcon(label: string, colorHex: string): Icon {
+export function buildPinIcon(label: string, colorHex: string, scale = 1): Icon {
   const hex = colorHex.replace('#', '');
   const textColor = textColorFor(hex);
   // Two-character labels (e.g. position index 10+) need a smaller font to
@@ -28,8 +30,8 @@ export function buildPinIcon(label: string, colorHex: string): Icon {
 
   return icon({
     iconUrl: 'data:image/svg+xml,' + encodeURIComponent(svg),
-    iconSize: [24, 37],
-    iconAnchor: [12, 37],
+    iconSize: [24 * scale, 37 * scale],
+    iconAnchor: [12 * scale, 37 * scale],
   });
 }
 
@@ -61,4 +63,25 @@ export function buildSkullIcon(): Icon {
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
+}
+
+// Applied to a large marker's icon size/anchor, on top of its regular size.
+const LARGE_MARKER_SCALE = 1.5;
+
+/**
+ * The icon for a map marker: the marker's own custom image when it has one
+ * (e.g. a real building/crest icon), or a plain colored teardrop pin
+ * (buildPinIcon with no label) otherwise — scaled up when the marker is
+ * flagged large.
+ */
+export function buildMarkerIcon(marker: Marker): Icon {
+  const scale = marker.large ? LARGE_MARKER_SCALE : 1;
+  if (marker.icon) {
+    return icon({
+      iconUrl: marker.icon,
+      iconSize: [28 * scale, 28 * scale],
+      iconAnchor: [14 * scale, 28 * scale],
+    });
+  }
+  return buildPinIcon('', marker.color ?? DEFAULT_MARKER_COLOR, scale);
 }

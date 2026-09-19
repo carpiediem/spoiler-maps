@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 15;
 
 export interface Migration {
   version: number;
@@ -250,6 +250,26 @@ export const MIGRATIONS: Migration[] = [
       );
 
       CREATE INDEX idx_character_aliases_character_id ON character_aliases(character_id);
+    `,
+  },
+  {
+    version: 14,
+    sql: `
+      -- Lets a marker's name in the editor link out to its own wiki page,
+      -- the same way a character's already can.
+      ALTER TABLE markers ADD COLUMN url TEXT;
+      -- Stored as 0/1, since SQLite has no native boolean type. Skips
+      -- rendering an icon for a marker set's markers on the map — for tiles
+      -- that already show one at each marker's location.
+      ALTER TABLE marker_sets ADD COLUMN no_icons INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
+  {
+    version: 15,
+    sql: `
+      -- Stored as 0/1, since SQLite has no native boolean type. Renders a
+      -- marker's icon at a larger size on the map.
+      ALTER TABLE markers ADD COLUMN large INTEGER NOT NULL DEFAULT 0;
     `,
   },
 ];

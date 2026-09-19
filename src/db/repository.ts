@@ -27,18 +27,38 @@ import type {
 
 type Row = Record<string, unknown>;
 
+// Diagnostic only: sql.js runs every query synchronously on the main thread
+// (it's SQLite compiled to WASM, not a real async driver), so a query slow
+// enough to matter here blocks the whole page for that long, with no
+// exception and no render involved at all — invisible to a React-focused
+// error boundary or render-loop watchdog. Warns about any single query at
+// or above this threshold, naming the SQL and row count, so a page that
+// "hangs" while loading a large story can be traced to the specific
+// culprit instead of guessed at.
+const SLOW_QUERY_WARNING_MS = 20;
+
 function selectAll<T>(
   db: SqlDatabase,
   sql: string,
   mapRow: (row: Row) => T,
   params?: unknown[],
 ): T[] {
+  const start = performance.now();
   const statement = db.prepare(sql);
   try {
     if (params) statement.bind(params as never);
     const rows: T[] = [];
     while (statement.step()) {
       rows.push(mapRow(statement.getAsObject()));
+    }
+    const elapsed = performance.now() - start;
+    if (elapsed >= SLOW_QUERY_WARNING_MS) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[db] slow query: ${elapsed.toFixed(1)}ms for ${rows.length} row(s):`,
+        sql,
+        params,
+      );
     }
     return rows;
   } finally {
@@ -295,12 +315,13 @@ export const deleteEpisode = episodeCrud.delete;
 
 const markerSetCrud = makeCrud<MarkerSet, NewMarkerSet>({
   table: 'marker_sets',
-  columns: ['story_id', 'name'],
-  toParams: (input) => [input.storyId, input.name],
+  columns: ['story_id', 'name', 'no_icons'],
+  toParams: (input) => [input.storyId, input.name, input.noIcons ? 1 : 0],
   fromRow: (row) => ({
     id: row.id as number,
     storyId: row.story_id as number,
     name: row.name as string,
+    noIcons: (row.no_icons as number) !== 0,
   }),
   parentColumn: 'story_id',
   orderBy: 'id',
@@ -442,7 +463,9 @@ const markerCrud = makeCrud<Marker, NewMarker>({
     'marker_set_id',
     'label',
     'icon',
+    'url',
     'color',
+    'large',
     'lat',
     'lng',
     'polygon',
@@ -455,7 +478,9 @@ const markerCrud = makeCrud<Marker, NewMarker>({
     input.markerSetId,
     input.label,
     input.icon,
+    input.url,
     input.color,
+    input.large ? 1 : 0,
     input.position.lat,
     input.position.lng,
     polygonToColumn(input.polygon),
@@ -467,7 +492,9 @@ const markerCrud = makeCrud<Marker, NewMarker>({
     markerSetId: row.marker_set_id as number,
     label: row.label as string,
     icon: row.icon as string | null,
+    url: row.url as string | null,
     color: row.color as string | null,
+    large: (row.large as number) !== 0,
     position: { lat: row.lat as number, lng: row.lng as number },
     polygon: rowToPolygon(row),
     chapterRange: rowToChapterRange(row),
@@ -483,6 +510,25 @@ export const createMarker = markerCrud.create;
 export const listMarkersForMarkerSet = markerCrud.listForParent;
 export const updateMarker = markerCrud.update;
 export const deleteMarker = markerCrud.delete;
+
+/**
+ * The total marker count across every marker set in a story, without
+ * loading any of the sets or markers themselves — for a sidebar count chip
+ * that should be accurate even before the Markers section (and the data it
+ * would otherwise need to load in full) has ever been expanded.
+ */
+export async function countMarkersForStory(storyId: number): Promise<number> {
+  const db = await getDatabase();
+  const row = selectOne<{ count: number }>(
+    db,
+    `SELECT COUNT(*) AS count FROM markers
+     WHERE marker_set_id IN (SELECT id FROM marker_sets WHERE story_id = ?);`,
+    (row) => ({ count: row.count as number }),
+    [storyId],
+  );
+  /* v8 ignore next -- COUNT(*) always returns exactly one row, even for zero matching markers. */
+  return row?.count ?? 0;
+}
 
 const characterCrud = makeCrud<Character, NewCharacter>({
   table: 'characters',
