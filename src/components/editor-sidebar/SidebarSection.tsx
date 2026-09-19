@@ -67,7 +67,15 @@ export function SidebarSection({
       disableGutters
       elevation={0}
       square
-      slotProps={lazy ? { transition: { mountOnEnter: true, unmountOnExit: true } } : undefined}
+      // timeout: 0 for lazy sections: MUI's Collapse measures its content's
+      // height once, when the open animation starts, and animates to that.
+      // A lazy section's content changes right after (its loading state is
+      // replaced by the loaded list), so an animation would leave it
+      // clipped to the loading state's height — showing just the first
+      // row — until the animation ends.
+      slotProps={
+        lazy ? { transition: { mountOnEnter: true, unmountOnExit: true, timeout: 0 } } : undefined
+      }
       // MUI wraps AccordionSummary in an <h3> by default; this section
       // heading is one level under the page's own (visually hidden) <h1>,
       // so it should be an <h2> — the nested per-item accordions (BookItem/
