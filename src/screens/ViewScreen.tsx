@@ -217,6 +217,8 @@ export function ViewScreen() {
           onCheckedIndicesChange={setCheckedIndices}
           showFullPath={showFullPath}
           onShowFullPathChange={setShowFullPath}
+          timelineMode={timelineMode}
+          timelineIndex={timelineIndex}
         />
         {document!.description ? (
           <DescriptionDialog

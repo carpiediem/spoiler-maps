@@ -14,7 +14,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import type { TimelineMode } from '../MapTimelineControl';
 import type { StoryDocumentCharacter } from '../../lib/storyDocument';
+import { isPositionVisible } from '../../lib/viewTimeline';
 
 interface CharacterPathsPanelProps {
   characters: StoryDocumentCharacter[];
@@ -22,6 +24,9 @@ interface CharacterPathsPanelProps {
   onCheckedIndicesChange: (next: Set<number>) => void;
   showFullPath: boolean;
   onShowFullPathChange: (next: boolean) => void;
+  /** The map timeline control's current mode and scrub position, used to tell which alias (if any) is currently active for each character. */
+  timelineMode: TimelineMode;
+  timelineIndex: number;
 }
 
 /**
@@ -36,6 +41,8 @@ export function CharacterPathsPanel({
   onCheckedIndicesChange,
   showFullPath,
   onShowFullPathChange,
+  timelineMode,
+  timelineIndex,
 }: CharacterPathsPanelProps) {
   const allChecked = characters.length > 0 && checkedIndices.size === characters.length;
   const someChecked = checkedIndices.size > 0 && !allChecked;
@@ -130,7 +137,18 @@ export function CharacterPathsPanel({
       ) : (
         <List dense disablePadding>
           {characters.map((character, index) => {
-            const name = character.name || 'Unnamed Character';
+            // The first alias (in array order) whose own chapter/episode
+            // range is currently active, if any — matches
+            // buildViewPinsAndTails's identical resolution for this
+            // character's map pins, so the sidebar and the map always agree
+            // on which identity is showing.
+            const activeAlias = character.aliases?.find((alias) =>
+              isPositionVisible(alias, timelineMode, timelineIndex),
+            );
+            const name = activeAlias?.name || character.name || 'Unnamed Character';
+            const icon = activeAlias?.icon ?? character.icon;
+            const color = activeAlias?.color ?? character.color;
+            const url = activeAlias?.url ?? character.url;
             return (
               <ListItem key={index} disablePadding>
                 <Checkbox
@@ -141,12 +159,12 @@ export function CharacterPathsPanel({
                 />
                 <ListItemAvatar sx={{ minWidth: 0, mr: 1 }}>
                   <Avatar
-                    src={character.icon ?? undefined}
+                    src={icon ?? undefined}
                     alt={name}
                     sx={{
                       width: 24,
                       height: 24,
-                      bgcolor: character.color ?? 'grey.400',
+                      bgcolor: color ?? 'grey.400',
                       border: 1,
                       borderColor: 'divider',
                     }}
@@ -154,8 +172,8 @@ export function CharacterPathsPanel({
                 </ListItemAvatar>
                 <ListItemText
                   primary={
-                    character.url ? (
-                      <Link href={character.url} target="_blank" rel="noopener noreferrer">
+                    url ? (
+                      <Link href={url} target="_blank" rel="noopener noreferrer">
                         {name}
                       </Link>
                     ) : (
