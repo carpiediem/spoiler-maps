@@ -133,7 +133,7 @@ describe('CharactersSection', () => {
       />,
     );
 
-    await vi.waitFor(() => expect(onCountChange).toHaveBeenCalledWith(2));
+    await waitFor(() => expect(onCountChange).toHaveBeenCalledWith(2));
   });
 
   it('reports zero for a story with no characters', async () => {
@@ -154,7 +154,7 @@ describe('CharactersSection', () => {
       />,
     );
 
-    await vi.waitFor(() => expect(onCountChange).toHaveBeenCalledWith(0));
+    await waitFor(() => expect(onCountChange).toHaveBeenCalledWith(0));
   });
 
   it('adds a new character, expanded, and persists it', async () => {

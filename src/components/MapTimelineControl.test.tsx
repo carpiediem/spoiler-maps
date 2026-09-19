@@ -238,7 +238,7 @@ describe('MapTimelineControl', () => {
     );
 
     const slider = screen.getByRole('slider');
-    slider.focus();
+    act(() => slider.focus());
     await user.keyboard('{ArrowLeft}');
 
     expect(await screen.findByText('AGOT: Prologue')).toBeInTheDocument();
@@ -258,7 +258,7 @@ describe('MapTimelineControl', () => {
     );
 
     const slider = screen.getByRole('slider');
-    slider.focus();
+    act(() => slider.focus());
     // The Home key isn't intercepted by the panel's own arrow-key handling,
     // so it reaches the Slider's native keyboard handling and fires its
     // onChange the same way a mouse/touch drag would.
@@ -329,7 +329,7 @@ describe('MapTimelineControl', () => {
     expect(screen.getByText('AGOT: Catelyn')).toBeInTheDocument();
 
     const previous = screen.getByRole('button', { name: 'Previous Chapter' });
-    previous.focus();
+    act(() => previous.focus());
     fireEvent.keyDown(previous, { key: 'ArrowLeft' });
 
     expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
@@ -347,7 +347,7 @@ describe('MapTimelineControl', () => {
     );
 
     const slider = screen.getByRole('slider');
-    slider.focus();
+    act(() => slider.focus());
     fireEvent.keyDown(slider, { key: 'ArrowLeft' });
 
     expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
@@ -369,7 +369,7 @@ describe('MapTimelineControl', () => {
       expect(screen.getByText('AGOT: Daenerys')).toBeInTheDocument();
 
       const previous = screen.getByRole('button', { name: 'Previous Chapter' });
-      previous.focus();
+      act(() => previous.focus());
       fireEvent.keyDown(previous, { key: 'ArrowLeft' });
       expect(screen.getByText('AGOT: Eddard')).toBeInTheDocument();
 
@@ -412,7 +412,7 @@ describe('MapTimelineControl', () => {
       );
 
       const previous = screen.getByRole('button', { name: 'Previous Chapter' });
-      previous.focus();
+      act(() => previous.focus());
       // No keyUp in between — simulates holding ArrowLeft, then switching
       // to ArrowRight without releasing it first.
       fireEvent.keyDown(previous, { key: 'ArrowLeft' });
@@ -441,7 +441,7 @@ describe('MapTimelineControl', () => {
       );
 
       const previous = screen.getByRole('button', { name: 'Previous Chapter' });
-      previous.focus();
+      act(() => previous.focus());
       fireEvent.keyDown(previous, { key: 'ArrowLeft' });
       expect(screen.getByText('AGOT: Bran')).toBeInTheDocument();
 
@@ -472,7 +472,7 @@ describe('MapTimelineControl', () => {
       );
 
       const previous = screen.getByRole('button', { name: 'Previous Chapter' });
-      previous.focus();
+      act(() => previous.focus());
       fireEvent.keyDown(previous, { key: 'ArrowLeft' });
       fireEvent.keyDown(previous, { key: 'ArrowLeft', repeat: true });
       fireEvent.keyDown(previous, { key: 'ArrowLeft', repeat: true });

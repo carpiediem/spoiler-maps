@@ -335,7 +335,10 @@ describe('App', () => {
 
     // Saving here only creates a brand-new story (rather than silently
     // no-op'ing, as it would if the URL's bogus id had stuck around) once
-    // the redirect to /edit/new has actually taken effect.
+    // the redirect to /edit/new has actually taken effect — which waits on
+    // the story list loading, so it can land after the form first renders.
+    // The title only stops being a link to /view/99 once it has.
+    await waitFor(() => expect(screen.queryByRole('link', { name: /new map/i })).toBeNull());
     await user.type(mapNameField, 'A New Map');
     fireEvent.change(screen.getByLabelText(/tile layer url template/i), {
       target: { value: 'https://tile.example.com/{z}/{x}/{y}.png' },
@@ -450,7 +453,7 @@ describe('App', () => {
     await user.click(await screen.findByText('Jon Snow'));
 
     let marker: Element | null = null;
-    await vi.waitFor(() => {
+    await waitFor(() => {
       marker = container.querySelector('.leaflet-marker-icon');
       expect(marker).not.toBeNull();
     });
@@ -526,7 +529,7 @@ describe('App', () => {
     await user.click(await screen.findByText('Jon Snow'));
 
     let marker: Element | null = null;
-    await vi.waitFor(() => {
+    await waitFor(() => {
       marker = container.querySelector('.leaflet-marker-icon');
       expect(marker).not.toBeNull();
     });
@@ -801,7 +804,7 @@ describe('App', () => {
       </MemoryRouter>,
     );
 
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining("/edit/999 names a story id that isn't in the local database"),
       ),
@@ -843,7 +846,7 @@ describe('App', () => {
       </MemoryRouter>,
     );
 
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining("/edit/999 names a story id that isn't in the local database"),
       ),

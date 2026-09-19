@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createBook,
@@ -97,7 +97,7 @@ describe('MarkersSection', () => {
     const onCountChange = vi.fn();
     render(<MarkersSection storyId={storyId} onCountChange={onCountChange} />);
 
-    await vi.waitFor(() => expect(onCountChange).toHaveBeenCalledWith(3));
+    await waitFor(() => expect(onCountChange).toHaveBeenCalledWith(3));
   });
 
   it('reports zero for a story with no marker sets', async () => {
@@ -105,7 +105,7 @@ describe('MarkersSection', () => {
     const onCountChange = vi.fn();
     render(<MarkersSection storyId={storyId} onCountChange={onCountChange} />);
 
-    await vi.waitFor(() => expect(onCountChange).toHaveBeenCalledWith(0));
+    await waitFor(() => expect(onCountChange).toHaveBeenCalledWith(0));
   });
 
   it('does not update state after unmounting while marker sets are still loading', async () => {
@@ -139,7 +139,7 @@ describe('MarkersSection', () => {
     fireEvent.change(nameField, { target: { value: 'Cities' } });
     fireEvent.blur(nameField);
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       expect(screen.getByText('Cities')).toBeInTheDocument();
     });
   });
@@ -155,7 +155,7 @@ describe('MarkersSection', () => {
 
     fireEvent.click(checkbox);
 
-    await vi.waitFor(() => expect(checkbox).toBeChecked());
+    await waitFor(() => expect(checkbox).toBeChecked());
   });
 
   it('adds a marker to a collection at the current map center, and expands it', async () => {
@@ -217,7 +217,7 @@ describe('MarkersSection', () => {
     fireEvent.change(colorField, { target: { value: '#00ff00' } });
     fireEvent.blur(colorField);
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.label).toBe('The Wall');
       expect(updated.icon).toBe('https://example.com/icon.png');
@@ -281,7 +281,7 @@ describe('MarkersSection', () => {
     fireEvent.click(await screen.findByText('Winterfell'));
     fireEvent.click(screen.getByRole('button', { name: /delete marker/i }));
 
-    await vi.waitFor(() => expect(screen.queryByText('Winterfell')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText('Winterfell')).not.toBeInTheDocument());
   });
 
   it('deletes a non-expanded marker, leaving the expanded one selected', async () => {
@@ -321,7 +321,7 @@ describe('MarkersSection', () => {
     // path, leaving King's Landing selected.
     fireEvent.click(screen.getAllByRole('button', { name: /delete marker/i })[0]!);
 
-    await vi.waitFor(() => expect(screen.queryByText('Winterfell')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText('Winterfell')).not.toBeInTheDocument());
     expect(screen.getByLabelText('Wiki URL')).toBeInTheDocument();
   });
 
@@ -335,7 +335,7 @@ describe('MarkersSection', () => {
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: /delete/i }));
 
-    await vi.waitFor(() => expect(screen.queryByText('Landmarks')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText('Landmarks')).not.toBeInTheDocument());
     expect(await screen.findByText(/no markers yet/i)).toBeInTheDocument();
   });
 
@@ -349,7 +349,7 @@ describe('MarkersSection', () => {
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: /cancel/i }));
 
-    await vi.waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByText('Landmarks')).toBeInTheDocument();
   });
 
@@ -372,12 +372,12 @@ describe('MarkersSection', () => {
     render(<MarkersSection storyId={storyId} onVisibleMarkersChange={onVisibleMarkersChange} />);
     await screen.findByText('Landmarks');
 
-    await vi.waitFor(() => expect(onVisibleMarkersChange).toHaveBeenCalledWith(null));
+    await waitFor(() => expect(onVisibleMarkersChange).toHaveBeenCalledWith(null));
     onVisibleMarkersChange.mockClear();
 
     fireEvent.click(screen.getByRole('button', { name: /show on map/i }));
 
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(onVisibleMarkersChange).toHaveBeenCalledWith([
         expect.objectContaining({
           noIcons: true,
@@ -414,14 +414,12 @@ describe('MarkersSection', () => {
     await screen.findByText('Landmarks');
 
     fireEvent.click(screen.getByRole('button', { name: /show on map/i }));
-    await vi.waitFor(() =>
-      expect(onVisibleMarkersChange).toHaveBeenCalledWith([expect.anything()]),
-    );
+    await waitFor(() => expect(onVisibleMarkersChange).toHaveBeenCalledWith([expect.anything()]));
 
     fireEvent.click(await screen.findByText('Landmarks'));
     fireEvent.click(await screen.findByText('Winterfell'));
 
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(onActiveMarkerChange).toHaveBeenCalledWith(
         expect.objectContaining({ marker: expect.objectContaining({ label: 'Winterfell' }) }),
       ),
@@ -450,13 +448,11 @@ describe('MarkersSection', () => {
     const header = await screen.findByText('Landmarks');
     fireEvent.click(header);
     fireEvent.click(await screen.findByText('Winterfell'));
-    await vi.waitFor(() =>
-      expect(onActiveMarkerChange).toHaveBeenLastCalledWith(expect.anything()),
-    );
+    await waitFor(() => expect(onActiveMarkerChange).toHaveBeenLastCalledWith(expect.anything()));
 
     fireEvent.click(header);
 
-    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenLastCalledWith(null));
+    await waitFor(() => expect(onActiveMarkerChange).toHaveBeenLastCalledWith(null));
   });
 
   it('collapses the selected marker set/marker when the Markers section itself collapses', async () => {
@@ -481,7 +477,7 @@ describe('MarkersSection', () => {
 
     rerender(<MarkersSection storyId={storyId} sectionExpanded={false} />);
 
-    await vi.waitFor(() => expect(screen.getByText('Winterfell')).not.toBeVisible());
+    await waitFor(() => expect(screen.getByText('Winterfell')).not.toBeVisible());
   });
 
   it('removes the draggable marker pin from the map when the Markers section itself collapses', async () => {
@@ -515,9 +511,7 @@ describe('MarkersSection', () => {
 
     fireEvent.click(await screen.findByText('Landmarks'));
     fireEvent.click(await screen.findByText('Winterfell'));
-    await vi.waitFor(() =>
-      expect(onActiveMarkerChange).toHaveBeenLastCalledWith(expect.anything()),
-    );
+    await waitFor(() => expect(onActiveMarkerChange).toHaveBeenLastCalledWith(expect.anything()));
 
     rerender(
       <MarkersSection
@@ -527,7 +521,7 @@ describe('MarkersSection', () => {
       />,
     );
 
-    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenLastCalledWith(null));
+    await waitFor(() => expect(onActiveMarkerChange).toHaveBeenLastCalledWith(null));
   });
 
   it('shows the marker’s icon in its header when one is set', async () => {
@@ -600,7 +594,7 @@ describe('MarkersSection', () => {
     fireEvent.change(iconField, { target: { value: '' } });
     fireEvent.blur(iconField);
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.icon).toBeNull();
     });
@@ -642,7 +636,7 @@ describe('MarkersSection', () => {
     fireEvent.change(nameField!, { target: { value: 'The Wall' } });
     fireEvent.blur(nameField!);
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const markers = await listMarkersForMarkerSet(markerSet.id);
       expect(markers.map((marker) => marker.label).sort()).toEqual(["King's Landing", 'The Wall']);
     });
@@ -672,7 +666,7 @@ describe('MarkersSection', () => {
 
     fireEvent.click(checkbox);
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       expect(checkbox).toBeChecked();
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.large).toBe(true);
@@ -710,7 +704,7 @@ describe('MarkersSection', () => {
     fireEvent.mouseDown(await screen.findByLabelText('Start Chapter'));
     fireEvent.click(await screen.findByRole('option', { name: /bran/i }));
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.chapterRange).toEqual({ startChapterId: chapter.id, endChapterId: null });
     });
@@ -718,7 +712,7 @@ describe('MarkersSection', () => {
     fireEvent.mouseDown(screen.getByLabelText('End Chapter'));
     fireEvent.click(await screen.findByRole('option', { name: /bran/i }));
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.chapterRange).toEqual({
         startChapterId: chapter.id,
@@ -757,7 +751,7 @@ describe('MarkersSection', () => {
     fireEvent.mouseDown(await screen.findByLabelText('Start Episode'));
     fireEvent.click(await screen.findByRole('option', { name: /winter is coming/i }));
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.episodeRange).toEqual({ startEpisodeId: episode.id, endEpisodeId: null });
     });
@@ -765,7 +759,7 @@ describe('MarkersSection', () => {
     fireEvent.mouseDown(screen.getByLabelText('End Episode'));
     fireEvent.click(await screen.findByRole('option', { name: /winter is coming/i }));
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.episodeRange).toEqual({
         startEpisodeId: episode.id,
@@ -795,7 +789,7 @@ describe('MarkersSection', () => {
     fireEvent.click(await screen.findByText('Landmarks'));
     fireEvent.click(await screen.findByText('Winterfell'));
 
-    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
+    await waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
     const active = onActiveMarkerChange.mock.calls.at(-1)![0];
     const polygon = [
       { lat: 1, lng: 1 },
@@ -803,9 +797,11 @@ describe('MarkersSection', () => {
       { lat: 3, lng: 3 },
     ];
 
-    active.onAreaSave(polygon);
+    act(() => {
+      active.onAreaSave(polygon);
+    });
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.polygon).toEqual(polygon);
     });
@@ -832,15 +828,17 @@ describe('MarkersSection', () => {
     fireEvent.click(await screen.findByText('Landmarks'));
     fireEvent.click(await screen.findByText('Winterfell'));
 
-    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
+    await waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
     const active = onActiveMarkerChange.mock.calls.at(-1)![0];
 
-    active.onAreaSave([
-      { lat: 1, lng: 1 },
-      { lat: 2, lng: 2 },
-    ]);
+    act(() => {
+      active.onAreaSave([
+        { lat: 1, lng: 1 },
+        { lat: 2, lng: 2 },
+      ]);
+    });
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.polygon).toBeNull();
     });
@@ -871,12 +869,14 @@ describe('MarkersSection', () => {
     fireEvent.click(await screen.findByText('Landmarks'));
     fireEvent.click(await screen.findByText('Winterfell'));
 
-    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
+    await waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
     const active = onActiveMarkerChange.mock.calls.at(-1)![0];
 
-    active.onAreaSave(null);
+    act(() => {
+      active.onAreaSave(null);
+    });
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const [updated] = await listMarkersForMarkerSet(markerSet.id);
       expect(updated.polygon).toBeNull();
     });
@@ -915,12 +915,14 @@ describe('MarkersSection', () => {
     fireEvent.click(await screen.findByText('Landmarks'));
     fireEvent.click(await screen.findByText('Winterfell'));
 
-    await vi.waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
+    await waitFor(() => expect(onActiveMarkerChange).toHaveBeenCalled());
     const active = onActiveMarkerChange.mock.calls.at(-1)![0];
 
-    active.onDrag({ lat: 5, lng: 6 });
+    act(() => {
+      active.onDrag({ lat: 5, lng: 6 });
+    });
 
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const markers = await listMarkersForMarkerSet(markerSet.id);
       const winterfell = markers.find((marker) => marker.label === 'Winterfell')!;
       const kingsLanding = markers.find((marker) => marker.label === "King's Landing")!;
@@ -950,14 +952,12 @@ describe('MarkersSection', () => {
 
     const toggle = screen.getByRole('button', { name: /show on map/i });
     fireEvent.click(toggle);
-    await vi.waitFor(() =>
-      expect(onVisibleMarkersChange).toHaveBeenCalledWith([expect.anything()]),
-    );
+    await waitFor(() => expect(onVisibleMarkersChange).toHaveBeenCalledWith([expect.anything()]));
     onVisibleMarkersChange.mockClear();
 
     fireEvent.click(screen.getByRole('button', { name: /hide on map/i }));
 
-    await vi.waitFor(() => expect(onVisibleMarkersChange).toHaveBeenCalledWith(null));
+    await waitFor(() => expect(onVisibleMarkersChange).toHaveBeenCalledWith(null));
   });
 
   it('deletes a visible, expanded collection, clearing its selection and visibility', async () => {
@@ -982,15 +982,13 @@ describe('MarkersSection', () => {
     fireEvent.click(screen.getByRole('button', { name: /show on map/i }));
     fireEvent.click(screen.getByText('Landmarks'));
     fireEvent.click(await screen.findByText('Winterfell'));
-    await vi.waitFor(() =>
-      expect(onActiveMarkerChange).toHaveBeenLastCalledWith(expect.anything()),
-    );
+    await waitFor(() => expect(onActiveMarkerChange).toHaveBeenLastCalledWith(expect.anything()));
 
     fireEvent.click(screen.getByRole('button', { name: /delete collection/i }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: /delete/i }));
 
-    await vi.waitFor(() => expect(screen.queryByText('Landmarks')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText('Landmarks')).not.toBeInTheDocument());
     expect(onActiveMarkerChange).toHaveBeenLastCalledWith(null);
   });
 });

@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -68,6 +69,13 @@ async function seedCharacter(
     sortOrder: 0,
     url: null,
   });
+}
+
+// CharacterItem loads its positions and aliases through chained promises on
+// mount; a test that asserts synchronously after render would otherwise end
+// with those updates still queued, landing outside act().
+async function settle() {
+  await act(async () => {});
 }
 
 function Wrapper({
@@ -331,6 +339,7 @@ describe('CharacterItem', () => {
   it('edits and persists the color field on blur', async () => {
     const character = await seedCharacter();
     render(<Wrapper initialCharacter={character} />);
+    await settle();
 
     const colorInput = screen.getByLabelText(/^color$/i);
     fireEvent.change(colorInput, { target: { value: '#abcdef' } });
@@ -622,6 +631,7 @@ describe('CharacterItem', () => {
   it('shows the character icon in the summary instead of the color swatch when set', async () => {
     const character = await seedCharacter({ icon: 'https://example.com/jon.png' });
     render(<Wrapper initialCharacter={character} />);
+    await settle();
 
     const icon = screen.getByRole('img', { name: character.name });
     expect(icon).toHaveAttribute('src', 'https://example.com/jon.png');
@@ -630,6 +640,7 @@ describe('CharacterItem', () => {
   it('falls back to "Unnamed Character" as the icon alt text for a blank name', async () => {
     const character = await seedCharacter({ name: '', icon: 'https://example.com/jon.png' });
     render(<Wrapper initialCharacter={character} />);
+    await settle();
 
     expect(screen.getByRole('img', { name: /unnamed character/i })).toBeInTheDocument();
   });

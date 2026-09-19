@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -149,6 +149,8 @@ describe('PositionPanel', () => {
       />,
     );
 
+    // useRangeOptions loads through chained promises; let them land inside act().
+    await act(async () => {});
     expect(screen.getByText(/drag the pin on the map/i)).toBeInTheDocument();
   });
 
@@ -169,6 +171,8 @@ describe('PositionPanel', () => {
       />,
     );
 
+    // useRangeOptions loads through chained promises; let them land inside act().
+    await act(async () => {});
     expect(screen.getByText('51.5000, -0.1278')).toBeInTheDocument();
   });
 
@@ -671,6 +675,7 @@ describe('PositionPanel', () => {
       />,
     );
 
+    await act(async () => {});
     expect(screen.getByRole('checkbox', { name: /dead/i })).toBeChecked();
   });
 

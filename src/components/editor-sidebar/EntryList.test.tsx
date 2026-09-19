@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -222,7 +222,7 @@ describe('EntryList', () => {
     const prologueField = screen.getByDisplayValue('Prologue');
     const branField = screen.getByDisplayValue('Bran');
 
-    prologueField.focus();
+    act(() => prologueField.focus());
     await user.keyboard('{ArrowDown}');
     expect(branField).toHaveFocus();
 
@@ -256,7 +256,7 @@ describe('EntryList', () => {
     const firstUrlField = screen.getByDisplayValue('https://example.com/1');
     const secondUrlField = screen.getByDisplayValue('https://example.com/2');
 
-    firstUrlField.focus();
+    act(() => firstUrlField.focus());
     await user.keyboard('{ArrowDown}');
     expect(secondUrlField).toHaveFocus();
   });
@@ -268,7 +268,7 @@ describe('EntryList', () => {
     render(<ChaptersEntryList bookId={bookId} chapters={[chapter]} onChaptersChange={vi.fn()} />);
 
     const nameField = screen.getByDisplayValue('Prologue');
-    nameField.focus();
+    act(() => nameField.focus());
 
     await user.keyboard('{ArrowUp}');
     expect(nameField).toHaveFocus();
@@ -284,7 +284,7 @@ describe('EntryList', () => {
     render(<ChaptersEntryList bookId={bookId} chapters={[chapter]} onChaptersChange={vi.fn()} />);
 
     const nameField = screen.getByDisplayValue('Prologue');
-    nameField.focus();
+    act(() => nameField.focus());
     await user.keyboard('{ArrowLeft}');
 
     expect(nameField).toHaveFocus();

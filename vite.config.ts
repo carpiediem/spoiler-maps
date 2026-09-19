@@ -18,6 +18,14 @@ export default defineConfig({
     // default there. This doesn't mask a real hang — a genuinely broken
     // test still fails, just after a longer wait.
     testTimeout: 20000,
+    // Runs afterEach hooks in the order they were registered, instead of
+    // reversed. Testing Library's automatic unmount-on-cleanup is registered
+    // first (in setupTests.ts), so it now runs before each test file's own
+    // afterEach — which awaits deleting the IndexedDB database. Otherwise
+    // components stay mounted during that await, and any async work still
+    // in flight (a blur-triggered save, a data load) updates state outside
+    // act(), logging "not wrapped in act(...)" warnings on slower runners.
+    sequence: { hooks: 'list' },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

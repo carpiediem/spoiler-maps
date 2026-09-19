@@ -1992,6 +1992,8 @@ describe('EditorSidebar', () => {
       </MemoryRouter>,
     );
 
+    // Switching stories starts a fresh round of data loads; let them land inside act().
+    await act(async () => {});
     expect(screen.getByLabelText(/map name/i)).toBeVisible();
   });
 
