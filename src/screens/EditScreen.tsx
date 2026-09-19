@@ -18,6 +18,7 @@ import {
 import { buildTileAttribution } from '../lib/attribution';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
 import { downloadTextFile } from '../lib/downloadTextFile';
+import { fetchStoryYaml } from '../lib/fetchStoryYaml';
 import type { ActiveMarker, MarkerMapPin } from '../lib/markerPins';
 import { getLastViewedStoryId, setLastViewedStoryId } from '../lib/lastViewedStory';
 import { useRenderLoopWatchdog } from '../lib/renderLoopWatchdog';
@@ -178,7 +179,7 @@ export function EditScreen() {
   // story) can reach EditScreen's populated states too, not just the empty
   // "New Map" form. Only for the bare create-new landing state; an
   // explicit story id in the URL wins over a `?d=` param. No extra
-  // "already imported this dataUrl" ref/guard beyond `cancelled`: once
+  // "already imported this dataUrl" ref/guard beyond the abort signal: once
   // import succeeds, handleSelectStory navigates to the new story's own
   // URL, which changes selectedStoryId and so already satisfies this
   // effect's own guard on any later run — a redundant ref-based guard here
@@ -189,27 +190,22 @@ export function EditScreen() {
   useEffect(() => {
     if (!dataUrl || selectedStoryId !== null) return;
 
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
     (async () => {
       try {
-        const response = await fetch(dataUrl);
-        if (!response.ok) {
-          throw new Error(`Could not load this map: the server responded with ${response.status}.`);
-        }
-        const imported = await importStoryFromYaml(await response.text());
-        if (cancelled) return;
+        const imported = await importStoryFromYaml(await fetchStoryYaml(dataUrl, signal));
+        if (signal.aborted) return;
         setStories((previous) => [...previous, imported]);
         setTileUrl(imported.tileUrlTemplate);
         handleSelectStory(imported.id);
       } catch (error) {
-        if (cancelled) return;
+        if (signal.aborted) return;
         setImportError(error instanceof Error ? error.message : String(error));
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataUrl, selectedStoryId]);
 

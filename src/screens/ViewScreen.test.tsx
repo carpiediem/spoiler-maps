@@ -117,6 +117,20 @@ describe('ViewScreen', () => {
     ).toBeInTheDocument();
   });
 
+  it('aborts an in-flight data URL fetch when unmounted', async () => {
+    const fetchMock = vi.fn().mockReturnValue(new Promise(() => {}));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { unmount } = renderAt('/view?d=https://example.com/story.yaml');
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const { signal } = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(signal!.aborted).toBe(false);
+
+    unmount();
+
+    expect(signal!.aborted).toBe(true);
+  });
+
   it('has a level-one heading in the loading state', () => {
     vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})));
     renderAt('/view?d=https://example.com/story.yaml');

@@ -1083,6 +1083,26 @@ describe('App', () => {
     vi.unstubAllGlobals();
   });
 
+  it('aborts an in-flight /edit?d=<url> fetch when unmounted', async () => {
+    const fetchMock = vi.fn().mockReturnValue(new Promise(() => {}));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/edit?d=https://example.com/story.yaml']}>
+        <App />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const { signal } = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(signal!.aborted).toBe(false);
+
+    unmount();
+
+    expect(signal!.aborted).toBe(true);
+
+    vi.unstubAllGlobals();
+  });
+
   it('ignores a ?d= param when a specific story id is already in the URL', async () => {
     const story = await createStory({
       name: 'A Song of Ice and Fire',

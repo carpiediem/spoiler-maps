@@ -17,6 +17,7 @@ import { MapErrorBoundary } from '../components/MapErrorBoundary';
 import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
 import { MapView } from '../components/MapView';
 import { buildTileAttribution } from '../lib/attribution';
+import { fetchStoryYaml } from '../lib/fetchStoryYaml';
 import { buildStoryDocument } from '../lib/storyExport';
 import { parseStoryDocument } from '../lib/storyImport';
 import type { StoryDocument } from '../lib/storyDocument';
@@ -48,36 +49,29 @@ function useLoadedDocument(storyId: number | null, dataUrl: string | null): Load
   }
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
 
     async function load() {
-      if (dataUrl) {
-        const response = await fetch(dataUrl);
-        if (!response.ok) {
-          throw new Error(`Could not load this map: the server responded with ${response.status}.`);
-        }
-        return parseStoryDocument(await response.text());
-      }
+      if (dataUrl) return parseStoryDocument(await fetchStoryYaml(dataUrl, signal));
       if (storyId !== null) return buildStoryDocument(storyId);
       throw new Error('No map specified — this link is missing a story or a data URL.');
     }
 
     load()
       .then((document) => {
-        if (cancelled) return;
+        if (signal.aborted) return;
         setState({ status: 'ready', document });
       })
       .catch((error: unknown) => {
-        if (cancelled) return;
+        if (signal.aborted) return;
         setState({
           status: 'error',
           message: error instanceof Error ? error.message : String(error),
         });
       });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, [storyId, dataUrl]);
 
   return state;
