@@ -1,10 +1,10 @@
-import type { CharacterPosition } from '../db';
-import { characterInitials } from './characterInitials';
-import type { CharacterPositionPin, CharacterTailOverlay } from './characterPositionPins';
-import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from './tailConnection';
+import type { CharacterPosition } from '../../db';
+import { characterInitials } from '../characterInitials';
+import type { CharacterPositionPin, CharacterTailOverlay } from '../characterPositionPins';
+import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from '../tailConnection';
 import { isPositionVisible } from './viewTimeline';
-import type { TimelineMode } from './timelineMode';
-import type { StoryDocument, StoryDocumentPosition } from './storyDocument';
+import type { TimelineMode } from '../timelineMode';
+import type { StoryDocument, StoryDocumentPosition } from '../storyDocument';
 
 /** Adapts a StoryDocument position into the shape MapView's pins/tails expect, with a synthetic id (the document has none). */
 function toMapCharacterPosition(

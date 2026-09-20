@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { CharacterPosition } from '../db';
-import type { FlatOption } from './rangeOptions';
+import type { CharacterPosition } from '../../db';
+import type { FlatOption } from '../rangeOptions';
 import { makeTimelineVisibilityChecker } from './timelineVisibility';
 
 const chapterOptions: FlatOption[] = [

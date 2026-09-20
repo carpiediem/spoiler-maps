@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { StoryDocument, StoryDocumentPosition } from './storyDocument';
+import type { StoryDocument, StoryDocumentPosition } from '../storyDocument';
 import {
   buildDocumentChapterOptions,
   buildDocumentEpisodeOptions,

@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { useMemo } from 'react';
 import type { CharacterPosition } from '../../../db';
-import { makeTimelineVisibilityChecker } from '../../../lib/timelineVisibility';
+import { makeTimelineVisibilityChecker } from '../../../lib/editor/timelineVisibility';
 import type { TimelineMode } from '../../../lib/timelineMode';
 import { PositionRangeSummaryView } from './PositionRangeSummaryView';
 import { useRangeOptions } from './rangeOptions';

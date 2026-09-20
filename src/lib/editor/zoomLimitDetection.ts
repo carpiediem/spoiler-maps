@@ -1,6 +1,6 @@
-import type { LatLng } from '../db';
-import { toKeyholeQuadkey } from './quadkey';
-import type { ResolvedTileUrlTemplate } from './tileUrl';
+import type { LatLng } from '../../db';
+import { toKeyholeQuadkey } from '../quadkey';
+import type { ResolvedTileUrlTemplate } from '../tileUrl';
 
 /** The XYZ tile (standard Web Mercator slippy-map tiling) containing `position` at `zoom`. */
 export function latLngToTile(position: LatLng, zoom: number): { x: number; y: number } {

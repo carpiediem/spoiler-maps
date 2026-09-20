@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { StoryDocument } from './storyDocument';
+import type { StoryDocument } from '../storyDocument';
 import { buildViewMarkerPins } from './viewMarkerPins';
 
 function minimalDocument(overrides: Partial<StoryDocument> = {}): StoryDocument {

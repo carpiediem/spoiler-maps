@@ -15,7 +15,7 @@ import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
 import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from '../../lib/tailConnection';
 import { useRenderLoopWatchdog } from '../../lib/renderLoopWatchdog';
-import { makeTimelineVisibilityChecker } from '../../lib/timelineVisibility';
+import { makeTimelineVisibilityChecker } from '../../lib/editor/timelineVisibility';
 import type { TimelineMode } from '../../lib/timelineMode';
 import { useRangeOptions } from './characters/rangeOptions';
 import { CharacterItem } from './characters/CharacterItem';

@@ -4,7 +4,7 @@ import {
   DEFAULT_MAX_ZOOM,
   DEFAULT_MIN_ZOOM,
   DEFAULT_ZOOM,
-} from '../../lib/mapDefaults';
+} from '../../lib/editor/mapDefaults';
 
 export interface FormValues {
   name: string;

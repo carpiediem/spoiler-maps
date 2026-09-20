@@ -1,6 +1,6 @@
-import type { ChapterRange, EpisodeRange } from '../db';
-import type { TimelineMode } from './timelineMode';
-import type { FlatOption } from './rangeOptions';
+import type { ChapterRange, EpisodeRange } from '../../db';
+import type { TimelineMode } from '../timelineMode';
+import type { FlatOption } from '../rangeOptions';
 
 /** The chapter/episode-range shape shared by a CharacterPosition and a CharacterAlias. */
 interface RangedEntity {

@@ -1,6 +1,6 @@
 import { Button, Dialog, DialogActions, DialogContentText, DialogTitle } from '@mui/material';
 import { useMemo } from 'react';
-import { renderMarkdownToHtml } from '../../lib/renderMarkdown';
+import { renderMarkdownToHtml } from '../../lib/view/renderMarkdown';
 
 interface DescriptionDialogProps {
   open: boolean;

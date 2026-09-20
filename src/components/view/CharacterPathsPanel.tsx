@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import type { TimelineMode } from '../../lib/timelineMode';
 import type { StoryDocumentCharacter } from '../../lib/storyDocument';
-import { isPositionVisible } from '../../lib/viewTimeline';
+import { isPositionVisible } from '../../lib/view/viewTimeline';
 
 interface CharacterPathsPanelProps {
   characters: StoryDocumentCharacter[];
