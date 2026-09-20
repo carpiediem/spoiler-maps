@@ -3,9 +3,16 @@ name: CD
 on:
   push:
     branches: [main]
+    # Everything that changes what gets built. Docs/tests-only pushes still
+    # skip a redeploy, but dependency bumps and build config don't.
     paths:
       - 'src/**'
       - 'public/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig*.json'
   workflow_dispatch:
 
 permissions:
