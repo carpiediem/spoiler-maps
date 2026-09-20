@@ -16,7 +16,7 @@ import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/chara
 import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from '../../lib/tailConnection';
 import { useRenderLoopWatchdog } from '../../lib/renderLoopWatchdog';
 import { makeTimelineVisibilityChecker } from '../../lib/timelineVisibility';
-import type { TimelineMode } from '../MapTimelineControl';
+import type { TimelineMode } from '../../lib/timelineMode';
 import { useRangeOptions } from './characters/rangeOptions';
 import { CharacterItem } from './characters/CharacterItem';
 import { useExpandableEntityList } from './useExpandableEntityList';

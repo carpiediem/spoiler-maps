@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { EditorSidebar } from '../components/EditorSidebar';
 import { MapErrorBoundary } from '../components/MapErrorBoundary';
-import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
+import { MapTimelineControl } from '../components/MapTimelineControl';
+import type { TimelineMode } from '../lib/timelineMode';
 import { MapView } from '../components/MapView';
 import {
   createStory,

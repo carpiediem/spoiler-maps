@@ -16,7 +16,7 @@ import { alpha } from '@mui/material/styles';
 import { memo, type SyntheticEvent } from 'react';
 import { updateCharacterAlias, type CharacterAlias } from '../../../db';
 import { DEFAULT_CHARACTER_COLOR } from '../../../lib/characterColor';
-import type { FlatOption } from './rangeOptions';
+import type { FlatOption } from '../../../lib/rangeOptions';
 import { RangeSelect } from '../RangeSelect';
 
 interface AliasItemProps {

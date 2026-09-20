@@ -13,7 +13,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { TimelineMode } from '../MapTimelineControl';
+import type { TimelineMode } from '../../lib/timelineMode';
 import type { StoryDocumentCharacter } from '../../lib/storyDocument';
 import { isPositionVisible } from '../../lib/viewTimeline';
 

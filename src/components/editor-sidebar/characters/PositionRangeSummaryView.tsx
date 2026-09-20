@@ -2,7 +2,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import PersonalVideoIcon from '@mui/icons-material/PersonalVideo';
 import { Box, Tooltip } from '@mui/material';
 import type { ReactNode } from 'react';
-import type { PositionRangeSummary, RangeSummaryPart } from './rangeOptions';
+import type { PositionRangeSummary, RangeSummaryPart } from '../../../lib/rangeOptions';
 
 function RangeSummaryPartView({ icon, part }: { icon: ReactNode; part: RangeSummaryPart }) {
   return (

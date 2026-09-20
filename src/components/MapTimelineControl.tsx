@@ -15,9 +15,8 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import type { FlatOption } from './editor-sidebar/characters/rangeOptions';
-
-export type TimelineMode = 'book' | 'tv';
+import type { FlatOption } from '../lib/rangeOptions';
+import type { TimelineMode } from '../lib/timelineMode';
 
 // How often, in ms, the slider advances while an arrow key is held down.
 const HELD_KEY_STEP_INTERVAL_MS = 150;

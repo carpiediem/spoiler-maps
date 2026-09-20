@@ -19,7 +19,7 @@ import { alpha } from '@mui/material/styles';
 import { memo, type SyntheticEvent } from 'react';
 import { updateMarker, type Marker } from '../../../db';
 import { DEFAULT_MARKER_COLOR } from '../../../lib/markerColor';
-import type { FlatOption } from '../characters/rangeOptions';
+import type { FlatOption } from '../../../lib/rangeOptions';
 import { RangeSelect } from '../RangeSelect';
 
 interface MarkerItemProps {

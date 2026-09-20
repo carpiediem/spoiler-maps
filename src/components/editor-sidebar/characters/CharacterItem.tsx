@@ -28,7 +28,7 @@ import {
   type CharacterPosition,
 } from '../../../db';
 import { DEFAULT_CHARACTER_COLOR } from '../../../lib/characterColor';
-import type { TimelineMode } from '../../MapTimelineControl';
+import type { TimelineMode } from '../../../lib/timelineMode';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
 import { SIDEBAR_SECTION_HEADER_HEIGHT, SIDEBAR_SECTION_HEADER_Z_INDEX } from '../SidebarSection';
 import { AliasList } from './AliasList';

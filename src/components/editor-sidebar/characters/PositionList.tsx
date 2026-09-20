@@ -14,9 +14,10 @@ import {
 import { useMemo } from 'react';
 import type { CharacterPosition } from '../../../db';
 import { makeTimelineVisibilityChecker } from '../../../lib/timelineVisibility';
-import type { TimelineMode } from '../../MapTimelineControl';
+import type { TimelineMode } from '../../../lib/timelineMode';
 import { PositionRangeSummaryView } from './PositionRangeSummaryView';
-import { summarizePositionRange, useRangeOptions } from './rangeOptions';
+import { useRangeOptions } from './rangeOptions';
+import { summarizePositionRange } from '../../../lib/rangeOptions';
 
 interface PositionListProps {
   storyId: number;

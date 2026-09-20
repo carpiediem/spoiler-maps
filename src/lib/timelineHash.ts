@@ -1,4 +1,4 @@
-import type { TimelineMode } from '../components/MapTimelineControl';
+import type { TimelineMode } from './timelineMode';
 
 const TIMELINE_HASH_PATTERN = /^#(chapter|episode)-(\d+)$/i;
 
