@@ -1,4 +1,4 @@
-import type { LatLng } from '../db';
+import type { LatLng } from '../../db';
 
 // Centered on the contiguous US, zoomed out enough to see the whole country
 // — a reasonable starting point for a new, not-yet-customized story.

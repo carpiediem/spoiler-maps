@@ -30,7 +30,7 @@ import {
 import type { LatLng } from '../../db';
 import { PALETTE_OPTIONS } from '../../lib/palettes';
 import { resolveTileUrlTemplate } from '../../lib/tileUrl';
-import { detectMaxZoom } from '../../lib/zoomLimitDetection';
+import { detectMaxZoom } from '../../lib/editor/zoomLimitDetection';
 import { DescriptionPanel } from './DescriptionPanel';
 import { StaticField } from './StaticField';
 import { TileUrlHelpDialog } from './TileUrlHelpDialog';

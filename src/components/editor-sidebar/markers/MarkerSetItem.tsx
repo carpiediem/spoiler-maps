@@ -20,7 +20,7 @@ import {
 import { alpha } from '@mui/material/styles';
 import { memo, useState, type SyntheticEvent } from 'react';
 import { updateMarkerSet, type Marker, type MarkerSet } from '../../../db';
-import type { FlatOption } from '../characters/rangeOptions';
+import type { FlatOption } from '../../../lib/rangeOptions';
 import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
 import { SIDEBAR_SECTION_HEADER_HEIGHT, SIDEBAR_SECTION_HEADER_Z_INDEX } from '../SidebarSection';
 import { MarkerItem } from './MarkerItem';

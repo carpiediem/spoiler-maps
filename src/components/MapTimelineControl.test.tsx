@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import type { FlatOption } from './editor-sidebar/characters/rangeOptions';
+import type { FlatOption } from '../lib/rangeOptions';
 import { MapTimelineControl } from './MapTimelineControl';
 
 function chapterOptions(...names: string[]): FlatOption[] {

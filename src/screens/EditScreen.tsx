@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { EditorSidebar } from '../components/EditorSidebar';
 import { MapErrorBoundary } from '../components/MapErrorBoundary';
-import { MapTimelineControl, type TimelineMode } from '../components/MapTimelineControl';
+import { MapTimelineControl } from '../components/MapTimelineControl';
+import type { TimelineMode } from '../lib/timelineMode';
 import { MapView } from '../components/MapView';
 import {
   createStory,
@@ -17,10 +18,10 @@ import {
 } from '../db';
 import { buildTileAttribution } from '../lib/attribution';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characterPositionPins';
-import { downloadTextFile } from '../lib/downloadTextFile';
+import { downloadTextFile } from '../lib/editor/downloadTextFile';
 import { fetchStoryYaml } from '../lib/fetchStoryYaml';
 import type { ActiveMarker, MarkerMapPin } from '../lib/markerPins';
-import { getLastViewedStoryId, setLastViewedStoryId } from '../lib/lastViewedStory';
+import { getLastViewedStoryId, setLastViewedStoryId } from '../lib/editor/lastViewedStory';
 import { useRenderLoopWatchdog } from '../lib/renderLoopWatchdog';
 import { parseTimelineHash } from '../lib/timelineHash';
 import {
@@ -28,7 +29,7 @@ import {
   DEFAULT_MAX_ZOOM,
   DEFAULT_MIN_ZOOM,
   DEFAULT_ZOOM,
-} from '../lib/mapDefaults';
+} from '../lib/editor/mapDefaults';
 import {
   RangeOptionsProvider,
   useRangeOptions,

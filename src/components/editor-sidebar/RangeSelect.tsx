@@ -1,5 +1,5 @@
 import { FormControl, InputLabel, MenuItem, Select, type SelectChangeEvent } from '@mui/material';
-import type { FlatOption } from './characters/rangeOptions';
+import type { FlatOption } from '../../lib/rangeOptions';
 
 const OPEN_END_VALUE = '';
 

@@ -1,7 +1,7 @@
-import type { FlatOption } from '../components/editor-sidebar/characters/rangeOptions';
-import { toAcronym } from '../components/editor-sidebar/characters/rangeOptions';
-import type { TimelineMode } from '../components/MapTimelineControl';
-import type { StoryDocument, StoryDocumentRangeTuple } from './storyDocument';
+import type { FlatOption } from '../rangeOptions';
+import { toAcronym } from '../rangeOptions';
+import type { TimelineMode } from '../timelineMode';
+import type { StoryDocument, StoryDocumentRangeTuple } from '../storyDocument';
 
 /** Zero-pads to (at least) 2 digits, e.g. for "S01E01"-style codes. */
 function pad2(n: number): string {

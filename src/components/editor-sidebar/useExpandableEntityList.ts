@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
-import { nextPaint } from '../../lib/nextPaint';
+import { nextPaint } from '../../lib/editor/nextPaint';
 
 interface UseExpandableEntityListOptions<T extends { id: number }> {
   storyId: number;

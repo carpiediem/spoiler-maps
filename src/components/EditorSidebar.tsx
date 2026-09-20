@@ -15,7 +15,7 @@ import type { CharacterPositionPin, CharacterTailOverlay } from '../lib/characte
 import type { ActiveMarker, MarkerMapPin } from '../lib/markerPins';
 import { BooksSection } from './editor-sidebar/BooksSection';
 import { CharactersSection } from './editor-sidebar/CharactersSection';
-import type { TimelineMode } from './MapTimelineControl';
+import type { TimelineMode } from '../lib/timelineMode';
 import { DeleteConfirmDialog } from './editor-sidebar/DeleteConfirmDialog';
 import { storyToFormValues, type FormValues } from './editor-sidebar/formValues';
 import { MapSection } from './editor-sidebar/MapSection';

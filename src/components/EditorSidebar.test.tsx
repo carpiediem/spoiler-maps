@@ -24,7 +24,7 @@ import {
   type Story,
 } from '../db';
 import { resetDatabaseForTests } from '../db/client';
-import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/mapDefaults';
+import { DEFAULT_CENTER, DEFAULT_ZOOM } from '../lib/editor/mapDefaults';
 import { EditorSidebar } from './EditorSidebar';
 
 async function deleteStoredDatabase(): Promise<void> {

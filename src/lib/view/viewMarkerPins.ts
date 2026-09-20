@@ -1,7 +1,7 @@
-import type { Marker } from '../db';
-import type { TimelineMode } from '../components/MapTimelineControl';
-import type { MarkerMapPin } from './markerPins';
-import type { StoryDocument, StoryDocumentMarker } from './storyDocument';
+import type { Marker } from '../../db';
+import type { TimelineMode } from '../timelineMode';
+import type { MarkerMapPin } from '../markerPins';
+import type { StoryDocument, StoryDocumentMarker } from '../storyDocument';
 import { isPositionVisible } from './viewTimeline';
 
 /** Adapts a StoryDocumentMarker into the shape MapView's pins expect, with a synthetic id (the document has none). */

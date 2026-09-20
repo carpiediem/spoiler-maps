@@ -3,12 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBook, createStory, listBooksForStory } from '../../db';
 import { resetDatabaseForTests } from '../../db/client';
-import { nextPaint } from '../../lib/nextPaint';
+import { nextPaint } from '../../lib/editor/nextPaint';
 import { BooksSection } from './BooksSection';
 
 // Wraps the real nextPaint so one test can hold it open.
-vi.mock('../../lib/nextPaint', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../../lib/nextPaint')>();
+vi.mock('../../lib/editor/nextPaint', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../lib/editor/nextPaint')>();
   return { nextPaint: vi.fn(original.nextPaint) };
 });
 
