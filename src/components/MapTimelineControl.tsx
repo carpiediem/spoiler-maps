@@ -237,6 +237,9 @@ export function MapTimelineControl({
               onChange={(_event, value) => setIndex(value as number)}
               disabled={activeOptions.length === 0}
               aria-label={unitLabel}
+              // Shows the overall index over the handle on hover, focus and drag.
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `${unitLabel} ${value}`}
               sx={{ mx: 1, width: 'auto' }}
             />
 
