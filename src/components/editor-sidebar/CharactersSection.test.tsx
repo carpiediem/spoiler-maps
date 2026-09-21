@@ -1529,6 +1529,74 @@ describe('CharactersSection', () => {
     expect(onEditPosition).toHaveBeenCalledWith(character.id, 1, position, null);
   });
 
+  it('shows all of an expanded character’s positions, ignoring the timeline, while its Position panel is open', async () => {
+    const storyId = await seedStoryId();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Bran',
+      url: null,
+      sortOrder: 1,
+    });
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+      sortOrder: 21,
+      url: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: { startChapterId: chapter2.id, endChapterId: null },
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={vi.fn()}
+        timelineMode="book"
+        timelineIndex={1}
+        editingCharacterId={character.id}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+
+    await waitFor(() => {
+      const pins = onVisiblePositionsChange.mock.lastCall?.[0];
+      expect(pins?.map((pin: { positionIndex: number }) => pin.positionIndex)).toEqual([1, 2]);
+    });
+  });
+
   it('hides an expanded character’s position once the timeline is before its start chapter', async () => {
     const storyId = await seedStoryId();
     const book = await createBook({

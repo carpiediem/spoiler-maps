@@ -47,6 +47,8 @@ interface CharactersSectionProps {
   timelineMode: TimelineMode;
   /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
   timelineIndex: number;
+  /** The character whose Position panel is open, if any: the map shows all of its positions regardless of the timeline, so the one being edited is always visible. */
+  editingCharacterId?: number | null;
   /** Whether the Characters accordion itself is expanded; collapsing it also collapses whichever character was expanded inside it. */
   sectionExpanded: boolean;
 }
@@ -62,6 +64,7 @@ export function CharactersSection({
   onVisibleTailsChange,
   timelineMode,
   timelineIndex,
+  editingCharacterId = null,
   sectionExpanded,
 }: CharactersSectionProps) {
   useRenderLoopWatchdog('CharactersSection');
@@ -152,10 +155,14 @@ export function CharactersSection({
       // An active alias's own color entirely replaces the character's — not
       // just filling in when the alias left it unset.
       const color = activeAlias ? (activeAlias.color ?? null) : (character?.color ?? null);
+      // While this character's Position panel is open, the timeline is
+      // ignored for it — otherwise the position being edited could be
+      // scrubbed out of view (or replaced by a different one) on the map.
+      const ignoreTimeline = editingCharacterId === expandedCharacterId;
       const characterTails: CharacterTailOverlay[] = [];
       let precedingPosition: CharacterPosition | undefined;
       positions?.forEach((position, positionIndex) => {
-        if (!isPositionVisible(position)) return;
+        if (!ignoreTimeline && !isPositionVisible(position)) return;
 
         pins.push({
           characterId: expandedCharacterId,
@@ -238,6 +245,7 @@ export function CharactersSection({
     characters,
     timelineMode,
     timelineIndex,
+    editingCharacterId,
     chapterOptions,
     episodeOptions,
     onVisiblePositionsChange,

@@ -398,6 +398,7 @@ export function EditorSidebar({
                     onVisibleTailsChange={onVisibleTailsChange}
                     timelineMode={timelineMode}
                     timelineIndex={timelineIndex}
+                    editingCharacterId={activePosition?.characterId ?? null}
                     sectionExpanded={expandedSection === 'characters'}
                   />
                 </SidebarSection>
