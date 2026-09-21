@@ -66,6 +66,7 @@ describe('TelevisionSection', () => {
     await user.click(screen.getByRole('button', { name: /add season/i }));
 
     await screen.findByText('Season 2');
+    expect(window.umami!.track).toHaveBeenCalledWith('season_added');
     const [existingUrlField, newUrlField] = screen.getAllByLabelText(/^url$/i);
     await waitFor(() => expect(existingUrlField).not.toBeVisible());
     await waitFor(() => expect(newUrlField).toBeVisible());

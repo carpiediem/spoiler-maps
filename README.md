@@ -70,6 +70,14 @@ This repo uses a few GitHub Actions workflows under [.github/workflows](.github/
 - **[Accessibility Scanner](.github/workflows/a11y-scan.yml)** — manually triggered from the Actions tab. Scans the live deployed site and files GitHub issues for any accessibility violations it finds.
 - **[Test Outline](.github/workflows/test-outline.yml)** — runs on every push to `main` that touches a test file or the generator script. Regenerates [docs/test-suite-outline.md](docs/test-suite-outline.md) and commits it back if anything changed.
 
+## Analytics
+
+The deployed site can report anonymous usage counts (which features get used, and where people stop partway through creating or viewing a map) to [Umami](https://umami.is), a cookieless analytics tool. It is **off unless configured** and never runs in development.
+
+- **What's collected:** page views and a fixed list of event names (see `AnalyticsEvent` in [src/lib/analytics.ts](src/lib/analytics.ts)), such as `story_created` or `share_link_opened`. No cookies, no personal data, and never any story content.
+- **What's not:** the URL's query string and hash are dropped (a `?d=` share link points at someone's story data), and the browser's Do Not Track setting is respected.
+- **Turning it on:** create a website in Umami, then set the repository variable `UMAMI_WEBSITE_ID` (Settings > Secrets and variables > Actions > Variables) to its ID. To use a self-hosted Umami, also set `VITE_UMAMI_SCRIPT_URL` at build time.
+
 ## Contributing
 
 Before opening a pull request, please make sure the following pass locally:

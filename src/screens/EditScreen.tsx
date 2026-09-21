@@ -39,6 +39,7 @@ import { importStoryFromYaml } from '../lib/storyImport';
 import { buildStoryTheme } from '../theme';
 import { visuallyHidden } from '../lib/visuallyHidden';
 import './EditScreen.css';
+import { track } from '../lib/analytics';
 
 /** "new", or absent, both mean the create-new-story flow; anything else must be a numeric id. */
 function parseStoryIdParam(param: string | undefined): number | null {
@@ -197,6 +198,7 @@ export function EditScreen() {
       try {
         const imported = await importStoryFromYaml(await fetchStoryYaml(dataUrl, signal));
         if (signal.aborted) return;
+        track('share_link_imported');
         setStories((previous) => [...previous, imported]);
         setTileUrl(imported.tileUrlTemplate);
         handleSelectStory(imported.id);
@@ -334,6 +336,7 @@ export function EditScreen() {
 
   const handleSaveMarkerArea = useCallback(() => {
     activeMarkerRef.current?.onAreaSave(areaDraftPointsRef.current);
+    track('marker_area_saved');
     setAreaDraftPoints(null);
   }, []);
 
@@ -359,6 +362,7 @@ export function EditScreen() {
   }) {
     if (selectedStoryId === null) {
       const created = await createStory({ ...input, description: null });
+      track('story_created');
       setStories((previous) => [...previous, created]);
       handleSelectStory(created.id);
     } else {
@@ -401,11 +405,13 @@ export function EditScreen() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '') || 'story';
     downloadTextFile(`${slug}.yaml`, yamlText, 'text/yaml');
+    track('story_exported');
   }
 
   async function handleImportFile(file: File) {
     const text = await file.text();
     const imported = await importStoryFromYaml(text);
+    track('story_imported');
     setStories((previous) => [...previous, imported]);
     setTileUrl(imported.tileUrlTemplate);
     handleSelectStory(imported.id);

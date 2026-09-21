@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App.tsx';
+import { initAnalytics } from './lib/analytics.ts';
 import { theme } from './theme.ts';
 
 // A crash inside Leaflet's own imperative code (tile loading, pan/zoom
@@ -19,6 +20,8 @@ window.addEventListener('unhandledrejection', (event) => {
   // eslint-disable-next-line no-console
   console.error('[unhandledrejection]', event.reason, event);
 });
+
+initAnalytics();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

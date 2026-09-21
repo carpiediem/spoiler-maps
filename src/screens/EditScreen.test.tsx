@@ -63,6 +63,7 @@ describe('App', () => {
       await screen.findByRole('button', { name: /a song of ice and fire/i }),
     ).toBeInTheDocument();
     expect(container.querySelector('.leaflet-container')).toBeInTheDocument();
+    expect(window.umami!.track).toHaveBeenCalledWith('story_created');
   });
 
   it('has exactly one level-one heading, naming the selected story once one is saved', async () => {
@@ -957,6 +958,7 @@ describe('App', () => {
     expect(
       await screen.findByRole('button', { name: /the wheel of time v2/i }),
     ).toBeInTheDocument();
+    expect(window.umami!.track).toHaveBeenCalledWith('story_imported');
   });
 
   it('auto-imports a story from /edit?d=<url> and starts editing it', async () => {
@@ -979,6 +981,7 @@ describe('App', () => {
     );
 
     expect(await screen.findByDisplayValue('The Wheel of Time v2')).toBeInTheDocument();
+    expect(window.umami!.track).toHaveBeenCalledWith('share_link_imported');
     // Only one story was created — the effect didn't re-import on its own
     // second run (e.g. from the ?d= param still being present after the
     // first import navigates away from it).
@@ -1160,6 +1163,7 @@ describe('App', () => {
       await user.click(exportButton);
 
       await waitFor(() => expect(clickSpy).toHaveBeenCalled());
+      expect(window.umami!.track).toHaveBeenCalledWith('story_exported');
     } finally {
       clickSpy.mockRestore();
     }

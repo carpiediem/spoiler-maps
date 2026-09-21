@@ -197,6 +197,26 @@ describe('MapTimelineControl', () => {
     await waitFor(() => expect(onChange).toHaveBeenLastCalledWith('tv', 2));
   });
 
+  it('reports timeline_used once, on the first user interaction rather than on mount', async () => {
+    const user = userEvent.setup();
+    render(
+      <MapTimelineControl
+        chapterOptions={chapterOptions('Prologue', 'Bran')}
+        episodeOptions={episodeOptions('Winter Is Coming', 'The Kingsroad')}
+        hasBooks
+        hasSeasons
+        onChange={vi.fn()}
+      />,
+    );
+    expect(window.umami!.track).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'TV seasons' }));
+    await user.click(screen.getByRole('button', { name: 'Books' }));
+
+    expect(window.umami!.track).toHaveBeenCalledTimes(1);
+    expect(window.umami!.track).toHaveBeenCalledWith('timeline_used');
+  });
+
   it('steps backward and forward with the arrow buttons, disabling them at the ends', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();

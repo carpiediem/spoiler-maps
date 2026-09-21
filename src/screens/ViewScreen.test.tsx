@@ -108,6 +108,7 @@ describe('ViewScreen', () => {
     expect(await screen.findByText('Show spoilers through:')).toBeInTheDocument();
     expect(screen.getByText('Jon Snow')).toBeInTheDocument();
     expect(container.querySelector('.leaflet-container')).toBeInTheDocument();
+    expect(window.umami!.track).toHaveBeenCalledWith('share_link_opened');
   });
 
   it('has a level-one heading in the error state (no story id or data URL given)', async () => {
@@ -151,6 +152,7 @@ describe('ViewScreen', () => {
     // heading is actually reachable via its accessible role, matching what
     // a real assistive-tech user (and an accessibility scanner) would see.
     await user.click(await screen.findByRole('button', { name: /got it/i }));
+    expect(window.umami!.track).toHaveBeenCalledWith('welcome_dismissed');
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'A Song of Ice and Fire' }),

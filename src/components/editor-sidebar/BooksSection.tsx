@@ -14,6 +14,7 @@ import { useRenderLoopWatchdog } from '../../lib/renderLoopWatchdog';
 import { BookItem } from './books/BookItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
 import { SectionLoading } from './SectionLoading';
+import { track } from '../../lib/analytics';
 
 interface BooksSectionProps {
   storyId: number;
@@ -65,6 +66,7 @@ export function BooksSection({ storyId, initialExpandedIndex, onCountChange }: B
   async function handleAddBook() {
     const sortOrder = sortOrderAfter(books!.map((book) => book.sortOrder));
     const book = await createBook({ storyId, name: '', author: null, url: null, sortOrder });
+    track('book_added');
     addEntity(book);
     setChaptersByBookId((previous) => ({ ...previous, [book.id]: [] }));
   }
