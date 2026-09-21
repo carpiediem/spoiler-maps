@@ -11,6 +11,8 @@ export interface CharacterPositionPin {
   color: string | null;
   /** 'pin' (default) is the usual labeled teardrop icon; 'dot' is a small solid circle, used for a visible-but-collapsed character's non-last positions. */
   style?: 'pin' | 'dot';
+  /** Overrides the hover tooltip, which otherwise shows the position's note (and nothing if it has none). */
+  tooltip?: string;
 }
 
 /** One position's saved tail, to be drawn as a polyline. */

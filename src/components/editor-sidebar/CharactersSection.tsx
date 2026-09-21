@@ -172,6 +172,13 @@ export function CharactersSection({
             positionIndex: positionIndex + 1,
             color,
             style: isEditing ? 'pin' : 'dot',
+            // Dots carry no label, so their tooltip says which position they
+            // are: "3: note", or just "3" without a note.
+            tooltip: isEditing
+              ? undefined
+              : position.note
+                ? `${positionIndex + 1}: ${position.note}`
+                : String(positionIndex + 1),
           });
 
           const precedingPosition = positions[positionIndex - 1];

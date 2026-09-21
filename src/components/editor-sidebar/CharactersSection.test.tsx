@@ -1558,7 +1558,7 @@ describe('CharactersSection', () => {
       characterId: character.id,
       position: { lat: 1, lng: 1 },
       dead: false,
-      note: null,
+      note: 'Winterfell',
       tail: [{ lat: 0.5, lng: 0.5 }],
       chapterRange: null,
       episodeRange: null,
@@ -1570,6 +1570,15 @@ describe('CharactersSection', () => {
       note: null,
       tail: [{ lat: 1.5, lng: 1.5 }],
       chapterRange: { startChapterId: chapter2.id, endChapterId: null },
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 3, lng: 3 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
       episodeRange: null,
     });
     const onVisiblePositionsChange = vi.fn();
@@ -1599,8 +1608,13 @@ describe('CharactersSection', () => {
         [
           ['', 'dot'],
           ['2', 'pin'],
+          ['', 'dot'],
         ],
       );
+      // Non-focused positions are identified by their index, plus the note if any.
+      expect(pins?.[0].tooltip).toBe('1: Winterfell');
+      expect(pins?.[1].tooltip).toBeUndefined();
+      expect(pins?.[2].tooltip).toBe('3');
     });
     const tails = onVisibleTailsChange.mock.lastCall?.[0];
     expect(tails).toHaveLength(1);

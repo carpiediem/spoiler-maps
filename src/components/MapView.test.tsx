@@ -322,6 +322,57 @@ describe('MapView', () => {
     expect(onCharacterPositionPinClick).toHaveBeenCalledWith(dotPin);
   });
 
+  it('uses a pin’s own tooltip text instead of its note, even when it has no note', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const dotPin = {
+      ...makePin(1, { lat: 41, lng: -101 }, ''),
+      style: 'dot' as const,
+      tooltip: '3',
+    };
+    const { container } = render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        characterPositionPins={[dotPin]}
+      />,
+    );
+
+    let circle: LeafletCircleMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletCircleMarker) circle = layer;
+    });
+
+    act(() => circle!.openTooltip());
+    expect(container.querySelector('.leaflet-tooltip')?.textContent).toBe('3');
+  });
+
+  it('uses a labeled pin’s own tooltip text instead of its note', () => {
+    const mapRef = createRef<LeafletMap | null>();
+    const pin = {
+      ...makePin(1, { lat: 41, lng: -101 }, '1', false, 'A note'),
+      tooltip: '1: A note!',
+    };
+    const { container } = render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        characterPositionPins={[pin]}
+      />,
+    );
+
+    let marker: LeafletMarker | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) marker = layer;
+    });
+
+    act(() => marker!.openTooltip());
+    expect(container.querySelector('.leaflet-tooltip')?.textContent).toBe('1: A note!');
+  });
+
   it('binds a tooltip showing the note on a "dot"-style position too', () => {
     const mapRef = createRef<LeafletMap | null>();
     const dotPin = {
