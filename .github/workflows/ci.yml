@@ -27,6 +27,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Catches failures only the production bundler hits (a bad chunking
+      # config, a missing asset, a broken import), which type checking and
+      # the tests don't — otherwise they only surface in CD after merging.
+      - name: Build
+        run: npm run build
+
       - name: Unit tests
         run: npm run test:coverage
 
