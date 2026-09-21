@@ -34,6 +34,28 @@ export function hasTailToDraw(
 // opacity; the most recent tail is always drawn at full opacity.
 const MIN_TAIL_OPACITY = 0.2;
 
+// The view screen's tails fade less than the editor's: the oldest bottoms
+// out here so the whole route stays legible.
+const MIN_PROGRESS_TAIL_OPACITY = 0.5;
+
+/**
+ * Opacity for a tail by how far into the story its position began, rather
+ * than by its place in the character's list of positions: `start` is the
+ * position's 0-based first chapter/episode (null/absent = the very
+ * beginning) and `currentIndex` the timeline's 1-based scrub position, so a
+ * position that began at the current point is fully opaque and one from
+ * the story's start fades to MIN_PROGRESS_TAIL_OPACITY. The same segment looks the
+ * same no matter which medium is scrubbed or how many positions a
+ * character has.
+ */
+export function tailOpacityForProgress(
+  start: number | null | undefined,
+  currentIndex: number,
+): number {
+  const progress = Math.min(1, Math.max(0, ((start ?? 0) + 1) / Math.max(currentIndex, 1)));
+  return MIN_PROGRESS_TAIL_OPACITY + (1 - MIN_PROGRESS_TAIL_OPACITY) * progress;
+}
+
 /**
  * Assigns each tail in a character's sequence (ordered oldest to most
  * recent — i.e. the order positions were visited) a linearly increasing

@@ -1,8 +1,8 @@
 import type { CharacterPosition } from '../../db';
 import { characterInitials } from '../characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../characterPositionPins';
-import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from '../tailConnection';
-import { isPositionVisible } from './viewTimeline';
+import { buildTailPoints, hasTailToDraw, tailOpacityForProgress } from '../tailConnection';
+import { hasPositionStarted, isPositionVisible } from './viewTimeline';
 import type { TimelineMode } from '../timelineMode';
 import type { StoryDocument, StoryDocumentPosition } from '../storyDocument';
 
@@ -58,6 +58,13 @@ export function buildViewPinsAndTails(
       .filter(({ position }) => isPositionVisible(position, mode, currentIndex));
     if (reachedPositionIndices.length === 0) return;
 
+    // The full route so far: every position that has started, including ones
+    // the character has since left, so tails reach back to the beginning of
+    // the story instead of stopping at positions still in their range.
+    const pathPositionIndices = character.positions
+      .map((position, positionIndex) => ({ position, positionIndex }))
+      .filter(({ position }) => hasPositionStarted(position, mode, currentIndex));
+
     // The first alias (in array order) whose own chapter/episode range is
     // currently active, if any — the character displays that alias's own
     // name/color instead of its real ones for as long as it stays active.
@@ -71,6 +78,8 @@ export function buildViewPinsAndTails(
     const color = activeAlias ? (activeAlias.color ?? null) : (character.color ?? null);
     const { position: lastPosition, positionIndex: lastPositionIndex } =
       reachedPositionIndices[reachedPositionIndices.length - 1]!;
+    const lastPathPositionIndex =
+      pathPositionIndices[pathPositionIndices.length - 1]!.positionIndex;
 
     if (!showFullPath) {
       pins.push({
@@ -89,9 +98,9 @@ export function buildViewPinsAndTails(
 
     const characterTails: CharacterTailOverlay[] = [];
 
-    reachedPositionIndices.forEach(({ position, positionIndex }, reachedIndex) => {
+    pathPositionIndices.forEach(({ position, positionIndex }, pathIndex) => {
       const syntheticId = characterIndex * 100_000 + positionIndex;
-      const isLast = positionIndex === lastPositionIndex;
+      const isLast = positionIndex === lastPathPositionIndex;
 
       pins.push({
         characterId: characterIndex,
@@ -102,11 +111,11 @@ export function buildViewPinsAndTails(
         style: isLast ? 'pin' : 'dot',
       });
 
-      // The preceding *visible* position, not just the preceding one in the
-      // character's full list — a position hidden by the timeline scrub or
-      // gated to the other medium shouldn't be a tail's endpoint.
+      // The preceding *started* position, not just the preceding one in the
+      // character's full list — a position not yet reached by the timeline
+      // scrub or gated to the other medium shouldn't be a tail's endpoint.
       const precedingPosition =
-        reachedIndex > 0 ? reachedPositionIndices[reachedIndex - 1]!.position : undefined;
+        pathIndex > 0 ? pathPositionIndices[pathIndex - 1]!.position : undefined;
       const precedingLatLng = precedingPosition && toLatLngPosition(precedingPosition);
       if (hasTailToDraw(position, precedingLatLng)) {
         characterTails.push({
@@ -116,12 +125,15 @@ export function buildViewPinsAndTails(
             precedingLatLng,
           ),
           color,
-          opacity: 0,
+          opacity: tailOpacityForProgress(
+            (mode === 'book' ? position.chapters : position.episodes)?.[0],
+            currentIndex,
+          ),
         });
       }
     });
 
-    tails.push(...applyTailOpacityGradient(characterTails));
+    tails.push(...characterTails);
   });
 
   return { pins, tails };
