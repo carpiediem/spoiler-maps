@@ -399,6 +399,7 @@ export function EditorSidebar({
                     timelineMode={timelineMode}
                     timelineIndex={timelineIndex}
                     editingCharacterId={activePosition?.characterId ?? null}
+                    editingPositionId={activePosition?.existing?.id ?? null}
                     sectionExpanded={expandedSection === 'characters'}
                   />
                 </SidebarSection>

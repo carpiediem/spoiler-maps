@@ -1529,7 +1529,7 @@ describe('CharactersSection', () => {
     expect(onEditPosition).toHaveBeenCalledWith(character.id, 1, position, null);
   });
 
-  it('shows all of an expanded character’s positions, ignoring the timeline, while its Position panel is open', async () => {
+  it('while its Position panel is open, ignores the timeline: the edited position is the pin, the others are dots, and only its tail is drawn', async () => {
     const storyId = await seedStoryId();
     const book = await createBook({
       storyId,
@@ -1559,20 +1559,21 @@ describe('CharactersSection', () => {
       position: { lat: 1, lng: 1 },
       dead: false,
       note: null,
-      tail: null,
+      tail: [{ lat: 0.5, lng: 0.5 }],
       chapterRange: null,
       episodeRange: null,
     });
-    await createCharacterPosition({
+    const editedPosition = await createCharacterPosition({
       characterId: character.id,
       position: { lat: 2, lng: 2 },
       dead: false,
       note: null,
-      tail: null,
+      tail: [{ lat: 1.5, lng: 1.5 }],
       chapterRange: { startChapterId: chapter2.id, endChapterId: null },
       episodeRange: null,
     });
     const onVisiblePositionsChange = vi.fn();
+    const onVisibleTailsChange = vi.fn();
     const user = userEvent.setup();
     render(
       <CharactersSection
@@ -1581,10 +1582,11 @@ describe('CharactersSection', () => {
         onEditPosition={vi.fn()}
         positionsVersion={0}
         onVisiblePositionsChange={onVisiblePositionsChange}
-        onVisibleTailsChange={vi.fn()}
+        onVisibleTailsChange={onVisibleTailsChange}
         timelineMode="book"
         timelineIndex={1}
         editingCharacterId={character.id}
+        editingPositionId={editedPosition.id}
         sectionExpanded
       />,
     );
@@ -1593,8 +1595,17 @@ describe('CharactersSection', () => {
 
     await waitFor(() => {
       const pins = onVisiblePositionsChange.mock.lastCall?.[0];
-      expect(pins?.map((pin: { positionIndex: number }) => pin.positionIndex)).toEqual([1, 2]);
+      expect(pins?.map((pin: { label: string; style?: string }) => [pin.label, pin.style])).toEqual(
+        [
+          ['', 'dot'],
+          ['2', 'pin'],
+        ],
+      );
     });
+    const tails = onVisibleTailsChange.mock.lastCall?.[0];
+    expect(tails).toHaveLength(1);
+    expect(tails[0].points[0]).toEqual({ lat: 2, lng: 2 });
+    expect(tails[0].opacity).toBe(1);
   });
 
   it('hides an expanded character’s position once the timeline is before its start chapter', async () => {
