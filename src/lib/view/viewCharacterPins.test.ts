@@ -82,6 +82,35 @@ describe('buildViewPinsAndTails', () => {
     expect(tails).toEqual([]);
   });
 
+  it('with showFullPath, keeps drawing positions whose range has already ended so tails reach back to the start', () => {
+    const document = minimalDocument({
+      characters: [
+        {
+          name: 'Jon Snow',
+          positions: [
+            { lat: 1, lng: 1, chapters: [0, 1] },
+            { lat: 2, lng: 2, chapters: [2, 3] },
+            { lat: 3, lng: 3, chapters: [4, null] },
+          ],
+        },
+      ],
+    });
+
+    const { pins, tails } = buildViewPinsAndTails(document, new Set([0]), true, 'book', 6);
+
+    expect(pins.map((pin) => pin.style)).toEqual(['dot', 'dot', 'pin']);
+    expect(tails.map((tail) => tail.points)).toEqual([
+      [
+        { lat: 2, lng: 2 },
+        { lat: 1, lng: 1 },
+      ],
+      [
+        { lat: 3, lng: 3 },
+        { lat: 2, lng: 2 },
+      ],
+    ]);
+  });
+
   it('hides positions the timeline scrub has not reached yet', () => {
     const document = minimalDocument({
       characters: [

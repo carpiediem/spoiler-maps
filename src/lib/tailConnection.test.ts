@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from './tailConnection';
+import {
+  applyTailOpacityGradient,
+  buildTailPoints,
+  hasTailToDraw,
+  tailOpacityForProgress,
+} from './tailConnection';
 
 describe('buildTailPoints', () => {
   it('starts with the position itself, then its own tail waypoints', () => {
@@ -94,5 +99,19 @@ describe('applyTailOpacityGradient', () => {
 
     expect(result[0]).toMatchObject({ characterId: 1, color: '#ff0000', opacity: 0.2 });
     expect(result[1]).toMatchObject({ characterId: 1, color: '#ff0000', opacity: 1 });
+  });
+});
+
+describe('tailOpacityForProgress', () => {
+  it('is fully opaque for a position that began at the current scrub position', () => {
+    expect(tailOpacityForProgress(9, 10)).toBe(1);
+  });
+
+  it('fades to the minimum for a position from the very start of a long story', () => {
+    expect(tailOpacityForProgress(null, 1000)).toBeCloseTo(0.5, 2);
+  });
+
+  it('fades older positions more than newer ones', () => {
+    expect(tailOpacityForProgress(2, 10)).toBeLessThan(tailOpacityForProgress(7, 10));
   });
 });

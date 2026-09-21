@@ -87,9 +87,32 @@ export function isPositionVisible(
   mode: TimelineMode,
   currentIndex: number,
 ): boolean {
+  return isEntityInRange(entity, mode, currentIndex, false);
+}
+
+/**
+ * Like isPositionVisible, but ignores the range's end — true for any entity
+ * that has already started for the active medium, even if it has since
+ * ended. Used to draw a character's whole route so far, including positions
+ * it has already left.
+ */
+export function hasPositionStarted(
+  entity: RangedDocumentEntity,
+  mode: TimelineMode,
+  currentIndex: number,
+): boolean {
+  return isEntityInRange(entity, mode, currentIndex, true);
+}
+
+function isEntityInRange(
+  entity: RangedDocumentEntity,
+  mode: TimelineMode,
+  currentIndex: number,
+  ignoreEnd: boolean,
+): boolean {
   const activeRange = mode === 'book' ? entity.chapters : entity.episodes;
   const otherRange = mode === 'book' ? entity.episodes : entity.chapters;
 
   if (activeRange === undefined) return otherRange === undefined;
-  return isRangeReached(activeRange, currentIndex);
+  return isRangeReached(ignoreEnd ? [activeRange[0], null] : activeRange, currentIndex);
 }
