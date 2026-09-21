@@ -244,6 +244,21 @@ describe('MapTimelineControl', () => {
     expect(next).toBeDisabled();
   });
 
+  it('labels the slider handle with the overall chapter index so hovering it shows where you are', () => {
+    render(
+      <MapTimelineControl
+        chapterOptions={chapterOptions('Prologue', 'Bran')}
+        episodeOptions={[]}
+        hasBooks
+        hasSeasons={false}
+        onChange={vi.fn()}
+      />,
+    );
+
+    // MUI renders the label next to the thumb and reveals it on hover/focus/drag.
+    expect(screen.getByText('Chapter 2')).toBeInTheDocument();
+  });
+
   it('moves the scrub position via the arrow keys while the slider itself is focused', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
