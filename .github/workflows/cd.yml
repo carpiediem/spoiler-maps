@@ -39,6 +39,10 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Analytics stays off unless this repository variable is set (Settings >
+          # Secrets and variables > Actions > Variables). It's a public site ID, not a secret.
+          VITE_UMAMI_WEBSITE_ID: ${{ vars.UMAMI_WEBSITE_ID }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

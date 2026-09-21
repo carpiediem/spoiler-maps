@@ -20,6 +20,7 @@ import {
 } from '../../db';
 import { useRangeOptions } from './characters/rangeOptions';
 import { RangeSelect } from './RangeSelect';
+import { track } from '../../lib/analytics';
 
 interface PositionPanelProps {
   storyId: number;
@@ -120,6 +121,7 @@ export function PositionPanel({
       episodeRange,
     }).then((created) => {
       savedPositionIdRef.current = created.id;
+      track('position_added');
     });
   }, [
     characterId,

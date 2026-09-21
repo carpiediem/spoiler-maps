@@ -661,6 +661,7 @@ describe('CharacterItem', () => {
       await user.click(await screen.findByRole('button', { name: /add alias/i }));
 
       expect(await screen.findByText('Unnamed Alias')).toBeInTheDocument();
+      expect(window.umami!.track).toHaveBeenCalledWith('alias_added');
       // Two "Name" fields are visible at once: the character's own, and
       // this alias's — the alias's renders second.
       const [, aliasNameField] = screen.getAllByLabelText('Name');

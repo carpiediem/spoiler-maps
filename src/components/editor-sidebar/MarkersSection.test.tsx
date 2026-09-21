@@ -126,6 +126,7 @@ describe('MarkersSection', () => {
     fireEvent.click(screen.getByRole('button', { name: /add collection/i }));
 
     expect(await screen.findByText('Unnamed Collection')).toBeInTheDocument();
+    expect(window.umami!.track).toHaveBeenCalledWith('marker_set_added');
     expect(screen.getByLabelText('Name')).toBeInTheDocument();
   });
 
@@ -167,6 +168,7 @@ describe('MarkersSection', () => {
     fireEvent.click(screen.getByRole('button', { name: /add marker/i }));
 
     expect(await screen.findByText('Unnamed Marker')).toBeInTheDocument();
+    expect(window.umami!.track).toHaveBeenCalledWith('marker_added');
     expect(screen.getByText(/12\.0000, 34\.0000/)).toBeInTheDocument();
   });
 

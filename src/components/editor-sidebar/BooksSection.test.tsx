@@ -94,6 +94,7 @@ describe('BooksSection', () => {
     await user.click(screen.getByRole('button', { name: /add book/i }));
 
     await screen.findByText('Untitled Book');
+    expect(window.umami!.track).toHaveBeenCalledWith('book_added');
     const [existingTitleField, newTitleField] = screen.getAllByLabelText(/^title$/i);
     await waitFor(() => expect(existingTitleField).not.toBeVisible());
     await waitFor(() => expect(newTitleField).toBeVisible());

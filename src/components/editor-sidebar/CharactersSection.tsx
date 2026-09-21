@@ -21,6 +21,7 @@ import { useRangeOptions } from './characters/rangeOptions';
 import { CharacterItem } from './characters/CharacterItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
 import { SectionLoading } from './SectionLoading';
+import { track } from '../../lib/analytics';
 
 interface CharactersSectionProps {
   storyId: number;
@@ -271,6 +272,7 @@ export function CharactersSection({
       url: null,
       sortOrder: sortOrderAfter(characters!.map((existing) => existing.sortOrder)),
     });
+    track('character_added');
     addEntity(character);
   }
 

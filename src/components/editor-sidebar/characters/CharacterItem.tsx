@@ -33,6 +33,7 @@ import { DeleteConfirmDialog } from '../DeleteConfirmDialog';
 import { SIDEBAR_SECTION_HEADER_HEIGHT, SIDEBAR_SECTION_HEADER_Z_INDEX } from '../SidebarSection';
 import { AliasList } from './AliasList';
 import { PositionList } from './PositionList';
+import { track } from '../../../lib/analytics';
 
 interface CharacterItemProps {
   character: Character;
@@ -161,6 +162,7 @@ export function CharacterItem({
     });
     /* v8 ignore next -- Add Alias is only reachable once aliases have loaded (disabled={aliases === null} on the button), so previous is never actually null here. */
     setAliases((previous) => [...(previous ?? []), created]);
+    track('alias_added');
     setExpandedAliasId(created.id);
   }, []);
 

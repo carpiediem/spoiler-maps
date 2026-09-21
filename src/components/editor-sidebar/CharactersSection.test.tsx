@@ -187,6 +187,7 @@ describe('CharactersSection', () => {
     await user.click(screen.getByRole('button', { name: /add character/i }));
 
     await screen.findByText('Unnamed Character');
+    expect(window.umami!.track).toHaveBeenCalledWith('character_added');
     const [existingNameField, newNameField] = screen.getAllByLabelText(/^name$/i);
     await waitFor(() => expect(existingNameField).not.toBeVisible());
     await waitFor(() => expect(newNameField).toBeVisible());

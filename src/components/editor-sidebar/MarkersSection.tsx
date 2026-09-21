@@ -19,6 +19,7 @@ import { useRangeOptions } from './characters/rangeOptions';
 import { MarkerSetItem } from './markers/MarkerSetItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
 import { SectionLoading } from './SectionLoading';
+import { track } from '../../lib/analytics';
 
 interface MarkersSectionProps {
   storyId: number;
@@ -291,6 +292,7 @@ export function MarkersSection({
   // `markerSets === null` early return.
   const handleAddMarkerSet = useCallback(async () => {
     const markerSet = await createMarkerSet({ storyId, name: '', noIcons: false });
+    track('marker_set_added');
     addEntity(markerSet);
     setMarkersByMarkerSetId((previous) => ({ ...previous, [markerSet.id]: [] }));
   }, [storyId, addEntity]);
@@ -335,6 +337,7 @@ export function MarkersSection({
       /* v8 ignore next -- setId always has an entry (created alongside its marker set, see handleAddMarkerSet) by the time a marker can be added to it. */
       [setId]: [...(previous[setId] ?? []), marker],
     }));
+    track('marker_added');
     setExpandedMarkerId(marker.id);
     setExpandedMarkerSetId(setId);
   }, []);

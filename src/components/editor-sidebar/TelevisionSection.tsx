@@ -13,6 +13,7 @@ import { sortOrderAfter } from '../../db/ordering';
 import { SeasonItem } from './television/SeasonItem';
 import { useExpandableEntityList } from './useExpandableEntityList';
 import { SectionLoading } from './SectionLoading';
+import { track } from '../../lib/analytics';
 
 interface TelevisionSectionProps {
   storyId: number;
@@ -69,6 +70,7 @@ export function TelevisionSection({
   async function handleAddSeason() {
     const sortOrder = sortOrderAfter(seasons!.map((season) => season.sortOrder));
     const season = await createTvSeason({ storyId, url: null, sortOrder });
+    track('season_added');
     addEntity(season);
     setEpisodesBySeasonId((previous) => ({ ...previous, [season.id]: [] }));
   }

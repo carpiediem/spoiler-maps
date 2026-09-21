@@ -29,6 +29,7 @@ import { buildViewMarkerPins } from '../lib/view/viewMarkerPins';
 import { buildStoryTheme } from '../theme';
 import { visuallyHidden } from '../lib/visuallyHidden';
 import './EditScreen.css';
+import { track } from '../lib/analytics';
 
 type LoadState =
   | { status: 'loading' }
@@ -62,6 +63,7 @@ function useLoadedDocument(storyId: number | null, dataUrl: string | null): Load
     load()
       .then((document) => {
         if (signal.aborted) return;
+        if (dataUrl) track('share_link_opened');
         setState({ status: 'ready', document });
       })
       .catch((error: unknown) => {
@@ -155,6 +157,7 @@ export function ViewScreen() {
 
   function handleCloseWelcome() {
     setIsWelcomeOpen(false);
+    track('welcome_dismissed');
   }
 
   if (loadState.status === 'loading') {

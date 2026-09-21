@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { trackOnce } from '../lib/analytics';
 import type { FlatOption } from '../lib/rangeOptions';
 import type { TimelineMode } from '../lib/timelineMode';
 
@@ -115,10 +116,13 @@ export function MapTimelineControl({
   if (!hasBooks && !hasSeasons) return null;
 
   function handleModeChange(_event: unknown, next: TimelineMode | null) {
-    if (next) setModeOverride(next);
+    if (!next) return;
+    trackOnce('timeline_used');
+    setModeOverride(next);
   }
 
   function setIndex(next: number) {
+    trackOnce('timeline_used');
     setIndexOverride({ key: optionsKey, index: Math.min(activeOptions.length, Math.max(1, next)) });
   }
 
@@ -144,6 +148,7 @@ export function MapTimelineControl({
     event.preventDefault();
     event.stopPropagation();
     if (event.repeat) return;
+    trackOnce('timeline_used');
 
     if (heldStepIntervalRef.current !== null) window.clearInterval(heldStepIntervalRef.current);
 

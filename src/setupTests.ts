@@ -1,6 +1,8 @@
 import '@testing-library/jest-dom/vitest';
 import 'fake-indexeddb/auto';
 import { configure } from '@testing-library/react';
+import { afterEach, beforeEach, vi } from 'vitest';
+import { resetTrackedEventsForTests } from './lib/analytics';
 
 // Testing Library's own findBy*/waitFor polling has its own default
 // timeout (1000ms) — separate from (and much tighter than) vitest's
@@ -18,3 +20,14 @@ document.elementFromPoint = () => null;
 Range.prototype.getClientRects = () => ({ item: () => null, length: 0 }) as unknown as DOMRectList;
 Range.prototype.getBoundingClientRect = () =>
   ({ x: 0, y: 0, width: 0, height: 0, top: 0, right: 0, bottom: 0, left: 0 }) as DOMRect;
+
+// Stands in for the Umami tracker, so tests can assert which analytics
+// events fired (see lib/analytics.ts) without loading the real script.
+beforeEach(() => {
+  window.umami = { track: vi.fn() };
+  resetTrackedEventsForTests();
+});
+
+afterEach(() => {
+  delete window.umami;
+});
