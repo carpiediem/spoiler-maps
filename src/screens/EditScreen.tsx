@@ -317,6 +317,16 @@ export function EditScreen() {
     setTailDraftPoints(null);
   }
 
+  // Saving a tail writes it straight to the DB (via PositionPanel's own
+  // autosave effect), but CharactersSection's map pins/tails come from a
+  // snapshot fetched on the last positionsVersion bump — without this, the
+  // animated tail on the map would keep its pre-edit shape until the whole
+  // Position panel is closed. Reuses that same refetch mechanism rather
+  // than threading the live points down as their own prop.
+  function handleTailSaved() {
+    setPositionsVersion((previous) => previous + 1);
+  }
+
   /* v8 ignore next 3 -- MapView.test.tsx covers this wiring at the unit level (onActiveMarkerDragEnd); a real drag gesture isn't practical to simulate through jsdom's mouse events in a full-App integration test. */
   const handleActiveMarkerDragEnd = useCallback((position: LatLng) => {
     activeMarkerRef.current?.onDrag(position);
@@ -503,6 +513,7 @@ export function EditScreen() {
             tailDraftPoints={tailDraftPoints ?? []}
             onStartDrawingTail={handleStartDrawingTail}
             onFinishDrawingTail={handleFinishDrawingTail}
+            onTailSaved={handleTailSaved}
             timelineMode={timelineMode}
             timelineIndex={timelineIndex}
             onVisibleMarkersChange={setMarkerPins}

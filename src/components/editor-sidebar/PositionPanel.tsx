@@ -39,6 +39,8 @@ interface PositionPanelProps {
   onStartDrawingTail: (initialPoints: LatLng[]) => void;
   /** Called when Save or Cancel is clicked, to leave drawing mode either way. */
   onFinishDrawingTail: () => void;
+  /** Called right after Save is clicked, so the map's already-rendered tail for this character — sourced from the last DB fetch, not this panel's own state — refreshes instead of keeping the pre-edit shape until the panel is closed. */
+  onTailSaved: () => void;
 }
 
 export function PositionPanel({
@@ -52,6 +54,7 @@ export function PositionPanel({
   tailDraftPoints,
   onStartDrawingTail,
   onFinishDrawingTail,
+  onTailSaved,
 }: PositionPanelProps) {
   const { chapterOptions, episodeOptions, hasBooks, hasSeasons } = useRangeOptions(storyId);
 
@@ -167,6 +170,7 @@ export function PositionPanel({
               onClick={() => {
                 setTail(tailDraftPoints);
                 onFinishDrawingTail();
+                onTailSaved();
               }}
             >
               Save
