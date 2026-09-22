@@ -14,11 +14,13 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import {
   createCharacterPosition,
+  deleteCharacterPosition,
   updateCharacterPosition,
   type CharacterPosition,
   type LatLng,
 } from '../../db';
 import { useRangeOptions } from './characters/rangeOptions';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { RangeSelect } from './RangeSelect';
 import { track } from '../../lib/analytics';
 
@@ -84,6 +86,11 @@ export function PositionPanel({
   // Skips this effect's very first run when opening an existing position —
   // nothing has changed yet, so there's nothing worth writing back.
   const hasRunEffectRef = useRef(false);
+  // Mirrors savedPositionIdRef !== null, but as state — reactive so the
+  // Delete button appears the moment a brand-new position is first
+  // persisted, not just when opening an already-existing one.
+  const [hasSavedPosition, setHasSavedPosition] = useState(existingPosition !== null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (position === null) return;
@@ -121,6 +128,7 @@ export function PositionPanel({
       episodeRange,
     }).then((created) => {
       savedPositionIdRef.current = created.id;
+      setHasSavedPosition(true);
       track('position_added');
     });
   }, [
@@ -263,6 +271,24 @@ export function PositionPanel({
           </Typography>
         </Box>
       )}
+
+      {hasSavedPosition && (
+        <Button size="small" color="error" onClick={() => setIsDeleteConfirmOpen(true)} fullWidth>
+          Delete Position
+        </Button>
+      )}
+
+      <DeleteConfirmDialog
+        open={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={() => {
+          setIsDeleteConfirmOpen(false);
+          deleteCharacterPosition(savedPositionIdRef.current!);
+          onBack();
+        }}
+        title="Delete this position?"
+        description="This removes the position, its tail, and its chapter/episode ranges. This can't be undone."
+      />
     </Stack>
   );
 }
