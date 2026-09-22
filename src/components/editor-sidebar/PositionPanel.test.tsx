@@ -75,6 +75,7 @@ function DraggableWrapper({
   onStartDrawingTail,
   onFinishDrawingTail,
   onTailSaved,
+  onBack,
 }: {
   storyId: number;
   characterId: number;
@@ -84,6 +85,7 @@ function DraggableWrapper({
   onStartDrawingTail?: () => void;
   onFinishDrawingTail?: () => void;
   onTailSaved?: () => void;
+  onBack?: () => void;
 }) {
   const [position, setPosition] = useState<LatLng | null>(
     existingPosition?.position ?? INITIAL_POSITION,
@@ -95,7 +97,7 @@ function DraggableWrapper({
         characterId={characterId}
         index={1}
         position={position}
-        onBack={vi.fn()}
+        onBack={onBack ?? vi.fn()}
         existingPosition={existingPosition}
         isDrawingTail={isDrawingTail}
         tailDraftPoints={tailDraftPoints}
@@ -851,5 +853,99 @@ describe('PositionPanel', () => {
     const allPositions = await listCharacterPositionsForCharacter(characterId);
     expect(allPositions).toHaveLength(1);
     expect(allPositions[0]!.id).toBe(existingPosition.id);
+  });
+
+  it('shows no Delete Position button until a position has actually been saved', async () => {
+    const storyId = await seedStoryId();
+    render(
+      <PositionPanel
+        storyId={storyId}
+        characterId={1}
+        index={1}
+        position={null}
+        onBack={vi.fn()}
+        existingPosition={null}
+        isDrawingTail={false}
+        tailDraftPoints={[]}
+        onStartDrawingTail={vi.fn()}
+        onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
+      />,
+    );
+
+    await act(async () => {});
+    expect(screen.queryByRole('button', { name: /delete position/i })).not.toBeInTheDocument();
+  });
+
+  it('shows Delete Position once a brand-new position is first saved (the marker moves)', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const user = userEvent.setup();
+    render(<DraggableWrapper storyId={storyId} characterId={characterId} />);
+
+    expect(screen.queryByRole('button', { name: /delete position/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /simulate drag 1/i }));
+
+    expect(await screen.findByRole('button', { name: /delete position/i })).toBeInTheDocument();
+  });
+
+  it('deletes an existing position and calls onBack after confirming', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onBack = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+        onBack={onBack}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /delete position/i }));
+    await user.click(await screen.findByRole('button', { name: /^delete$/i }));
+
+    expect(onBack).toHaveBeenCalledTimes(1);
+    await waitFor(async () => {
+      expect(await listCharacterPositionsForCharacter(characterId)).toEqual([]);
+    });
+  });
+
+  it('keeps the position when the delete confirmation is cancelled', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onBack = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+        onBack={onBack}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /delete position/i }));
+    await user.click(await screen.findByRole('button', { name: /^cancel$/i }));
+
+    expect(onBack).not.toHaveBeenCalled();
+    expect(await listCharacterPositionsForCharacter(characterId)).toHaveLength(1);
   });
 });
