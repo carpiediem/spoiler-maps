@@ -594,8 +594,9 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 
-    // Drawing mode ends and the tail button reappears.
-    expect(await screen.findByRole('button', { name: /add a tail/i })).toBeInTheDocument();
+    // Drawing mode ends and the tail button reappears, now reading "Edit
+    // tail" since a (non-empty) tail was just saved.
+    expect(await screen.findByRole('button', { name: /edit tail/i })).toBeInTheDocument();
   }, 10000);
 
   it('draws, saves, and renders a marker area at 50% opacity', async () => {
