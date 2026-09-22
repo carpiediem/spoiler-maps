@@ -480,6 +480,36 @@ describe('PositionPanel', () => {
     });
   });
 
+  it('labels the button "Edit tail" and seeds the draft with the saved tail when one already exists', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      note: null,
+      tail: [{ lat: 40, lng: -99 }],
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const user = userEvent.setup();
+    const onStartDrawingTail = vi.fn();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+        onStartDrawingTail={onStartDrawingTail}
+      />,
+    );
+
+    const tailButton = screen.getByRole('button', { name: /edit tail/i });
+    await user.hover(tailButton);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Edit tail');
+
+    await user.click(tailButton);
+    expect(onStartDrawingTail).toHaveBeenCalledWith([{ lat: 40, lng: -99 }]);
+  });
+
   it('shows Save/Cancel instead of the tail button while drawing, and Save persists the drawn points', async () => {
     const { storyId, characterId } = await seedCharacter();
     const onFinishDrawingTail = vi.fn();

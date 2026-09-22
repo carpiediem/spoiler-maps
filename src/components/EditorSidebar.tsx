@@ -113,7 +113,8 @@ interface EditorSidebarProps {
   isDrawingTail: boolean;
   /** Points clicked so far while drawing a tail. */
   tailDraftPoints: LatLng[];
-  onStartDrawingTail: () => void;
+  /** Called with the position's already-saved tail (or [] if it has none) to seed the draft when entering drawing/editing mode. */
+  onStartDrawingTail: (initialPoints: LatLng[]) => void;
   /** Called when Save or Cancel is clicked, to leave drawing mode either way. */
   onFinishDrawingTail: () => void;
   /** The map timeline control's current mode, used to filter which character positions show as map pins. */

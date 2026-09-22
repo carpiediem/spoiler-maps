@@ -300,8 +300,11 @@ export function EditScreen() {
     setPositionsVersion((previous) => previous + 1);
   }
 
-  function handleStartDrawingTail() {
-    setTailDraftPoints([]);
+  // Seeded with the position's already-saved tail (if any), so drawing mode
+  // is really editing mode: existing waypoints start out draggable/deletable
+  // on the map instead of being discarded the moment it's entered.
+  function handleStartDrawingTail(initialPoints: LatLng[]) {
+    setTailDraftPoints(initialPoints);
   }
 
   // Only reachable while drawing: MapView's click-catching listener is only
@@ -456,6 +459,7 @@ export function EditScreen() {
               onCharacterPositionPinClick={handlePinClick}
               tailDraftPoints={tailDraftPoints}
               onTailPointClick={handleTailPointClick}
+              onTailDraftPointsChange={setTailDraftPoints}
               tailColor={activePosition?.color ?? null}
               markerPins={markerPins}
               activeMarkerPin={activeMarker}

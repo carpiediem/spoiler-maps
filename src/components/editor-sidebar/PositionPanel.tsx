@@ -35,7 +35,8 @@ interface PositionPanelProps {
   isDrawingTail: boolean;
   /** Points clicked so far while drawing a tail. */
   tailDraftPoints: LatLng[];
-  onStartDrawingTail: () => void;
+  /** Called with the position's already-saved tail (or [] if it has none) to seed the draft when entering drawing/editing mode. */
+  onStartDrawingTail: (initialPoints: LatLng[]) => void;
   /** Called when Save or Cancel is clicked, to leave drawing mode either way. */
   onFinishDrawingTail: () => void;
 }
@@ -175,12 +176,12 @@ export function PositionPanel({
             </Button>
           </Stack>
         ) : (
-          <Tooltip title="Add a tail">
+          <Tooltip title={tail && tail.length > 0 ? 'Edit tail' : 'Add a tail'}>
             <span>
               <IconButton
                 size="small"
-                aria-label="Add a tail"
-                onClick={onStartDrawingTail}
+                aria-label={tail && tail.length > 0 ? 'Edit tail' : 'Add a tail'}
+                onClick={() => onStartDrawingTail(tail ?? [])}
                 disabled={position === null}
               >
                 <RouteIcon fontSize="small" />

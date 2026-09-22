@@ -8,7 +8,7 @@ import {
 import { act, render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import type { Marker } from '../db';
+import type { LatLng, Marker } from '../db';
 import { DEFAULT_CHARACTER_COLOR } from '../lib/characterColor';
 import { MapErrorBoundary } from './MapErrorBoundary';
 import { MapView } from './MapView';
@@ -531,7 +531,7 @@ describe('MapView', () => {
     expect(onTailPointClick).not.toHaveBeenCalled();
   });
 
-  it('renders the in-progress tail as a colored polyline with a dot per point', () => {
+  it('renders the in-progress tail as a colored polyline with a draggable marker per waypoint', () => {
     const mapRef = createRef<LeafletMap | null>();
     render(
       <MapView
@@ -549,17 +549,111 @@ describe('MapView', () => {
     );
 
     let polyline: LeafletPolyline | undefined;
-    const circleMarkers: LeafletCircleMarker[] = [];
+    const markers: LeafletMarker[] = [];
     mapRef.current!.eachLayer((layer) => {
       if (layer instanceof LeafletPolyline) polyline = layer;
-      if (layer instanceof LeafletCircleMarker) circleMarkers.push(layer);
+      if (layer instanceof LeafletMarker) markers.push(layer);
     });
 
     expect(polyline).toBeDefined();
     expect((polyline!.options as { color?: string }).color).toBe('#00ff00');
     expect(polyline!.getLatLngs()).toHaveLength(3);
-    expect(circleMarkers).toHaveLength(2);
-    expect((circleMarkers[0]!.options as { color?: string }).color).toBe('#00ff00');
+    expect(markers).toHaveLength(2);
+    expect(markers[0]!.options.draggable).toBe(true);
+  });
+
+  it('drags a tail waypoint to a new position, reporting the full updated list', () => {
+    const onTailDraftPointsChange = vi.fn();
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        draftPosition={{ lat: 40, lng: -100 }}
+        tailDraftPoints={[
+          { lat: 41, lng: -101 },
+          { lat: 42, lng: -102 },
+        ]}
+        onTailDraftPointsChange={onTailDraftPointsChange}
+      />,
+    );
+
+    const markers: LeafletMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) markers.push(layer);
+    });
+
+    act(() => {
+      markers[1]!.setLatLng([50, -110]);
+      markers[1]!.fire('dragend');
+    });
+
+    expect(onTailDraftPointsChange).toHaveBeenCalledWith([
+      { lat: 41, lng: -101 },
+      { lat: 50, lng: -110 },
+    ]);
+  });
+
+  it('removes a tail waypoint when it’s clicked', () => {
+    const onTailDraftPointsChange = vi.fn();
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        draftPosition={{ lat: 40, lng: -100 }}
+        tailDraftPoints={[
+          { lat: 41, lng: -101 },
+          { lat: 42, lng: -102 },
+        ]}
+        onTailDraftPointsChange={onTailDraftPointsChange}
+      />,
+    );
+
+    const markers: LeafletMarker[] = [];
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletMarker) markers.push(layer);
+    });
+
+    act(() => markers[0]!.fire('click'));
+
+    expect(onTailDraftPointsChange).toHaveBeenCalledWith([{ lat: 42, lng: -102 }]);
+  });
+
+  it('inserts a waypoint where the tail line itself is clicked, in the right segment', () => {
+    const onTailDraftPointsChange = vi.fn();
+    const mapRef = createRef<LeafletMap | null>();
+    render(
+      <MapView
+        tileUrl={null}
+        center={center}
+        zoom={5}
+        mapRef={mapRef}
+        draftPosition={{ lat: 0, lng: 0 }}
+        tailDraftPoints={[
+          { lat: 0, lng: 10 },
+          { lat: 0, lng: 20 },
+        ]}
+        onTailDraftPointsChange={onTailDraftPointsChange}
+      />,
+    );
+
+    let polyline: LeafletPolyline | undefined;
+    mapRef.current!.eachLayer((layer) => {
+      if (layer instanceof LeafletPolyline) polyline = layer;
+    });
+
+    act(() => polyline!.fire('click', { latlng: { lat: 0.1, lng: 15 } as unknown as LatLng }));
+
+    expect(onTailDraftPointsChange).toHaveBeenCalledWith([
+      { lat: 0, lng: 10 },
+      { lat: 0.1, lng: 15 },
+      { lat: 0, lng: 20 },
+    ]);
   });
 
   it('does not render a tail when there is no draft position yet', () => {
