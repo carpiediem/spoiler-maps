@@ -1529,6 +1529,99 @@ describe('CharactersSection', () => {
     expect(onEditPosition).toHaveBeenCalledWith(character.id, 1, position, null);
   });
 
+  it('while its Position panel is open, ignores the timeline: the edited position is the pin, the others are dots, and only its tail is drawn', async () => {
+    const storyId = await seedStoryId();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    await createChapter({ bookId: book.id, name: 'Prologue', url: null, sortOrder: 0 });
+    const chapter2 = await createChapter({
+      bookId: book.id,
+      name: 'Bran',
+      url: null,
+      sortOrder: 1,
+    });
+    const character = await createCharacter({
+      storyId,
+      name: 'Jon Snow',
+      group: null,
+      icon: null,
+      color: '#ff0000',
+      sortOrder: 21,
+      url: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 1, lng: 1 },
+      dead: false,
+      note: 'Winterfell',
+      tail: [{ lat: 0.5, lng: 0.5 }],
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const editedPosition = await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 2, lng: 2 },
+      dead: false,
+      note: null,
+      tail: [{ lat: 1.5, lng: 1.5 }],
+      chapterRange: { startChapterId: chapter2.id, endChapterId: null },
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 3, lng: 3 },
+      dead: false,
+      note: null,
+      tail: null,
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const onVisiblePositionsChange = vi.fn();
+    const onVisibleTailsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={onVisiblePositionsChange}
+        onVisibleTailsChange={onVisibleTailsChange}
+        timelineMode="book"
+        timelineIndex={1}
+        editingCharacterId={character.id}
+        editingPositionId={editedPosition.id}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByText('Jon Snow'));
+
+    await waitFor(() => {
+      const pins = onVisiblePositionsChange.mock.lastCall?.[0];
+      expect(pins?.map((pin: { label: string; style?: string }) => [pin.label, pin.style])).toEqual(
+        [
+          ['', 'dot'],
+          ['2', 'pin'],
+          ['', 'dot'],
+        ],
+      );
+      // Non-focused positions are identified by their index, plus the note if any.
+      expect(pins?.[0].tooltip).toBe('1: Winterfell');
+      expect(pins?.[1].tooltip).toBeUndefined();
+      expect(pins?.[2].tooltip).toBe('3');
+    });
+    const tails = onVisibleTailsChange.mock.lastCall?.[0];
+    expect(tails).toHaveLength(1);
+    expect(tails[0].points[0]).toEqual({ lat: 2, lng: 2 });
+    expect(tails[0].opacity).toBe(1);
+  });
+
   it('hides an expanded character’s position once the timeline is before its start chapter', async () => {
     const storyId = await seedStoryId();
     const book = await createBook({

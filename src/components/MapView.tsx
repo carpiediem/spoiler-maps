@@ -392,7 +392,9 @@ export function MapView({
               }}
             >
               {/* Never falls back to showing the lat/lng — no note means no tooltip at all. */}
-              {pin.characterPosition.note && <Tooltip>{pin.characterPosition.note}</Tooltip>}
+              {(pin.tooltip ?? pin.characterPosition.note) && (
+                <Tooltip>{pin.tooltip ?? pin.characterPosition.note}</Tooltip>
+              )}
             </CircleMarker>
           );
         }
@@ -421,7 +423,9 @@ export function MapView({
               click: () => onCharacterPositionPinClick?.(pin),
             }}
           >
-            {pin.characterPosition.note && <Tooltip>{pin.characterPosition.note}</Tooltip>}
+            {(pin.tooltip ?? pin.characterPosition.note) && (
+              <Tooltip>{pin.tooltip ?? pin.characterPosition.note}</Tooltip>
+            )}
           </Marker>
         );
       })}

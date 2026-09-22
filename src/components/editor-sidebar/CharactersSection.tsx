@@ -47,6 +47,10 @@ interface CharactersSectionProps {
   timelineMode: TimelineMode;
   /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
   timelineIndex: number;
+  /** The character whose Position panel is open, if any. While it is, the map ignores the timeline for that character: the position being edited shows as the numbered pin, its other positions as small dots, and only the edited position's own tail is drawn. */
+  editingCharacterId?: number | null;
+  /** The position open in that panel, or null when adding a new one. */
+  editingPositionId?: number | null;
   /** Whether the Characters accordion itself is expanded; collapsing it also collapses whichever character was expanded inside it. */
   sectionExpanded: boolean;
 }
@@ -62,6 +66,8 @@ export function CharactersSection({
   onVisibleTailsChange,
   timelineMode,
   timelineIndex,
+  editingCharacterId = null,
+  editingPositionId = null,
   sectionExpanded,
 }: CharactersSectionProps) {
   useRenderLoopWatchdog('CharactersSection');
@@ -152,30 +158,65 @@ export function CharactersSection({
       // An active alias's own color entirely replaces the character's — not
       // just filling in when the alias left it unset.
       const color = activeAlias ? (activeAlias.color ?? null) : (character?.color ?? null);
-      const characterTails: CharacterTailOverlay[] = [];
-      let precedingPosition: CharacterPosition | undefined;
-      positions?.forEach((position, positionIndex) => {
-        if (!isPositionVisible(position)) return;
-
-        pins.push({
-          characterId: expandedCharacterId,
-          characterPosition: position,
-          label: String(positionIndex + 1),
-          positionIndex: positionIndex + 1,
-          color,
-        });
-
-        if (hasTailToDraw(position, precedingPosition)) {
-          characterTails.push({
+      if (editingCharacterId === expandedCharacterId) {
+        // While this character's Position panel is open the timeline is
+        // ignored, so the position being edited can't be scrubbed out of
+        // view: it's the one numbered pin (MapView makes it draggable), its
+        // siblings are small dots for context, and only its own tail shows.
+        positions?.forEach((position, positionIndex) => {
+          const isEditing = position.id === editingPositionId;
+          pins.push({
             characterId: expandedCharacterId,
-            points: buildTailPoints(position, precedingPosition),
+            characterPosition: position,
+            label: isEditing ? String(positionIndex + 1) : '',
+            positionIndex: positionIndex + 1,
             color,
-            opacity: 0,
+            style: isEditing ? 'pin' : 'dot',
+            // Dots carry no label, so their tooltip says which position they
+            // are: "3: note", or just "3" without a note.
+            tooltip: isEditing
+              ? undefined
+              : position.note
+                ? `${positionIndex + 1}: ${position.note}`
+                : String(positionIndex + 1),
           });
-        }
-        precedingPosition = position;
-      });
-      tails.push(...applyTailOpacityGradient(characterTails));
+
+          const precedingPosition = positions[positionIndex - 1];
+          if (isEditing && hasTailToDraw(position, precedingPosition)) {
+            tails.push({
+              characterId: expandedCharacterId,
+              points: buildTailPoints(position, precedingPosition),
+              color,
+              opacity: 1,
+            });
+          }
+        });
+      } else {
+        const characterTails: CharacterTailOverlay[] = [];
+        let precedingPosition: CharacterPosition | undefined;
+        positions?.forEach((position, positionIndex) => {
+          if (!isPositionVisible(position)) return;
+
+          pins.push({
+            characterId: expandedCharacterId,
+            characterPosition: position,
+            label: String(positionIndex + 1),
+            positionIndex: positionIndex + 1,
+            color,
+          });
+
+          if (hasTailToDraw(position, precedingPosition)) {
+            characterTails.push({
+              characterId: expandedCharacterId,
+              points: buildTailPoints(position, precedingPosition),
+              color,
+              opacity: 0,
+            });
+          }
+          precedingPosition = position;
+        });
+        tails.push(...applyTailOpacityGradient(characterTails));
+      }
     }
 
     // A visible-but-collapsed character shows its last position as an
@@ -238,6 +279,8 @@ export function CharactersSection({
     characters,
     timelineMode,
     timelineIndex,
+    editingCharacterId,
+    editingPositionId,
     chapterOptions,
     episodeOptions,
     onVisiblePositionsChange,
