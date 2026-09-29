@@ -20,6 +20,7 @@ import { DEFAULT_MARKER_COLOR } from '../lib/markerColor';
 import type { MarkerMapPin } from '../lib/markerPins';
 import { buildMarkerIcon, buildPinIcon, buildSkullIcon } from '../lib/pinIcon';
 import { useRenderLoopWatchdog } from '../lib/renderLoopWatchdog';
+import { nearestSegmentIndex } from '../lib/tailEditing';
 import { attachTailFlowClass } from '../lib/tailFlowClass';
 import { detectTileUrlTemplateKind } from '../lib/tileUrl';
 import { QuadkeyTileLayer } from './QuadkeyTileLayer';
@@ -97,6 +98,18 @@ const AREA_VERTEX_ICON = divIcon({
   iconAnchor: [6, 6],
 });
 
+// A small draggable, clickable-to-delete dot for each waypoint of a tail
+// being drawn/edited — colored like the tail itself (unlike AREA_VERTEX_ICON)
+// so it reads as part of that character's route.
+function buildTailWaypointIcon(color: string) {
+  return divIcon({
+    className: '',
+    html: `<div style="width: 10px; height: 10px; border-radius: 50%; background: ${color}; border: 2px solid white; box-shadow: 0 0 3px rgba(0,0,0,0.6);"></div>`,
+    iconSize: [10, 10],
+    iconAnchor: [5, 5],
+  });
+}
+
 // A polygon area is shown at 50% opacity so the underlying map tiles stay
 // legible beneath it.
 const AREA_FILL_OPACITY = 0.5;
@@ -128,8 +141,10 @@ interface MapViewProps {
   onCharacterPositionPinClick?: (pin: CharacterPositionPin) => void;
   /** Points clicked so far while drawing a tail; null when not in drawing mode. */
   tailDraftPoints?: LatLng[] | null;
-  /** Called with the clicked lat/lng while drawing a tail. */
+  /** Called with the clicked lat/lng while drawing a tail, appending a new waypoint at the end (a plain click on the map, not on the line or an existing waypoint). */
   onTailPointClick?: (point: LatLng) => void;
+  /** Called with the full updated waypoint list after a waypoint is dragged, removed (via clicking it), or inserted mid-line (via clicking the line itself). */
+  onTailDraftPointsChange?: (points: LatLng[]) => void;
   /** The color of the character whose tail is being drawn. */
   tailColor?: string | null;
   /** Static (non-draggable) pins for every marker toggled visible on the map, excluding whichever one is currently selected (see activeMarkerPin). */
@@ -269,6 +284,7 @@ export function MapView({
   onCharacterPositionPinClick,
   tailDraftPoints,
   onTailPointClick,
+  onTailDraftPointsChange,
   tailColor,
   markerPins,
   activeMarkerPin,
@@ -344,16 +360,50 @@ export function MapView({
               color: tailColor ?? DEFAULT_CHARACTER_COLOR,
               weight: CHARACTER_TAIL_WEIGHT,
             }}
+            eventHandlers={
+              onTailDraftPointsChange
+                ? {
+                    // Inserts a new waypoint into whichever segment the
+                    // click landed nearest, rather than always appending to
+                    // the end — the line itself stops the click from also
+                    // reaching MapClickCatcher's map-wide handler below.
+                    click: (event) => {
+                      const fullPoints = [draftPosition, ...tailDraftPoints];
+                      const insertAt = nearestSegmentIndex(fullPoints, {
+                        lat: event.latlng.lat,
+                        lng: event.latlng.lng,
+                      });
+                      const next = [...tailDraftPoints];
+                      next.splice(insertAt, 0, { lat: event.latlng.lat, lng: event.latlng.lng });
+                      onTailDraftPointsChange(next);
+                    },
+                  }
+                : undefined
+            }
           />
           {tailDraftPoints.map((point, index) => (
-            <CircleMarker
+            <Marker
               key={index}
-              center={[point.lat, point.lng]}
-              radius={4}
-              pathOptions={{
-                color: tailColor ?? DEFAULT_CHARACTER_COLOR,
-                fillColor: tailColor ?? DEFAULT_CHARACTER_COLOR,
-                fillOpacity: 1,
+              position={[point.lat, point.lng]}
+              icon={buildTailWaypointIcon(tailColor ?? DEFAULT_CHARACTER_COLOR)}
+              draggable
+              eventHandlers={{
+                dragend: (event) => {
+                  const latLng = (event.target as LeafletMarker).getLatLng();
+                  onTailDraftPointsChange?.(
+                    tailDraftPoints.map((existing, existingIndex) =>
+                      existingIndex === index ? { lat: latLng.lat, lng: latLng.lng } : existing,
+                    ),
+                  );
+                },
+                // Leaflet suppresses the click that would otherwise follow
+                // an actual drag, so this only fires on a genuine
+                // (non-drag) click.
+                click: () => {
+                  onTailDraftPointsChange?.(
+                    tailDraftPoints.filter((_, existingIndex) => existingIndex !== index),
+                  );
+                },
               }}
             />
           ))}

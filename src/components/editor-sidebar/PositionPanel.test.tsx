@@ -74,6 +74,7 @@ function DraggableWrapper({
   tailDraftPoints = [],
   onStartDrawingTail,
   onFinishDrawingTail,
+  onTailSaved,
 }: {
   storyId: number;
   characterId: number;
@@ -82,6 +83,7 @@ function DraggableWrapper({
   tailDraftPoints?: LatLng[];
   onStartDrawingTail?: () => void;
   onFinishDrawingTail?: () => void;
+  onTailSaved?: () => void;
 }) {
   const [position, setPosition] = useState<LatLng | null>(
     existingPosition?.position ?? INITIAL_POSITION,
@@ -99,6 +101,7 @@ function DraggableWrapper({
         tailDraftPoints={tailDraftPoints}
         onStartDrawingTail={onStartDrawingTail ?? vi.fn()}
         onFinishDrawingTail={onFinishDrawingTail ?? vi.fn()}
+        onTailSaved={onTailSaved ?? vi.fn()}
       />
       <button onClick={() => setPosition({ lat: 51.5, lng: -0.1278 })}>Simulate drag 1</button>
       <button onClick={() => setPosition({ lat: 40.7128, lng: -74.006 })}>Simulate drag 2</button>
@@ -122,6 +125,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
         onBack={onBack}
       />,
     );
@@ -146,6 +150,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -168,6 +173,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -190,6 +196,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -229,6 +236,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -269,6 +277,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -305,6 +314,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -332,6 +342,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -365,6 +376,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -394,6 +406,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -419,6 +432,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -444,6 +458,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={onStartDrawingTail}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -467,6 +482,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={onStartDrawingTail}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 
@@ -478,6 +494,36 @@ describe('PositionPanel', () => {
     await waitFor(async () => {
       expect(await listCharacterPositionsForCharacter(characterId)).toHaveLength(1);
     });
+  });
+
+  it('labels the button "Edit tail" and seeds the draft with the saved tail when one already exists', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const existingPosition = await createCharacterPosition({
+      characterId,
+      position: INITIAL_POSITION,
+      dead: false,
+      note: null,
+      tail: [{ lat: 40, lng: -99 }],
+      chapterRange: null,
+      episodeRange: null,
+    });
+    const user = userEvent.setup();
+    const onStartDrawingTail = vi.fn();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        existingPosition={existingPosition}
+        onStartDrawingTail={onStartDrawingTail}
+      />,
+    );
+
+    const tailButton = screen.getByRole('button', { name: /edit tail/i });
+    await user.hover(tailButton);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Edit tail');
+
+    await user.click(tailButton);
+    expect(onStartDrawingTail).toHaveBeenCalledWith([{ lat: 40, lng: -99 }]);
   });
 
   it('shows Save/Cancel instead of the tail button while drawing, and Save persists the drawn points', async () => {
@@ -513,9 +559,30 @@ describe('PositionPanel', () => {
     });
   });
 
-  it('discards the drawn points when Cancel is clicked', async () => {
+  it('calls onTailSaved when Save is clicked', async () => {
+    const { storyId, characterId } = await seedCharacter();
+    const onTailSaved = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <DraggableWrapper
+        storyId={storyId}
+        characterId={characterId}
+        isDrawingTail
+        tailDraftPoints={[{ lat: 51.5, lng: -0.1278 }]}
+        onTailSaved={onTailSaved}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /simulate drag 1/i }));
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(onTailSaved).toHaveBeenCalledTimes(1);
+  });
+
+  it('discards the drawn points when Cancel is clicked, without calling onTailSaved', async () => {
     const { storyId, characterId } = await seedCharacter();
     const onFinishDrawingTail = vi.fn();
+    const onTailSaved = vi.fn();
     const user = userEvent.setup();
     render(
       <DraggableWrapper
@@ -524,12 +591,14 @@ describe('PositionPanel', () => {
         isDrawingTail
         tailDraftPoints={[{ lat: 51.5, lng: -0.1278 }]}
         onFinishDrawingTail={onFinishDrawingTail}
+        onTailSaved={onTailSaved}
       />,
     );
 
     await user.click(screen.getByRole('button', { name: /^cancel$/i }));
 
     expect(onFinishDrawingTail).toHaveBeenCalledTimes(1);
+    expect(onTailSaved).not.toHaveBeenCalled();
     // Nothing has moved yet, so no position row exists at all — proving
     // Cancel didn't trigger a save.
     expect(await listCharacterPositionsForCharacter(characterId)).toEqual([]);
@@ -549,6 +618,7 @@ describe('PositionPanel', () => {
         tailDraftPoints={[]}
         onStartDrawingTail={vi.fn()}
         onFinishDrawingTail={vi.fn()}
+        onTailSaved={vi.fn()}
       />,
     );
 

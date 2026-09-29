@@ -35,9 +35,12 @@ interface PositionPanelProps {
   isDrawingTail: boolean;
   /** Points clicked so far while drawing a tail. */
   tailDraftPoints: LatLng[];
-  onStartDrawingTail: () => void;
+  /** Called with the position's already-saved tail (or [] if it has none) to seed the draft when entering drawing/editing mode. */
+  onStartDrawingTail: (initialPoints: LatLng[]) => void;
   /** Called when Save or Cancel is clicked, to leave drawing mode either way. */
   onFinishDrawingTail: () => void;
+  /** Called right after Save is clicked, so the map's already-rendered tail for this character — sourced from the last DB fetch, not this panel's own state — refreshes instead of keeping the pre-edit shape until the panel is closed. */
+  onTailSaved: () => void;
 }
 
 export function PositionPanel({
@@ -51,6 +54,7 @@ export function PositionPanel({
   tailDraftPoints,
   onStartDrawingTail,
   onFinishDrawingTail,
+  onTailSaved,
 }: PositionPanelProps) {
   const { chapterOptions, episodeOptions, hasBooks, hasSeasons } = useRangeOptions(storyId);
 
@@ -166,6 +170,7 @@ export function PositionPanel({
               onClick={() => {
                 setTail(tailDraftPoints);
                 onFinishDrawingTail();
+                onTailSaved();
               }}
             >
               Save
@@ -175,12 +180,12 @@ export function PositionPanel({
             </Button>
           </Stack>
         ) : (
-          <Tooltip title="Add a tail">
+          <Tooltip title={tail && tail.length > 0 ? 'Edit tail' : 'Add a tail'}>
             <span>
               <IconButton
                 size="small"
-                aria-label="Add a tail"
-                onClick={onStartDrawingTail}
+                aria-label={tail && tail.length > 0 ? 'Edit tail' : 'Add a tail'}
+                onClick={() => onStartDrawingTail(tail ?? [])}
                 disabled={position === null}
               >
                 <RouteIcon fontSize="small" />

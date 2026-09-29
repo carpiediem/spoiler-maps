@@ -113,9 +113,12 @@ interface EditorSidebarProps {
   isDrawingTail: boolean;
   /** Points clicked so far while drawing a tail. */
   tailDraftPoints: LatLng[];
-  onStartDrawingTail: () => void;
+  /** Called with the position's already-saved tail (or [] if it has none) to seed the draft when entering drawing/editing mode. */
+  onStartDrawingTail: (initialPoints: LatLng[]) => void;
   /** Called when Save or Cancel is clicked, to leave drawing mode either way. */
   onFinishDrawingTail: () => void;
+  /** Called right after Save is clicked, so the map's already-rendered tail for this character refreshes instead of keeping the pre-edit shape until the panel is closed. */
+  onTailSaved: () => void;
   /** The map timeline control's current mode, used to filter which character positions show as map pins. */
   timelineMode: TimelineMode;
   /** The map timeline control's current scrub position (a flat 1-based chapter/episode index). */
@@ -157,6 +160,7 @@ export function EditorSidebar({
   tailDraftPoints,
   onStartDrawingTail,
   onFinishDrawingTail,
+  onTailSaved,
   timelineMode,
   timelineIndex,
   onVisibleMarkersChange,
@@ -477,6 +481,7 @@ export function EditorSidebar({
               tailDraftPoints={tailDraftPoints}
               onStartDrawingTail={onStartDrawingTail}
               onFinishDrawingTail={onFinishDrawingTail}
+              onTailSaved={onTailSaved}
             />
           )}
         </Box>
