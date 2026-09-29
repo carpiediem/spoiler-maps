@@ -1,5 +1,47 @@
 import type { LatLng } from '../db';
 
+/** The chapter/episode-range shape shared by whatever's checked for a shared medium below. */
+interface RangedForMedium {
+  chapterRange: unknown | null;
+  episodeRange: unknown | null;
+}
+
+/**
+ * Whether two positions could plausibly appear on screen at the same
+ * point in the story — i.e. whether connecting one's tail to the other
+ * makes sense at all. A position gated to only one medium (say, an
+ * episode-only detour) never displays alongside one gated to only the
+ * other (say, a chapter-only one), even though they may sit next to each
+ * other in the character's position list — often because both are really
+ * one location reached by two different routes depending on the medium.
+ * A position with no range at all (always visible in both media) is
+ * compatible with anything.
+ */
+export function sharesDisplayMedium(a: RangedForMedium, b: RangedForMedium): boolean {
+  if (a.chapterRange === null && a.episodeRange === null) return true;
+  if (b.chapterRange === null && b.episodeRange === null) return true;
+  if (a.chapterRange !== null && b.chapterRange !== null) return true;
+  if (a.episodeRange !== null && b.episodeRange !== null) return true;
+  return false;
+}
+
+/**
+ * The nearest position before `positionIndex` (in array order) that shares
+ * a display medium with it — see sharesDisplayMedium. Skips over any
+ * medium-incompatible positions in between, e.g. a run of episode-only
+ * detour stops between two chapter-only ones.
+ */
+export function findPrecedingCompatiblePosition<T extends RangedForMedium>(
+  positions: T[],
+  positionIndex: number,
+): T | undefined {
+  const position = positions[positionIndex]!;
+  for (let i = positionIndex - 1; i >= 0; i--) {
+    if (sharesDisplayMedium(position, positions[i]!)) return positions[i];
+  }
+  return undefined;
+}
+
 /**
  * Builds the polyline points for one position's tail: the position itself,
  * then its own tail waypoints, then — if there is one — the preceding

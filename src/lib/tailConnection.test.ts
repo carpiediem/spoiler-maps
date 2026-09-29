@@ -2,9 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   applyTailOpacityGradient,
   buildTailPoints,
+  findPrecedingCompatiblePosition,
   hasTailToDraw,
+  sharesDisplayMedium,
   tailOpacityForProgress,
 } from './tailConnection';
+
+const CHAPTERS = { startChapterId: 1, endChapterId: 2 };
+const EPISODES = { startEpisodeId: 1, endEpisodeId: 2 };
 
 describe('buildTailPoints', () => {
   it('starts with the position itself, then its own tail waypoints', () => {
@@ -113,5 +118,87 @@ describe('tailOpacityForProgress', () => {
 
   it('fades older positions more than newer ones', () => {
     expect(tailOpacityForProgress(2, 10)).toBeLessThan(tailOpacityForProgress(7, 10));
+  });
+});
+
+describe('sharesDisplayMedium', () => {
+  it('is true for two positions both gated to chapters', () => {
+    expect(
+      sharesDisplayMedium(
+        { chapterRange: CHAPTERS, episodeRange: null },
+        { chapterRange: CHAPTERS, episodeRange: null },
+      ),
+    ).toBe(true);
+  });
+
+  it('is true for two positions both gated to episodes', () => {
+    expect(
+      sharesDisplayMedium(
+        { chapterRange: null, episodeRange: EPISODES },
+        { chapterRange: null, episodeRange: EPISODES },
+      ),
+    ).toBe(true);
+  });
+
+  it('is false for a chapter-only position and an episode-only position', () => {
+    expect(
+      sharesDisplayMedium(
+        { chapterRange: CHAPTERS, episodeRange: null },
+        { chapterRange: null, episodeRange: EPISODES },
+      ),
+    ).toBe(false);
+  });
+
+  it('is true when either position has no range at all (always visible in both media)', () => {
+    expect(
+      sharesDisplayMedium(
+        { chapterRange: null, episodeRange: null },
+        { chapterRange: null, episodeRange: EPISODES },
+      ),
+    ).toBe(true);
+    expect(
+      sharesDisplayMedium(
+        { chapterRange: CHAPTERS, episodeRange: null },
+        { chapterRange: null, episodeRange: null },
+      ),
+    ).toBe(true);
+  });
+
+  it('is true when a position has both ranges, regardless of the other’s single medium', () => {
+    expect(
+      sharesDisplayMedium(
+        { chapterRange: CHAPTERS, episodeRange: EPISODES },
+        { chapterRange: null, episodeRange: EPISODES },
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('findPrecedingCompatiblePosition', () => {
+  it('skips over medium-incompatible positions to find one that matches', () => {
+    // e.g. two arrivals at the same place authored as separate book-only/
+    // TV-only positions, with an unrelated TV-only detour in between.
+    const positions = [
+      { note: 'A', chapterRange: CHAPTERS, episodeRange: EPISODES },
+      { note: 'B (TV detour)', chapterRange: null, episodeRange: EPISODES },
+      { note: 'C (book)', chapterRange: CHAPTERS, episodeRange: null },
+    ];
+
+    expect(findPrecedingCompatiblePosition(positions, 2)?.note).toBe('A');
+  });
+
+  it('returns undefined when nothing before it is compatible', () => {
+    const positions = [
+      { note: 'A (TV only)', chapterRange: null, episodeRange: EPISODES },
+      { note: 'B (book only)', chapterRange: CHAPTERS, episodeRange: null },
+    ];
+
+    expect(findPrecedingCompatiblePosition(positions, 1)).toBeUndefined();
+  });
+
+  it('returns undefined for the first position', () => {
+    const positions = [{ note: 'A', chapterRange: null, episodeRange: null }];
+
+    expect(findPrecedingCompatiblePosition(positions, 0)).toBeUndefined();
   });
 });
