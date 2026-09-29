@@ -1622,6 +1622,93 @@ describe('CharactersSection', () => {
     expect(tails[0].opacity).toBe(1);
   });
 
+  it('while editing a chapter-only position, connects its tail to the nearest chapter-having position, skipping an episode-only one in between', async () => {
+    // Reproduces two arrivals at the same place authored as separate
+    // book-only/TV-only positions (e.g. Catelyn reaching Riverrun by two
+    // different routes depending on medium), with an unrelated episode-only
+    // detour sitting between the book-only one and its true predecessor.
+    const storyId = await seedStoryId();
+    const book = await createBook({
+      storyId,
+      name: 'A Game of Thrones',
+      author: null,
+      url: null,
+      sortOrder: 0,
+    });
+    const chapter1 = await createChapter({ bookId: book.id, name: 'One', url: null, sortOrder: 0 });
+    const chapter2 = await createChapter({ bookId: book.id, name: 'Two', url: null, sortOrder: 1 });
+    const season = await createTvSeason({ storyId, url: null, sortOrder: 0 });
+    const episode = await createEpisode({
+      seasonId: season.id,
+      name: 'One',
+      url: null,
+      sortOrder: 0,
+    });
+    const character = await createCharacter({
+      storyId,
+      name: 'Catelyn Stark',
+      group: null,
+      icon: null,
+      color: '#808080',
+      sortOrder: 0,
+      url: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 10, lng: 10 },
+      dead: false,
+      note: "A village near Storm's End",
+      tail: null,
+      chapterRange: { startChapterId: chapter1.id, endChapterId: chapter1.id },
+      episodeRange: null,
+    });
+    await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 20, lng: 20 },
+      dead: false,
+      note: 'Traveling from Harrenhal to Riverrun',
+      tail: null,
+      chapterRange: null,
+      episodeRange: { startEpisodeId: episode.id, endEpisodeId: episode.id },
+    });
+    const riverrunBook = await createCharacterPosition({
+      characterId: character.id,
+      position: { lat: 30, lng: 30 },
+      dead: false,
+      note: 'Riverrun (book)',
+      tail: null,
+      chapterRange: { startChapterId: chapter2.id, endChapterId: null },
+      episodeRange: null,
+    });
+    const onVisibleTailsChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CharactersSection
+        storyId={storyId}
+        onAddPosition={vi.fn()}
+        onEditPosition={vi.fn()}
+        positionsVersion={0}
+        onVisiblePositionsChange={vi.fn()}
+        onVisibleTailsChange={onVisibleTailsChange}
+        timelineMode="book"
+        timelineIndex={1}
+        editingCharacterId={character.id}
+        editingPositionId={riverrunBook.id}
+        sectionExpanded
+      />,
+    );
+
+    await user.click(await screen.findByText('Catelyn Stark'));
+
+    await waitFor(() => {
+      const tails = onVisibleTailsChange.mock.lastCall?.[0];
+      expect(tails).toHaveLength(1);
+      // Connects back to "A village near Storm's End" (lat/lng 10,10), not
+      // the episode-only "Traveling..." position (20,20) sitting between them.
+      expect(tails[0].points[tails[0].points.length - 1]).toEqual({ lat: 10, lng: 10 });
+    });
+  });
+
   it('hides an expanded character’s position once the timeline is before its start chapter', async () => {
     const storyId = await seedStoryId();
     const book = await createBook({

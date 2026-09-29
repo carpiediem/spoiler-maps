@@ -13,7 +13,12 @@ import {
 import { sortOrderAfter, sortOrderBetween } from '../../db/ordering';
 import { characterInitials } from '../../lib/characterInitials';
 import type { CharacterPositionPin, CharacterTailOverlay } from '../../lib/characterPositionPins';
-import { applyTailOpacityGradient, buildTailPoints, hasTailToDraw } from '../../lib/tailConnection';
+import {
+  applyTailOpacityGradient,
+  buildTailPoints,
+  findPrecedingCompatiblePosition,
+  hasTailToDraw,
+} from '../../lib/tailConnection';
 import { useRenderLoopWatchdog } from '../../lib/renderLoopWatchdog';
 import { makeTimelineVisibilityChecker } from '../../lib/editor/timelineVisibility';
 import type { TimelineMode } from '../../lib/timelineMode';
@@ -181,7 +186,13 @@ export function CharactersSection({
                 : String(positionIndex + 1),
           });
 
-          const precedingPosition = positions[positionIndex - 1];
+          // The nearest preceding position sharing this one's display
+          // medium (chapters vs. episodes) — not just the previous one in
+          // array order, which may be an unrelated detour gated to the
+          // other medium (e.g. two arrivals at the same place authored as
+          // separate book-only/TV-only positions, with other single-medium
+          // stops in between).
+          const precedingPosition = findPrecedingCompatiblePosition(positions, positionIndex);
           if (isEditing && hasTailToDraw(position, precedingPosition)) {
             tails.push({
               characterId: expandedCharacterId,
